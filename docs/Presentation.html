@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="fr" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>適応 — Module d'Adaptation Morphique Shinkofa</title>
+<meta name="description" content="Pas un overlay. Pas un patch. Un système nerveux pour le digital. Le moteur qui prouve la promesse Shinkofa.">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --bg-deep: #111213;
+    --fg: #111213;
+    --fg-soft: #3a3c3f;
+    --fg-muted: #6b6e72;
+    --fg-inv: #fafaf7;
+    --border: #e0dfd9;
+    --accent: #c1442d;
+    --accent-soft: #f4e8e4;
+    --rule: #1a1b1d;
+    --serif: "EB Garamond", "Iowan Old Style", "Apple Garamond", Garamond, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #0e0f12;
+      --bg-elev: #16181c;
+      --bg-deep: #fafaf7;
+      --fg: #ececef;
+      --fg-soft: #c4c6ca;
+      --fg-muted: #9a9da2;
+      --fg-inv: #111213;
+      --border: #2a2d33;
+      --accent: #ff8a73;
+      --accent-soft: rgba(255, 138, 115, 0.12);
+      --rule: #ececef;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e0f12;
+    --bg-elev: #16181c;
+    --bg-deep: #fafaf7;
+    --fg: #ececef;
+    --fg-soft: #c4c6ca;
+    --fg-muted: #9a9da2;
+    --fg-inv: #111213;
+    --border: #2a2d33;
+    --accent: #ff8a73;
+    --accent-soft: rgba(255, 138, 115, 0.12);
+    --rule: #ececef;
+  }
+  :root[data-theme="light"] {
+    --bg: #fafaf7;
+    --bg-elev: #ffffff;
+    --bg-deep: #111213;
+    --fg: #111213;
+    --fg-soft: #3a3c3f;
+    --fg-muted: #6b6e72;
+    --fg-inv: #fafaf7;
+    --border: #e0dfd9;
+    --accent: #c1442d;
+    --accent-soft: #f4e8e4;
+    --rule: #1a1b1d;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; animation: none !important; }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.site {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0.7rem 1.4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--fg-muted);
+  }
+  header.site .mark { color: var(--fg); font-weight: 600; letter-spacing: 0.02em; }
+  header.site nav { display: flex; gap: 0.5rem; }
+  header.site button {
+    background: transparent;
+    color: var(--fg-soft);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 32px;
+    letter-spacing: 0.04em;
+  }
+  header.site button:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 0 1.4rem; }
+
+  section { padding: 6rem 0 5rem; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.72rem;
+    color: var(--fg-muted);
+    margin: 0 0 1.2rem;
+    font-weight: 600;
+  }
+  .eyebrow .num { color: var(--accent); margin-right: 0.6rem; }
+
+  h1, h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    color: var(--fg);
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(2.4rem, 7vw, 4.2rem);
+    line-height: 1.05;
+  }
+  h2 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1.15;
+    margin: 0 0 1.2rem;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-size: 1.05rem;
+    margin: 2rem 0 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  p { color: var(--fg-soft); max-width: 62ch; margin: 0 0 1rem; }
+  p.lede {
+    font-family: var(--serif);
+    font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+    line-height: 1.45;
+    color: var(--fg);
+    max-width: 30ch;
+    margin: 0 0 2rem;
+  }
+  p.lede-wide { max-width: 50ch; }
+
+  .kanji {
+    font-family: var(--serif);
+    font-size: clamp(7rem, 22vw, 14rem);
+    line-height: 0.9;
+    color: var(--accent);
+    font-weight: 300;
+    margin: 0 0 1rem;
+    letter-spacing: -0.05em;
+  }
+
+  .meta {
+    color: var(--fg-muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-top: 2rem;
+  }
+  .meta span + span::before { content: " — "; opacity: 0.5; }
+
+  blockquote {
+    margin: 2rem 0;
+    padding: 1rem 0 1rem 1.5rem;
+    border-left: 3px solid var(--accent);
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    line-height: 1.4;
+    color: var(--fg);
+    max-width: 36ch;
+  }
+  blockquote cite {
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--fg-muted);
+    margin-top: 0.8rem;
+    font-style: normal;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+  }
+  @media (max-width: 700px) {
+    .pair { grid-template-columns: 1fr; gap: 1rem; }
+  }
+  .pair > div {
+    padding: 1.2rem 1.4rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-elev);
+  }
+  .pair .label {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--fg-muted);
+    margin: 0 0 0.6rem;
+  }
+  .pair .refuse { border-left: 3px solid #6b6e72; }
+  .pair .accept { border-left: 3px solid var(--accent); }
+  .pair p { margin: 0; font-size: 0.95rem; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0;
+    margin: 2.5rem 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .stats > div {
+    padding: 1.5rem 1rem;
+    border-right: 1px solid var(--border);
+  }
+  .stats > div:last-child { border-right: none; }
+  .stats .n {
+    font-family: var(--serif);
+    font-size: 2.4rem;
+    line-height: 1;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+  .stats .l {
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  ul.bare {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  ul.bare li {
+    padding: 0.7rem 0 0.7rem 1.6rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    color: var(--fg);
+    max-width: 58ch;
+  }
+  ul.bare li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  ul.bare li:last-child { border-bottom: none; }
+
+  .phases {
+    display: grid;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .phase {
+    border-top: 1px solid var(--rule);
+    padding: 1.2rem 0 1rem;
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 640px) {
+    .phase { grid-template-columns: 1fr; gap: 0.4rem; }
+  }
+  .phase .label {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+  .phase .label small {
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.3rem;
+  }
+  .phase .body p { margin: 0; color: var(--fg-soft); }
+
+  details.tech {
+    margin: 3rem 0 0;
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+  }
+  details.tech summary {
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    list-style: none;
+    padding: 0.4rem 0;
+  }
+  details.tech summary::after { content: " →"; color: var(--accent); }
+  details.tech[open] summary::after { content: " ↓"; }
+  details.tech summary:hover { color: var(--accent); }
+
+  table.tech {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.86rem;
+  }
+  table.tech th, table.tech td {
+    text-align: left;
+    padding: 0.4rem 0.7rem 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--fg-soft);
+  }
+  table.tech th {
+    font-weight: 600;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+  }
+
+  code { font-family: var(--mono); font-size: 0.84em; color: var(--accent); }
+
+  .closing {
+    background: #0e0f12;
+    color: #ececef;
+    padding: 6rem 1.4rem;
+    text-align: center;
+    border: none;
+  }
+  .closing h2 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: #ececef;
+    margin: 0 auto 2rem;
+    max-width: 22ch;
+  }
+  .closing p { color: #ececef; opacity: 0.72; max-width: 40ch; margin: 0 auto 0.5rem; }
+  .closing .sign {
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    margin-top: 3rem;
+    opacity: 0.9;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+  }
+  a:hover { background: var(--accent-soft); }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--fg-muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+
+  @media print {
+    header.site { display: none; }
+    section { page-break-after: always; padding: 2rem 0; }
+    .closing { background: white; color: black; }
+    .closing h2, .closing p, .closing .sign { color: black; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="mark">Shinkofa Morphic Engine <span style="opacity:0.5;">— v2.0.0</span></div>
+  <nav>
+    <button id="theme-toggle" type="button" aria-label="Changer le thème">Auto</button>
+    <button onclick="window.print()" type="button" aria-label="Imprimer">Imprimer</button>
+  </nav>
+</header>
+
+<main>
+
+<section>
+  <div class="kanji" aria-hidden="true">適応</div>
+  <h1>Le digital qui s'adapte<br>à&nbsp;toi.<br>Pas l'inverse.</h1>
+  <div class="meta">
+    <span>Module d'Adaptation Morphique</span>
+    <span>v2.0.0</span>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">01</span>L'inversion</p>
+  <h2>On vous a vendu<br>un mensonge utile.</h2>
+  <p class="lede-wide">Que la technologie était neutre. Que les outils s'adaptaient à vous. Que si l'application vous épuisait, c'était votre faute.</p>
+  <p>Le digital actuel est construit pour un modèle d'humain qui n'existe pas. Attention infinie, énergie constante, traitement sensoriel uniforme. Ce modèle est utile à ceux qui mesurent votre attention pour la vendre. À personne d'autre.</p>
+  <blockquote>
+    Shinkofa fait l'inverse. Et ce module est la preuve technique vivante de cette inversion.
+    <cite>Manifeste Shinkofa</cite>
+  </blockquote>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">02</span>Ce que ce n'est pas</p>
+  <h2>Pas un overlay.<br>Pas un patch.<br>Un système nerveux.</h2>
+
+  <div class="pair">
+    <div class="refuse">
+      <p class="label">Les overlays d'accessibilité</p>
+      <p>Un script tiers, un widget en bas à droite, une promesse de conformité instantanée. Le contrôle reste chez le vendeur. Les données sont collectées. La FTC a sanctionné l'un d'eux en 2024 — un million de dollars, 1&nbsp;023 sites concernés.</p>
+    </div>
+    <div class="accept">
+      <p class="label">Le module morphique Shinkofa</p>
+      <p>Un moteur intégré au cœur du produit. Code ouvert, auditable. Préférences chiffrées de bout en bout. Le contrôle reste chez l'utilisateur. Détachable en deux clics, données exportables.</p>
+    </div>
+  </div>
+
+  <p>L'adaptation n'est pas une option d'accessibilité posée par-dessus. C'est la matière du produit.</p>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">03</span>Ce qu'il fait</p>
+  <h2>Treize axes.<br>Trois minutes.<br>Une seule personne :<br>vous.</h2>
+
+  <p class="lede-wide">Si vous préférez peu de mouvement, l'interface ralentit. Si vous lisez mieux avec une typo dense, elle se densifie. Si votre énergie est basse aujourd'hui, l'interface se calme : moins d'animations, moins de sollicitations, plus d'espace.</p>
+
+  <p>Pas parce que vous avez coché une case dans un menu. Parce que le système comprend — et parce que vous gardez le dernier mot, à tout moment.</p>
+
+  <h3>L'onboarding sensoriel d'abord</h3>
+  <ul class="bare">
+    <li>Quatre choix avant qu'on vous demande qui vous êtes</li>
+    <li>Trois décisions maximum pour démarrer. Pas cinq, pas huit.</li>
+    <li>Une option «&nbsp;je ne sais pas&nbsp;» sur tout. Toujours.</li>
+    <li>Le confort sensoriel avant l'identité — c'est la première promesse Shinkofa, et elle est tenue dès le premier écran</li>
+  </ul>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">04</span>Ce que ça change pour vous</p>
+  <h2>Trois chiffres<br>qui vous concernent.</h2>
+
+  <div class="stats">
+    <div><span class="n">13</span><span class="l">façons d'adapter l'interface à votre fonctionnement</span></div>
+    <div><span class="n">3</span><span class="l">décisions pour démarrer. Pas une de plus.</span></div>
+    <div><span class="n">0</span><span class="l">donnée d'adaptation qui quitte votre appareil en clair</span></div>
+  </div>
+
+  <p>Les détails techniques — poids du moteur, latence, couvertures de tests, durée de soak — sont publics et vérifiables. Ils vivent plus bas, pour qui veut auditer. Ici, ce qui compte : trois chiffres qui parlent de vous, pas de la machine.</p>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">05</span>Le standard qu'on dépasse</p>
+  <h2>Le plancher Shinkofa<br>est déjà élevé.<br>On le dépasse exprès.</h2>
+
+  <p>La méthodologie interne fixe un seuil. Sur ce module, on l'a tiré vers le haut là où ça compte pour la personne en face.</p>
+
+  <div class="pair">
+    <div class="refuse">
+      <p class="label">Le plancher méthodologie</p>
+      <p>Cinq décisions à l'onboarding. Couverture 95&nbsp;% sur le code critique. Impact LCP non spécifié. Type coverage exigé sur le nouveau code seulement.</p>
+    </div>
+    <div class="accept">
+      <p class="label">Ici, v2</p>
+      <p>Trois décisions strict. Couverture 95&nbsp;% plus mutation testing 75&nbsp;%. LCP plafonné à 50&nbsp;ms additionnels. Type coverage 100&nbsp;% sur tout le code.</p>
+    </div>
+  </div>
+
+  <p>On dépasse pour une raison précise : chaque chiffre tiré vers le haut soulage une personne réelle.</p>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">06</span>Ce qu'on refuse</p>
+  <h2>Quatre lignes<br>qu'on ne franchira pas.</h2>
+
+  <ul class="bare">
+    <li>Aucune donnée d'adaptation ne quitte l'appareil en clair. Le serveur ne voit que des deltas chiffrés. Il n'a même pas la clé.</li>
+    <li>Aucun dark pattern, à aucun moment du flow. Ni à l'accueil, ni à la limite, ni au départ. Désinscription en deux clics, export proposé avant.</li>
+    <li>Aucun tracking tiers, aucun analytics intrusif. La télémétrie est agrégée, anonyme, opt-in, désactivable d'un clic.</li>
+    <li>Aucun storytelling fabriqué. Si on vous parle d'une fonctionnalité, c'est qu'elle existe et qu'on peut vous montrer son code.</li>
+  </ul>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">07</span>Ce qu'on construit</p>
+  <h2>Vingt-neuf briques.<br>Six phases.<br>Aucune brûlée.</h2>
+
+  <p>La méthodologie est <em>brick by brick</em> — une brique, une preuve, un commit. Pas de «&nbsp;on finira plus tard&nbsp;». Pas de «&nbsp;ça suffira pour démarrer&nbsp;».</p>
+
+  <div class="phases">
+    <div class="phase">
+      <div class="label">Phase 1<small>Fondations</small></div>
+      <div class="body"><p>Le squelette. Architecture en trois couches. Les tests d'abord, le code après. Le compilateur strict comme première garde.</p></div>
+    </div>
+    <div class="phase">
+      <div class="label">Phase 2<small>Sensoriel</small></div>
+      <div class="body"><p>Cinq axes sensoriels gradués — thème, mouvement, densité, taille de texte, contraste. Le confort avant l'identité.</p></div>
+    </div>
+    <div class="phase">
+      <div class="label">Phase 3<small>Cognitif &amp; accueil</small></div>
+      <div class="body"><p>Mode focus, réduction des distractions, prédictibilité. Et l'onboarding en trois décisions — pas une de plus.</p></div>
+    </div>
+    <div class="phase">
+      <div class="label">Phase 4<small>Mémoire</small></div>
+      <div class="body"><p>Persistance locale d'abord, synchronisation entre appareils ensuite — toujours en zéro-knowledge, jamais imposée.</p></div>
+    </div>
+    <div class="phase">
+      <div class="label">Phase 5<small>Résilience</small></div>
+      <div class="body"><p>Isolation des couches lourdes hors du thread principal. L'interface ne ralentit jamais, même quand l'arrière-plan travaille fort.</p></div>
+    </div>
+    <div class="phase">
+      <div class="label">Phase 6<small>Dévoilement</small></div>
+      <div class="body"><p>Démonstration sur <code>theermite.com</code>, interopérabilité avec les standards d'accessibilité existants, RGPD intégré, publication publique.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">08</span>Comment ça devient visible</p>
+  <h2>Pas un lancement.<br>Un dévoilement.</h2>
+
+  <p class="lede-wide">Shinkofa existe depuis 2025. Les plateformes tournent en production depuis sept mois. Le travail a été fait dans l'ombre. Ce module rend la promesse visible.</p>
+
+  <h3>Quatre points d'entrée</h3>
+  <ul class="bare">
+    <li>Une démonstration vivante sur <code>theermite.com</code> — le module en train de respirer, pas une vidéo</li>
+    <li>Un paquet ouvert sur npm, intégrable en trois lignes par n'importe qui</li>
+    <li>Une candidature au fonds européen NGI0 Commons — code ouvert, biens communs numériques</li>
+    <li>Une interopérabilité avec les standards d'accessibilité existants — on rejoint l'écosystème, on ne le concurrence pas</li>
+  </ul>
+
+  <p>Pas de hype. Pas de cold outreach. La preuve d'abord, la révélation ensuite.</p>
+</section>
+
+<section>
+  <p class="eyebrow"><span class="num">09</span>Pourquoi maintenant</p>
+  <h2>Parce que la rhétorique<br>ne suffit plus.</h2>
+
+  <p class="lede-wide">«&nbsp;L'humain au centre&nbsp;» est devenu un slogan. Tout le monde le dit. Personne ne le prouve techniquement.</p>
+
+  <p>Le module morphique est la pièce qui transforme une posture en architecture. Sans lui, la promesse Shinkofa reste une jolie phrase. Avec lui, elle devient observable au premier écran, vérifiable par n'importe quel auditeur, mesurable à la milliseconde.</p>
+
+  <p>C'est aussi la pièce qui rend les autres plateformes Shinkofa cohérentes entre elles. Une seule logique d'adaptation, partagée. Le système nerveux commun.</p>
+</section>
+
+</main>
+
+<section class="closing">
+  <h2>Le digital ne devrait pas être<br>un endroit où l'on se perd.</h2>
+  <p>Ce devrait être un endroit où l'on revient à soi.</p>
+  <p style="margin-top:1.5rem;">Vous pourrez l'essayer. Lire le code. Auditer la sécurité. Comparer avec ce que vous utilisez aujourd'hui.</p>
+  <div class="sign">— Shinkofa</div>
+</section>
+
+<main style="padding: 0 1.4rem 4rem;">
+<details class="tech">
+  <summary>Détail technique pour qui veut auditer</summary>
+
+  <h3>Architecture en cinq couches</h3>
+  <ul class="bare">
+    <li><strong>Visible</strong> — TypeScript 5.7 strict + Web Components v1 + Lit 3.2. Framework-agnostic. Adapters React/Vue/Svelte/Astro en couches minces.</li>
+    <li><strong>Validation critique</strong> — Rust 1.87 compilé en WebAssembly. Tokens W3C DTCG dérivés via Style Dictionary 5.4.</li>
+    <li><strong>Résilience</strong> — Effect-TS 3.10. Retry exponentiel, circuit breaker. Un échec de synchronisation ne dégrade jamais l'expérience locale.</li>
+    <li><strong>Isolation</strong> — Web Workers. Yjs CRDT lazy-loaded (50&nbsp;Ko), chiffrement NaCl box, dérivation tokens. Le thread principal reste sous 50&nbsp;ms d'INP.</li>
+    <li><strong>Relais optionnel</strong> — Phoenix 1.8 sur Elixir 1.19, serveur Bandit 1.11. Channel zero-knowledge — le serveur relaie sans déchiffrer.</li>
+  </ul>
+
+  <h3>Couverture qualité</h3>
+  <table class="tech">
+    <thead><tr><th>Critère</th><th>Plancher méthodologie</th><th>Module v2</th></tr></thead>
+    <tbody>
+      <tr><td>Coverage Critical</td><td>95&nbsp;%</td><td>95&nbsp;% + mutation testing 75&nbsp;%</td></tr>
+      <tr><td>Type coverage</td><td>100&nbsp;% nouveau code</td><td>100&nbsp;% du codebase</td></tr>
+      <tr><td>Bundle initial</td><td>≤ 200&nbsp;Ko</td><td>≤ 20&nbsp;Ko (Yjs lazy 50&nbsp;Ko en sus)</td></tr>
+      <tr><td>LCP impact</td><td>&lt; 2.0&nbsp;s absolu</td><td>≤ +50&nbsp;ms sur le site hôte</td></tr>
+      <tr><td>INP</td><td>&lt; 100&nbsp;ms</td><td>&lt; 50&nbsp;ms</td></tr>
+      <tr><td>WCAG</td><td>2.2 AA</td><td>2.2 AA + WAI-Adapt symbols</td></tr>
+      <tr><td>Onboarding</td><td>≤ 5 décisions</td><td>≤ 3 décisions strict</td></tr>
+      <tr><td>Soak mémoire</td><td>Non spécifié</td><td>24&nbsp;h, drift &lt; 1&nbsp;Mo, BLOCKING release</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Anti-Circular Testing — trois couches</h3>
+  <ul class="bare">
+    <li>PBT (property-based testing) + mutation testing sur tout le code Critical</li>
+    <li>Tests holdout jamais vus à l'écriture + sessions Writer/Reviewer séparées</li>
+    <li>Revue cross-modèle sur tout module Critical avant release publique</li>
+  </ul>
+
+  <h3>Documents canoniques</h3>
+  <ul class="bare">
+    <li><code>docs/Conception-Morphique/CDC.md</code> — intention (24 features, 14 modules, FMEA 15 modes)</li>
+    <li><code>docs/Conception-Morphique/PET.md</code> — exécution (29 briques, 6 phases, traçabilité bidirectionnelle)</li>
+    <li><code>docs/Conception-Morphique/Changelog-v1-v2.md</code> — la rupture v1 → v2 documentée</li>
+  </ul>
+</details>
+</main>
+
+<footer>
+  匠 Takumi × Jay (The Ermite) · AGPL-3.0
+</footer>
+
+<script>
+  (function() {
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    var stored = localStorage.getItem('morphic-pres-theme');
+    if (stored) root.setAttribute('data-theme', stored);
+    function label(v) { return v.charAt(0).toUpperCase() + v.slice(1); }
+    btn.textContent = label(root.getAttribute('data-theme') || 'auto');
+    btn.addEventListener('click', function() {
+      var cur = root.getAttribute('data-theme') || 'auto';
+      var next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('morphic-pres-theme', next);
+      btn.textContent = label(next);
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      var sections = Array.prototype.slice.call(document.querySelectorAll('section'));
+      var y = window.scrollY + 120;
+      var idx = sections.findIndex(function(s) { return s.offsetTop + s.offsetHeight > y; });
+      if (idx < 0) idx = sections.length - 1;
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === 'j') {
+        e.preventDefault();
+        var next = sections[Math.min(idx + 1, sections.length - 1)];
+        if (next) next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'k') {
+        e.preventDefault();
+        var prev = sections[Math.max(idx - 1, 0)];
+        if (prev) prev.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
