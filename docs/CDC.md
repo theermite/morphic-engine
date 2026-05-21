@@ -19,7 +19,7 @@
 | Persistence | Aucune (objets en mémoire) | **CRDT Yjs lazy-loaded** + IndexedDB local-first + sync opt-in chiffré E2E |
 | Adaptation | Statique (générée par profil) | **13 axes morphiques** + 3-tier surfacing (4 onboarding sensoriel-first + 4 optionnels + 5 auto-derivés) |
 | Standards | Quality.md baseline | **Refonte 2026 floors** + Dignity §a sensoriel-first + Anti-overlay (FTC AccessiBe 2025) |
-| Open source | Privé monorepo | **AGPL-3.0** + NLNet NGI0 (deadline 2026-05-26) |
+| Open source | Privé monorepo | **AGPL-3.0** + NLNet NGI0 (deadline 2026-06-01) |
 | Démo | Aucune | **The Ermite** (theermite.com) vitrine + case study citable IA |
 
 Le module v1 est **archivé** au moment du switch v2 (pas migré in-place — risque de drift). Les consommateurs internes (Michi, Shizen, Kakusei) migrent dans une phase ultérieure tracée au PET §13.
@@ -40,7 +40,7 @@ Le module morphique est l'**incarnation technique** de la promesse Shinkofa : *�
 
 Le module est le **levier magnétique** de l'écosystème Shinkofa en 2026 :
 
-1. **AGPL-3.0 + NLNet** (deadline soumission 2026-05-26) → financement Commons + crédibilité auprès de la NGI Initiative + reconnaissance W3C WAI-Adapt alignment.
+1. **AGPL-3.0 + NLNet** (deadline soumission 2026-06-01) → financement Commons + crédibilité auprès de la NGI Initiative + reconnaissance W3C WAI-Adapt alignment.
 2. **Démo theermite.com** → vitrine vivante (le blog Jay l'utilise sur lui-même = preuve par dogfooding, pas marketing).
 3. **NPM `@shinkofa/morphic-engine`** → distribution naturelle (Dev.to/Hashnode/GitHub topics : `morphic`, `neurodiversity`, `ux-adaptation`).
 4. **Citabilité IA** (Perplexity, AI Overviews, Claude-with-web) sur la requête « how to adapt UI for neurodiversity morphically » → JSON-LD `SoftwareApplication` + pillar article The Ermite.
@@ -236,7 +236,7 @@ Le serveur **ne décrypte jamais** les préférences. Il relaie des blobs chiffr
 | Bundler client | Vite | 6.x | 2026-05-21 | vitejs.dev |
 | Package manager | pnpm | 9.x | 2026-05-21 | pnpm.io |
 | License | AGPL-3.0 | — | 2026-05-21 | gnu.org/licenses |
-| Funding | NLNet NGI0 Commons Fund | round 2026-05-26 | 2026-05-21 | nlnet.nl/news |
+| Funding | NLNet NGI0 Commons Fund | round 2026-06-01 | 2026-05-21 | nlnet.nl/news |
 | A11y audit auto | axe-core + Pa11y CI | 4.10+ / 9.x | 2026-05-21 | deque.com |
 | Telemetry | OpenTelemetry JS + Elixir | 1.27 / 1.x | 2026-05-21 | opentelemetry.io |
 
@@ -401,7 +401,7 @@ Ce qu'on **ne fera PAS** dans cette v2.0.0 :
 
 | Métrique | Cible | Mesure | Échéance |
 |----------|-------|--------|----------|
-| NLNet dossier soumis | 1 | Confirmation email NLNet | 2026-05-26 |
+| NLNet dossier soumis | 1 | Confirmation email NLNet | 2026-06-01 |
 | NLNet acceptation | Stage 1 passé | Réponse NLNet | T+3 mois |
 | Downloads NPM `@shinkofa/morphic-engine` | 100/mois | npm-stat | T+6 mois |
 | GitHub stars `theermite/morphic-engine` | 50 | GitHub API | T+6 mois |
@@ -438,7 +438,7 @@ Ce qu'on **ne fera PAS** dans cette v2.0.0 :
 | **GEO** (AI Overviews, Perplexity, Claude-with-web) | JSON-LD `SoftwareApplication` + `TechArticle` + E-E-A-T (auteur Jay, 23y design, ND), contenu Q&A structuré, citations sources primaires (FTC, W3C, NLNet) | À implémenter |
 | **Distribution** | Blog The Ermite → LinkedIn/Discord/Telegram (pipeline existant) + Dev.to/Hashnode auto-publish + GitHub topics (`morphic`, `neurodiversity`, `ux-adaptation`, `accessibility`, `web-components`) + README NPM exemplaire | Pipeline existant à étendre |
 | **Capture** | CTA "Install in 5 lines" sur theermite.com avec lien GitHub + email capture optionnel sur newsletter Refonte | À implémenter |
-| **Funding visibility** | Dossier NLNet public (deadline 2026-05-26), badge "Funded by NGI0" si accepté | À soumettre |
+| **Funding visibility** | Dossier NLNet public (deadline 2026-06-01), badge "Funded by NGI0" si accepté | À soumettre |
 | **Interop standards bodies** | Apparition GPII Morphic.org registry interop (lien import préférences), W3C WAI-Adapt community group participation | Phase 1.5 |
 
 ---

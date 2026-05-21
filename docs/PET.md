@@ -167,7 +167,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-025 | NLNet dossier soumis (deadline 2026-05-26) — dossier `docs/Refonte/NLNet-Dossier-*` finalisé | §11 NLNet | ⬜ Pending | — | NLNet round 2026-05-26 | — | — |
+| B-025 | NLNet dossier soumis (deadline 2026-06-01) — dossier `docs/Refonte/NLNet-Dossier-*` finalisé | §11 NLNet | ⬜ Pending | — | NLNet round 2026-06-01 | — | — |
 | B-026 | README NPM `@shinkofa/morphic-engine` + LICENSE AGPL-3.0 + CHANGELOG + CONTRIBUTING | §12 Distribution | ⬜ Pending | — | npm publish workflow | — | — |
 | B-027 | Pillar article The Ermite « Adaptation morphique vs accessibility overlays (FTC AccessiBe 2024) » + JSON-LD SoftwareApplication | §12 SEO + GEO | ⬜ Pending | — | schema.org SoftwareApplication | — | — |
 | B-028 | Audit final GO/NO-GO Quality-Gates Refonte (4D ≥ 80/100) + Lighthouse ≥95 + axe 0 + Pa11y 0 + cross-browser pass | §11 Compliance | ⬜ Pending | — | — | — | — |
@@ -176,6 +176,19 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 **Statuts possibles** : ⬜ Pending · 🟡 In progress · 🔵 Tests written (red) · 🟢 Done · 🔴 Blocked · ⚫ Skipped
 
 **Coverage** : valeur cible selon CDC §7 Risk Classification. Vérifiée AVANT clôture brick. Mutation score vérifié hebdo et avant release.
+
+### Outillage qualité par étape (BLOCKING — calage roadmap)
+
+| Outil | Brick d'introduction | Justification | Référence |
+|-------|---------------------|---------------|-----------|
+| **Coverage thresholds v8** (global 80%) | **B-002 (déjà appliqué)** | Floor MNK-GoRin Quality.md — calibré dès la 2e brick pour TDG cohérent | Audit 2026-05-22 finding T1 |
+| **StrykerJS mutation testing** | **B-005** (token validation Zod) puis **B-018** (Rust→WASM) | Premier module avec logique non-triviale → cible mutation score 75% sur paths Critical. cargo-mutants côté Rust dès B-018. | Audit 2026-05-22 finding T2 + Quality.md §Anti-Circular |
+| **fast-check PBT** | **B-005** (DTCG validators) puis tout module Critical 95% | Layer 1 Anti-Circular — propriétés algorithmiques sur validators, mappers HD/ND, schemas | Audit 2026-05-22 finding T3 + Quality.md §Anti-Circular |
+| **Schemathesis fuzzing** | **B-023** (API import GPII / WAI-Adapt) | Fuzz des contrats import externe — déjà tracé dans la brick | PET déjà conforme |
+| **Holdout tests `__holdout__/`** | **B-017** (sync E2E) + **B-018** (WASM core) | Layer 2 Anti-Circular — tests cachés du writer | Quality.md §Anti-Circular |
+| **Cross-model review** (Koshin / DeepSeek) | **B-018**, **B-024a**, **B-024b** | Layer 3 Anti-Circular sur modules Critical (WASM + GDPR Export/Delete) | Quality.md §Anti-Circular |
+
+**Principe** : aucun module Critical 95% n'est marqué 🟢 Done sans (a) PBT Layer 1 + (b) mutation score ≥75% + (c) holdout test passé OU cross-model review. Vérifié au DOD de chaque brick Critical.
 
 ---
 
@@ -470,6 +483,17 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | Date | Session ID | Bricks touchées | Commits | Rapport |
 |------|-----------|-----------------|---------|---------|
 | 2026-05-21 | Session-2026-05-21-XXX | B-000 (conception CDC+PET v2) | — | `docs/Sessions/Session-2026-05-21-XXX.md` |
+| 2026-05-22 | Session-2026-05-22-001 | Audit + remédiation P0/P1/P2 (S1+A1+L1+T1+T2+T3+L2) | (voir batch 2026-05-22) | `docs/audits/Audit-2026-05-22.md` |
+
+**Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
+- `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
+- `[VEILLE] vitest@4.1.7 verifie 2026-05-21 via vitest.dev`
+- `[VEILLE] biome@2.4.15 verifie 2026-05-21 via biomejs.dev`
+- `[VEILLE] typescript@5.9.3 verifie 2026-05-21 via npmjs.com`
+- `[VEILLE] nlnet@round-2026-06-01 verifie 2026-05-22 via nlnet.nl/propose/` (rectification finding A1)
+
+**Marqueur Veille session 2026-05-22** :
+- `[VEILLE] @vitest/coverage-v8@4.1.7 verifie 2026-05-22 via npmjs.com` (T1 — peer aligné vitest 4.1.7)
 
 ---
 
