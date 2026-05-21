@@ -37,3 +37,6 @@ target/
 .env
 .env.local
 .claude/state/
+
+# Methodology (PII-laden, MNK-GoRin source-of-truth — never published)
+.claude/
