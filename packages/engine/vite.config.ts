@@ -12,5 +12,18 @@ export default defineConfig({
     testTimeout: 10_000,
     hookTimeout: 10_000,
     include: ['tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts', 'tests/**'],
+      // MNK-GoRin Quality.md floors — global / new code / critical paths
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+    },
   },
 });
