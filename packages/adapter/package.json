@@ -1,0 +1,12 @@
+{
+  "name": "@morphic/adapter",
+  "version": "2.0.0-alpha.0",
+  "description": "Shinkofa Morphic Adaptation — host adapters (vanilla, React, Astro)",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "echo 'adapter: host adapters deferred to B-008+' && exit 0",
+    "test": "echo 'adapter: no tests yet (B-008+)' && exit 0"
+  }
+}

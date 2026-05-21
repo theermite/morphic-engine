@@ -1,0 +1,12 @@
+{
+  "name": "@morphic/wasm-core",
+  "version": "2.0.0-alpha.0",
+  "description": "Shinkofa Morphic Adaptation — Rust→WASM critical paths (scaffolding for B-005)",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "echo 'wasm-core: Rust crate scaffolding deferred to B-005' && exit 0",
+    "test": "echo 'wasm-core: no tests yet (B-005)' && exit 0"
+  }
+}
