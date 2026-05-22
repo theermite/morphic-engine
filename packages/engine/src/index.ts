@@ -123,3 +123,19 @@ export {
   resolveAutoFontSize,
   setFontSize,
 } from './typography.js';
+export {
+  disableWaiSymbols,
+  enableWaiSymbols,
+  getWaiSymbolsState,
+  MORPHIC_WAI_SYMBOLS_DEFAULT_Z_INDEX,
+  MORPHIC_WAI_SYMBOLS_MARKER,
+  MORPHIC_WAI_SYMBOLS_ORIGINAL_TEXT_ATTR,
+  parseBciIndices,
+  type SymbolResolution,
+  type SymbolResolver,
+  WAI_SYMBOL_ATTRIBUTE,
+  WAI_SYMBOLS_MODES,
+  type WaiSymbolsMode,
+  type WaiSymbolsOptions,
+  type WaiSymbolsState,
+} from './wai-symbols.js';
