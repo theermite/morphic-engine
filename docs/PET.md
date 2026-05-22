@@ -652,6 +652,17 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 - `[VEILLE] jsdom@29.1.1 verifie 2026-05-22 via npm registry` (B-003 — test environment Custom Elements v1 + Shadow DOM)
 - `[VEILLE] happy-dom@20.9.0 verifie 2026-05-22 via npm registry` (B-003 — écarté, Shadow DOM edge cases)
 
+**Veille rigoureuse post-B-003 (correction CI Node EOL)** — toutes sources directes officielles (gh api + nodejs/Release schedule.json) :
+- `[VEILLE] node@20 verifie 2026-05-22 via nodejs/Release schedule.json` — **EOL depuis 2026-04-30**, DROP matrix
+- `[VEILLE] node@22 verifie 2026-05-22 via nodejs/Release schedule.json` — Maintenance LTS jusqu'à 2027-04-30, KEEP
+- `[VEILLE] node@24 verifie 2026-05-22 via nodejs/Release schedule.json` — Active LTS jusqu'à 2028-04-30, ADD
+- `[VEILLE] actions/checkout@v6.0.2 verifie 2026-05-22 via gh api repos/actions/checkout/releases` — bump v4→v6 (Node 24 runtime)
+- `[VEILLE] actions/setup-node@v6.4.0 verifie 2026-05-22 via gh api` — bump v4→v6 (PR #1374 : `cache: 'pnpm'` reste OK avec input explicite)
+- `[VEILLE] pnpm/action-setup@v6.0.8 verifie 2026-05-22 via gh api` — bump v4→v6 (pnpm 10.33 conservé via packageManager field)
+- `[VEILLE] codecov/codecov-action@v6.0.1 verifie 2026-05-22 via gh api` — bump v5→v6 (Node 24 runtime)
+- `[VEILLE] typescript@6.0.3 verifie 2026-05-22 via npm` — DISPONIBLE mais ⏸ flag Jay (major bump, hors scope ce fix)
+- `[VEILLE] pnpm@11.2.2 verifie 2026-05-22 via npm` — DISPONIBLE mais ⏸ flag Jay (major bump, hors scope)
+
 ---
 
 ## Changelog PET v1 → v2

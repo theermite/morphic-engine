@@ -13,15 +13,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node ${{ matrix.node }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
@@ -41,8 +41,8 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=2048
 
       - name: Upload coverage to Codecov
-        if: matrix.node == 22
-        uses: codecov/codecov-action@v5
+        if: matrix.node == 24
+        uses: codecov/codecov-action@v6
         with:
           files: packages/engine/coverage/coverage-final.json
           flags: engine
