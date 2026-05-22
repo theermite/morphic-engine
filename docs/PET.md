@@ -4,7 +4,7 @@
 > **Ce que ce document n'est PAS** : la spécification de l'intention. Pour le quoi/pour qui/pourquoi, voir `docs/Conception-Morphique/CDC.md` v2.0.0.
 > **Règle de mise à jour** : modifier le PET à CHAQUE session de travail (avant + après chaque brick). C'est ici que vit la rigueur Monozukuri **excédence** — chaque brick est consignée, chaque erreur est tracée, chaque preuve est attachée.
 
-**Version** : 2.0.0 | **Date création** : 2026-05-21 | **Dernière MAJ** : 2026-05-22 | **Statut** : Active (v2 alignée Refonte + Monozukuri excédence)
+**Version** : 2.0.0 | **Date création** : 2026-05-21 | **Dernière MAJ** : 2026-05-22 (B-010/B-011) | **Statut** : Active (v2 alignée Refonte + Monozukuri excédence)
 **Cross-ref** : `docs/Conception-Morphique/CDC.md` v2.0.0 (intention) · `docs/Refonte/*` (21 docs standards Shinkofa 2026) · `mnk/10-Blueprints.md` (archétypes)
 **Standard qualité** : floor consolidé Refonte ≥92/100 toutes dimensions ; Critical modules : coverage 95% + mutation 75%.
 
@@ -53,7 +53,8 @@ Chaque feature CDC §3 mappée vers ≥1 brick PET §6 + ≥1 test. Aucun featur
 | F-007 Axe motion | B-008 | unit/motion.test.ts, e2e/reduced-motion.spec.ts | Standard |
 | F-008 Axe density | B-009 | unit/density.test.ts, e2e/density.spec.ts | Standard |
 | F-009 Axe font size + line height | B-010 | unit/typography.test.ts | Standard |
-| F-010 Axe cognitif decision points cap ≤3 | B-011 | unit/decision-points-ast.test.ts (lint custom AST), Storybook + axe | **Critical** |
+| F-006 ext. Axe contrast runtime API | B-011 | unit/contrast.test.ts | Standard |
+| F-010 Axe cognitif decision points cap ≤3 | B-012 | unit/decision-points-ast.test.ts (lint custom AST), Storybook + axe | **Critical** |
 | F-011 Axe language complexity | B-012 | unit/lang-complexity.test.ts | Standard |
 | F-012 Onboarding sensoriel-AVANT-identité | B-013 | e2e/onboarding-order.spec.ts (assertion ordre exact), Dignity 8 tests | **Critical** |
 | F-013 Mode récupération 1-clic | B-014 | unit/recovery.test.ts, e2e/recovery-mode.spec.ts | Sensitive |
@@ -127,14 +128,15 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | a590dc9 | 2026-05-22 |
 | B-008 | Axe motion (full/reduced/none/auto) — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` + CSS var + persistence localStorage | F-007 | ✅ Done | Standard 80% (atteint 93.33% lines / 92.3% branches) | prefers-reduced-motion (matchMedia API stable) | 7b75025 | 2026-05-22 |
 | B-009 | Axe density (compact/comfortable/spacious/auto) — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` + CSS var + persistence localStorage | F-008 | ✅ Done | Standard 80% (atteint 93.1% lines / 90.9% branches) | Aucune veille requise (pas de media query OS) | 9e866a2 | 2026-05-22 |
-| B-010 | Axe font size + line height + max-width (75ch prose) | F-009 | ⬜ Pending | Standard 80% | — | — | — |
-| B-011 | Lint AST custom : decision points cap ≤3 par écran morphique (BLOCKING) | F-010 | ⬜ Pending | **Critical 95%** | TypeScript Compiler API | — | — |
+| B-010 | Axe font-size (sm/md/lg/xl/auto) — runtime API `setFontSize`/`getFontSize`/`resolveAutoFontSize` + CSS var + persistence localStorage | F-009 | ✅ Done | Standard 80% (atteint — 232/232 tests) | Aucune veille requise (pas de media query OS) | 7fc6e40 | 2026-05-22 |
+| B-011 | Axe contrast (no-preference/more/less/custom/auto) — runtime API `setContrast`/`getContrast`/`resolveAutoContrast` + CSS var + persistence localStorage + `prefers-contrast` media query bridge | F-006 ext. | ✅ Done | Standard 80% (atteint — 261/261 tests) | prefers-contrast (matchMedia API stable) | 0bc1d81 | 2026-05-22 |
 
 ### Phase 1.2 — Cognitif + Onboarding + Recovery (B-012 à B-014)
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-012 | Axe language complexity (simple/standard/expert) + binding i18n keys | F-011 | ⬜ Pending | Standard 80% | — | — | — |
+| B-012 | Lint AST custom : decision points cap ≤3 par écran morphique (BLOCKING) | F-010 | ⬜ Pending | **Critical 95%** | TypeScript Compiler API | — | — |
+| B-012b | Axe language complexity (simple/standard/expert) + binding i18n keys | F-011 | ⬜ Pending | Standard 80% | — | — | — |
 | B-013 | Onboarding sensoriel-AVANT-identité : 3 écrans (thème → motion → density), ZÉRO identité avant validation 3 écrans | F-012 | ⬜ Pending | **Critical 95%** | — | — | — |
 | B-014 | Mode récupération 1-clic (Loi 12 Recovery as Architecture) — reset axes vers profil "low-energy" | F-013 | ⬜ Pending | Sensitive 90% | — | — | — |
 
