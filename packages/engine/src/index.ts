@@ -92,6 +92,22 @@ export {
   validateDwellDelay,
 } from './dwell-click.js';
 export {
+  clearTremorFilter,
+  type FilteredPosition,
+  getDiagnostics,
+  getTremorFilter,
+  getTremorFilterState,
+  MORPHIC_TREMOR_FILTER_MARKER,
+  movingAverage,
+  setTremorFilter,
+  TREMOR_FILTER_WINDOW_DEFAULT,
+  TREMOR_FILTER_WINDOW_MAX,
+  TREMOR_FILTER_WINDOW_MIN,
+  type TremorFilterOptions,
+  type TremorFilterState,
+  validateWindowSize,
+} from './tremor-filter.js';
+export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
   morphicInit,
