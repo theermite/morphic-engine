@@ -211,7 +211,8 @@ Le serveur **ne décrypte jamais** les préférences. Il relaie des blobs chiffr
 
 | Couche | Technologie | Version | Vérifiée le | Source veille |
 |--------|-------------|---------|-------------|---------------|
-| Language client visible | TypeScript | 5.6+ strict (`--noUncheckedIndexedAccess`, `--exactOptionalPropertyTypes`) | 2026-05-21 | typescriptlang.org |
+| Runtime client (dev + CI) | Node.js | **engines ≥22.0.0** (LTS Active 24 + LTS Maintenance 22 en CI matrix). Node 20 exclu (EOL 2026-04-30). | 2026-05-22 | nodejs.org/en/about/previous-releases |
+| Language client visible | TypeScript | 5.6+ floor strict (`--noUncheckedIndexedAccess`, `--exactOptionalPropertyTypes`) — **installé 5.9.3** | 2026-05-22 | typescriptlang.org |
 | Web Components | natif (Custom Elements v1) | spec stable WHATWG | 2026-05-21 | webcomponents.org |
 | Language critique | Rust | 1.87+ | 2026-05-21 | blog.rust-lang.org |
 | WASM toolchain | wasm-bindgen + wasm-pack | wasm-bindgen 0.2.95+ | 2026-05-21 | rustwasm.github.io |
@@ -225,16 +226,17 @@ Le serveur **ne décrypte jamais** les préférences. Il relaie des blobs chiffr
 | Backend | Elixir / Phoenix | 1.19 / 1.8 | 2026-05-21 | hex.pm |
 | HTTP server | Bandit | 1.11+ | 2026-05-21 | hex.pm |
 | Backend tests | ExUnit + StreamData (PBT) | 1.19 / 1.0+ | 2026-05-21 | hexdocs.pm |
-| Tests client | Vitest | 4.0+ (forks pool, maxForks 2) | 2026-05-21 | vitest.dev |
+| Tests client | Vitest | 4.0+ floor (forks pool, maxForks 2) — **installé 4.1.7** | 2026-05-22 | vitest.dev |
+| DOM test runtime | jsdom | 29.1.1 (Custom Elements + Shadow DOM v1) | 2026-05-22 | github.com/jsdom/jsdom |
 | Tests cross-browser | Playwright | 1.58+ | 2026-05-21 | playwright.dev |
 | PBT client | fast-check | 3.21+ | 2026-05-21 | fast-check.dev |
 | Mutation testing | StrykerJS (TS) + cargo-mutants (Rust) + Mutant.ex (Elixir) | 9.5 / 25.x / 0.13+ | 2026-05-21 | stryker-mutator.io |
-| Lint TS | Biome | 2.4+ | 2026-05-21 | biomejs.dev |
+| Lint TS | Biome | 2.4+ floor — **installé 2.4.15** | 2026-05-22 | biomejs.dev |
 | Lint Rust | clippy strict + rustfmt | rust 1.87 | 2026-05-21 | rust-lang.org |
 | Lint Elixir | Credo strict + Dialyzer | 1.7+ / OTP 27 | 2026-05-21 | hex.pm |
 | Security Elixir | Sobelow | 0.14+ | 2026-05-21 | hex.pm |
-| Bundler client | Vite | 6.x | 2026-05-21 | vitejs.dev |
-| Package manager | pnpm | 9.x | 2026-05-21 | pnpm.io |
+| Bundler client | Vite | 6.x floor — **installé 8.0.14** (transitif via Vitest 4.1.7) | 2026-05-22 | vitejs.dev |
+| Package manager | pnpm | 9.x floor — **installé 10.33.0** (packageManager pinned). pnpm 11 disponible mais major breaking → décision dédiée. | 2026-05-22 | pnpm.io |
 | License | AGPL-3.0 | — | 2026-05-21 | gnu.org/licenses |
 | Funding | NLNet NGI0 Commons Fund | round 2026-06-01 | 2026-05-21 | nlnet.nl/news |
 | A11y audit auto | axe-core + Pa11y CI | 4.10+ / 9.x | 2026-05-21 | deque.com |
@@ -481,6 +483,7 @@ Ce qu'on **ne fera PAS** dans cette v2.0.0 :
 |------|-----------|--------|----------|
 | 2026-05-21 | Création CDC v1.0.0 (provisoire, sans lecture Refonte folder) | Démarrage projet | Jay + Takumi |
 | 2026-05-21 | Refonte CDC v2.0.0 — alignement Refonte folder + Monozukuri excédence + tri-layer architecture (TS + Rust→WASM + Effect-TS + Web Workers + Phoenix opt-in) | Mandat Jay : « pas moyenne haute, j'aimerais qu'on soit dans l'exceptionnel, applique Monozukuri pour l'excédence ». Lecture 21 docs Refonte. Réécriture intégrale. | Jay (validation) + Takumi (rédaction) |
+| 2026-05-22 | §5 Stack — alignement versions installées (Node ≥22 ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1 ajouté, Vite 6→8.0.14, pnpm 9→10.33.0). Aucun changement d'intention, mise en cohérence factuelle uniquement. | Jay : « je n'ai pas envie de prendre de risque de confusion ou d'erreur a cause d'une mauvaise lecture ». | Jay (demande) + Takumi (édition) |
 
 ---
 

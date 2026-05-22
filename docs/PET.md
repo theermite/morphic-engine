@@ -633,7 +633,9 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-21 | Session-2026-05-21-XXX | B-000 (conception CDC+PET v2) | — | `docs/Sessions/Session-2026-05-21-XXX.md` |
 | 2026-05-22 | Session-2026-05-22-001 | Audit + remédiation P0/P1/P2 (S1+A1+L1+T1+T2+T3+L2) | (voir batch 2026-05-22) | `docs/audits/Audit-2026-05-22.md` |
 | 2026-05-22 | Session-2026-05-22-002 | B-002 CI complète (lint+typecheck+coverage Codecov, Rust/Elixir deferred) | 3cfe2bd..88348fd | `docs/Sessions/Session-2026-05-22-002.md` |
-| 2026-05-22 | Session-2026-05-22-003 | B-003 `<morphic-provider>` Custom Element v1 zero-config (Sensitive, coverage 100%) | _à compléter_ | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-003 | B-003 `<morphic-provider>` Custom Element v1 zero-config (Sensitive, coverage 100%) | 6c30f0d | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-004 | CI fix Node EOL (20→22+24, actions v4/v5→v6) + veille rigoureuse versions | bdb461b | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-005 | CDC §5 alignement versions installées (Node ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1, Vite 8.0.14, pnpm 10.33.0) | _en cours_ | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
