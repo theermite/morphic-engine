@@ -65,6 +65,17 @@ export {
   setMotion,
 } from './motion.js';
 export {
+  applyReadingFocus,
+  clearReadingFocus,
+  getReadingFocus,
+  MORPHIC_READING_FOCUS_MARKER,
+  MORPHIC_READING_FOCUS_RATIOS,
+  READING_FOCUS_INTENSITIES,
+  type ReadingFocusIntensity,
+  type ReadingFocusOptions,
+  setReadingFocus,
+} from './reading-focus.js';
+export {
   getTheme,
   type ResolvedTheme,
   resolveAutoTheme,
