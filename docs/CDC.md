@@ -217,6 +217,7 @@ Le serveur **ne décrypte jamais** les préférences. Il relaie des blobs chiffr
 | Language critique | Rust | 1.87+ | 2026-05-21 | blog.rust-lang.org |
 | WASM toolchain | wasm-bindgen + wasm-pack | wasm-bindgen 0.2.95+ | 2026-05-21 | rustwasm.github.io |
 | Résilience | Effect-TS | 3.10+ | 2026-05-21 | effect.website |
+| Validation schémas | Zod | 4.x (validé 2026-05-22 — Zod 4.4.3 installé en B-005) | 2026-05-22 | zod.dev |
 | Process isolation | Web Workers + transferable objects | natif | 2026-05-21 | MDN |
 | CRDT | Yjs | 13.6.27+ (lazy-loaded séparé) | 2026-05-21 | github.com/yjs/yjs |
 | IndexedDB binding | `idb` | 8.x | 2026-05-21 | github.com/jakearchibald/idb |
@@ -484,6 +485,7 @@ Ce qu'on **ne fera PAS** dans cette v2.0.0 :
 | 2026-05-21 | Création CDC v1.0.0 (provisoire, sans lecture Refonte folder) | Démarrage projet | Jay + Takumi |
 | 2026-05-21 | Refonte CDC v2.0.0 — alignement Refonte folder + Monozukuri excédence + tri-layer architecture (TS + Rust→WASM + Effect-TS + Web Workers + Phoenix opt-in) | Mandat Jay : « pas moyenne haute, j'aimerais qu'on soit dans l'exceptionnel, applique Monozukuri pour l'excédence ». Lecture 21 docs Refonte. Réécriture intégrale. | Jay (validation) + Takumi (rédaction) |
 | 2026-05-22 | §5 Stack — alignement versions installées (Node ≥22 ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1 ajouté, Vite 6→8.0.14, pnpm 9→10.33.0). Aucun changement d'intention, mise en cohérence factuelle uniquement. | Jay : « je n'ai pas envie de prendre de risque de confusion ou d'erreur a cause d'une mauvaise lecture ». | Jay (demande) + Takumi (édition) |
+| 2026-05-22 | §5 Stack — ajout Zod 4.x (validation schémas). Conventions globales Shinkofa mentionnent Zod 3.x, mais Zod 4.4.3 stable disponible. Décision : adopter 4.x dès B-005 (dette évitée, écosystème migre). | Jay : « Partons sur Zod 4.x c'est bien mieux ». | Jay (décision) + Takumi (challenge technique) |
 
 ---
 
