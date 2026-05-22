@@ -93,6 +93,21 @@ export {
   validateDwellDelay,
 } from './dwell-click.js';
 export {
+  __resetIdleDetectionStateForTests,
+  clearIdleDetection,
+  getIdleDetectionState,
+  IDLE_TIMEOUT_DEFAULT,
+  IDLE_TIMEOUT_MAX,
+  IDLE_TIMEOUT_MIN,
+  type IdleDetectionOptions,
+  type IdleDetectionState,
+  isIdle,
+  MORPHIC_IDLE_EVENT_PAUSE,
+  MORPHIC_IDLE_EVENT_RESUME,
+  MORPHIC_IDLE_MARKER,
+  setIdleDetection,
+} from './idle-detection.js';
+export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
   morphicInit,
