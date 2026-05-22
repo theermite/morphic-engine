@@ -14,7 +14,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
+      reporter: ['text', 'html', 'json-summary', 'json'],
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.d.ts', 'tests/**'],
       // MNK-GoRin Quality.md floors — global / new code / critical paths
