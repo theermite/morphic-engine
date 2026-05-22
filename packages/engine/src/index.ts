@@ -23,6 +23,13 @@ export {
   MorphicProvider,
 } from './morphic-provider.js';
 export {
+  getTheme,
+  type ResolvedTheme,
+  resolveAutoTheme,
+  setTheme,
+  type ThemeChoice,
+} from './theme.js';
+export {
   CONTRASTS,
   type Contrast,
   ContrastSchema,

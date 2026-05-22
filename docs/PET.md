@@ -124,7 +124,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-007 | Axe thème (light/dark/auto/high-contrast/sepia) + CSS vars + persistence IDB | F-006 | ⬜ Pending | Standard 80% | prefers-color-scheme cross-browser | — | — |
+| B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | _pending_ | 2026-05-22 |
 | B-008 | Axe motion (full/reduced/none) + override `prefers-reduced-motion` | F-007 | ⬜ Pending | Standard 80% | prefers-reduced-motion | — | — |
 | B-009 | Axe density (compact/comfortable/spacious) + CSS scale tokens | F-008 | ⬜ Pending | Standard 80% | — | — | — |
 | B-010 | Axe font size + line height + max-width (75ch prose) | F-009 | ⬜ Pending | Standard 80% | — | — | — |
@@ -722,6 +722,73 @@ Lines        : 100% ( 78/78 )
 - Branch : `main` (direct)
 - CI : ✅ Verte (Node 22+24, 27s)
 
+### B-007 — Axe thème (runtime API)
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-006 (Axe sensoriel : thème light/dark/auto/high-contrast/sepia)
+**Risk level** : Standard 80% — atteint 93.54% lines / 92.3% branches / 100% functions.
+**Scope** : Module `theme.ts` — runtime API user-facing pour l'axe thème :
+- `setTheme(theme)` : valide via closed enum, résout `auto` via `prefers-color-scheme`, met à jour `data-morphic-theme` + `--morphic-theme`, persiste le **choix utilisateur** (pas la valeur résolue), retourne le thème concret appliqué.
+- `getTheme()` : relit le choix utilisateur persisté (peut être `'auto'`), renvoie `null` si absent/malformé/invalide.
+- `resolveAutoTheme()` : interroge `matchMedia('(prefers-color-scheme: dark)')`, fallback `'light'` si `matchMedia` indisponible (SSR / vieux navigateur).
+
+**Fichiers impactés** :
+- `packages/engine/src/theme.ts` (nouveau, 144 lignes — closed-enum validation, graceful localStorage fail, matchMedia bridge)
+- `packages/engine/tests/theme.test.ts` (nouveau, 34 tests — DOM, persistence, defensive, getTheme, resolveAutoTheme, round-trip)
+- `packages/engine/src/index.ts` (barrel export : `getTheme`, `setTheme`, `resolveAutoTheme`, types `ThemeChoice` + `ResolvedTheme`)
+
+**FMEA modes (Gate 1 enrichment)** :
+
+| # | Mode défaillance | Probabilité | Impact | Mitigation effective |
+|---|------------------|-------------|--------|----------------------|
+| 1 | `setTheme('auto')` persiste la valeur résolue (`'dark'`) au lieu du choix utilisateur (`'auto'`) | Moyenne | Au prochain lever du soleil/coucher de soleil système, le thème ne suit plus → contrat morphique violé | Test explicite `persists the user choice (not the resolved value) for "auto"` ; persistance distincte du `resolved` calculé pour DOM |
+| 2 | `localStorage` throw en mode privé / quota → setTheme crash → DOM non mis à jour | Moyenne | UX cassée en navigation privée, regression rapport à l'init B-004 | DOM appliqué AVANT try/catch persistance ; test `does not throw when localStorage is unavailable (private mode)` + DOM toujours mis à jour |
+| 3 | Override "auto" écrase les autres axes en storage (motion, density, contrast) | Moyenne | Préférences utilisateur perdues silencieusement | Lecture du JSON existant, merge sur `theme` uniquement ; test `preserves other axes already present in storage` |
+
+**TDG (Gate 3)** :
+- Red d'abord : 34 tests écrits avant `theme.ts`. Import resolution failure (`Failed to resolve import "../src/theme.js"`) → confirme RED.
+- Green après 1 itération : implémentation directe a fait passer 34/34 (vitest local) puis 158/158 (suite complète package).
+
+**Tests post (Gate 6)** :
+- 34/34 tests passent. Suite complète 158/158 (B-001 → B-007).
+- Coverage `theme.ts` : 100% functions, 93.54% lines, 92.3% branches (lignes 100, 130 = `catch` du JSON malformé sur entrée existante — exigerait un mock plus invasif que la valeur ajoutée).
+- Cible Standard 80% largement dépassée.
+
+**5 test reliability metrics** :
+- Empty tests : 0 ✅
+- Trivial tests : <10% ✅ (chaque test vérifie DOM/storage/return value concret)
+- Mock:assert ratio : <1:N ✅ (3 stubs `matchMedia`, 1 spy `setItem` ; tout le reste = real DOM + real localStorage)
+- Type coverage : 100% TS strict ✅
+- Line coverage : 93.54% (cible 80%) ✅
+
+**Erreurs rencontrées** :
+1. Premier run de la suite complète depuis racine repo → `document is not defined` sur theme.test.ts. **Diagnostic** : la racine du monorepo n'a pas le même config vitest (env jsdom) que `packages/engine/vite.config.ts`. **Fix** : exécution depuis `packages/engine` (où vite.config.ts impose jsdom). Les tests passent 158/158. Ce n'est pas un bug du code — c'est le pattern monorepo correct (tests par package).
+2. Biome remonte 2 erreurs de formatting (stubGlobal multi-ligne) → `biome check --write .` les corrige automatiquement (un seul `vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(…))` sur une ligne).
+
+**Décisions techniques** :
+
+| Décision | Raison |
+|----------|--------|
+| `setTheme('auto')` persiste `'auto'` (pas la valeur résolue) | Le contrat morphique = le choix utilisateur. Si l'utilisateur a dit "suis le système", on doit pouvoir continuer à suivre le système même après reload. Persister `'dark'` au lieu de `'auto'` casserait le contrat. |
+| `setTheme` retourne `ResolvedTheme` (jamais `'auto'`) | L'appelant a souvent besoin de savoir ce qui a effectivement été appliqué (pour analytics, classes CSS conditionnelles, etc.). Retourner `'auto'` forcerait à re-résoudre côté appelant. |
+| DOM mis à jour AVANT try/catch persistance | Principe Dignity : si localStorage est bloqué (navigation privée, quota), l'utilisateur n'a pas à payer le prix UX. Le thème s'applique quand même, même sans persistance. Pattern aligné B-004 `init.ts`. |
+| Closed enum `VALID_THEMES` réimporté de `init.ts` (pas dupliqué) | Source unique de vérité. Si on ajoute `'sepia-dark'` un jour, on ne le modifie qu'à un endroit. |
+| `null` retourné sur valeur invalide (pas throw) | `getTheme` est une lecture défensive — un storage corrompu (autre app, debug DevTools) ne doit pas casser l'app appelante. Pattern aligné `readPrefs()` B-004. |
+| `resolveAutoTheme` séparé de `setTheme` et exporté | Permet à l'appelant d'observer la résolution sans muter le DOM (utile pour SSR markup hint, ou debug). |
+
+#### Anti-Circular review (Layer 1)
+
+| Layer | Méthode | Statut |
+|-------|---------|--------|
+| L1 — Algorithmic | Coverage 93.54%, tests exhaustifs sur chaque valeur du closed enum, tests de round-trip set/get sur les 5 thèmes, tests defensive (null/undefined/cyberpunk), tests matchMedia (matches true/false/undefined). | ✅ Fait |
+| L2/L3 | Non requis pour Standard (recommandé Critical uniquement). | N/A |
+
+#### Commit
+
+- SHA : _renseigné après push_
+- Branch : `main` (direct)
+- CI : _attendu vert (vitest + biome + tsc)_
+
 ---
 
 ## 8. PII Detection — configuration
@@ -861,6 +928,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-006 | B-004 `morphicInit()` zero-flash (Critical 95%, atteint 100%) + PBT fast-check + MC/DC + note Anti-Circular L2/L3 (Kobo/DeepSeek planifié) | 69941b4..b2a855d | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-007 | B-005 token system DTCG + Zod 4 validation (Sensitive 90%, atteint 100%) + ajout Zod 4.x au CDC §5 (override conventions Shinkofa 3.x) | d8a69f9..e052f76 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | cafe641 | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-009 | B-007 axe thème — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` (Standard 80%, atteint 93.54% lines / 92.3% branches) + persistence localStorage user choice (pas la valeur résolue) + matchMedia bridge SSR-safe | _pending_ | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
