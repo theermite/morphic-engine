@@ -28,16 +28,16 @@
 /** localStorage key for morphic preferences. */
 export const MORPHIC_STORAGE_KEY = 'morphic-prefs' as const;
 
-/** Valid theme values (closed enum). */
-const VALID_THEMES = ['light', 'dark', 'auto', 'high-contrast', 'sepia'] as const;
+/** Valid theme values (closed enum). Exported for cross-module sync check (B-005). */
+export const VALID_THEMES = ['light', 'dark', 'auto', 'high-contrast', 'sepia'] as const;
 type Theme = (typeof VALID_THEMES)[number];
 
-/** Valid motion values (closed enum). */
-const VALID_MOTIONS = ['full', 'reduced', 'none'] as const;
+/** Valid motion values (closed enum). Exported for cross-module sync check (B-005). */
+export const VALID_MOTIONS = ['full', 'reduced', 'none'] as const;
 type Motion = (typeof VALID_MOTIONS)[number];
 
-/** Valid contrast values (closed enum). */
-const VALID_CONTRASTS = ['no-preference', 'more', 'less', 'custom'] as const;
+/** Valid contrast values (closed enum). Exported for cross-module sync check (B-005). */
+export const VALID_CONTRASTS = ['no-preference', 'more', 'less', 'custom'] as const;
 type Contrast = (typeof VALID_CONTRASTS)[number];
 
 // ---------------------------------------------------------------------------
