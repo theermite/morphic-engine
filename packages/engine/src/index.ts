@@ -76,6 +76,18 @@ export {
   setReadingFocus,
 } from './reading-focus.js';
 export {
+  clearReadingGuide,
+  getReadingGuide,
+  MORPHIC_READING_GUIDE_DEFAULT_BAND_HEIGHT,
+  MORPHIC_READING_GUIDE_DEFAULT_RULER_WIDTH,
+  MORPHIC_READING_GUIDE_DEFAULT_Z_INDEX,
+  MORPHIC_READING_GUIDE_MARKER,
+  READING_GUIDE_MODES,
+  type ReadingGuideMode,
+  type ReadingGuideOptions,
+  setReadingGuide,
+} from './reading-guide.js';
+export {
   getTheme,
   type ResolvedTheme,
   resolveAutoTheme,
