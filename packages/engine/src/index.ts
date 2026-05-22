@@ -12,6 +12,12 @@
 export const VERSION = '2.0.0-alpha.0' as const;
 
 export {
+  MORPHIC_STORAGE_KEY,
+  type MorphicPrefs,
+  morphicInit,
+  readPrefs,
+} from './init.js';
+export {
   defineMorphicProvider,
   MORPHIC_PROVIDER_TAG,
   MorphicProvider,
