@@ -78,6 +78,20 @@ export {
   setDensity,
 } from './density.js';
 export {
+  clearDwellClick,
+  DWELL_CLICK_DELAY_MAX,
+  DWELL_CLICK_DELAY_MIN,
+  DWELL_CLICK_RADIUS_DEFAULT,
+  type DwellClickOptions,
+  type DwellClickState,
+  getDwellClick,
+  getDwellClickState,
+  MORPHIC_DWELL_CLICK_MARKER,
+  MORPHIC_DWELL_CLICK_PROGRESS_CLASS,
+  setDwellClick,
+  validateDwellDelay,
+} from './dwell-click.js';
+export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
   morphicInit,
