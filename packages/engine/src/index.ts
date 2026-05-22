@@ -24,6 +24,7 @@ export {
   validateClickDelay,
 } from './click-delay.js';
 export {
+  __resetCognitiveStateForTests,
   getDecisionPointsCap,
   MORPHIC_DECISION_POINTS_CAP_DEFAULT,
   MORPHIC_DECISION_POINTS_CAP_MAX,
@@ -92,22 +93,6 @@ export {
   validateDwellDelay,
 } from './dwell-click.js';
 export {
-  clearTremorFilter,
-  type FilteredPosition,
-  getDiagnostics,
-  getTremorFilter,
-  getTremorFilterState,
-  MORPHIC_TREMOR_FILTER_MARKER,
-  movingAverage,
-  setTremorFilter,
-  TREMOR_FILTER_WINDOW_DEFAULT,
-  TREMOR_FILTER_WINDOW_MAX,
-  TREMOR_FILTER_WINDOW_MIN,
-  type TremorFilterOptions,
-  type TremorFilterState,
-  validateWindowSize,
-} from './tremor-filter.js';
-export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
   morphicInit,
@@ -149,6 +134,21 @@ export {
   setReadingGuide,
 } from './reading-guide.js';
 export {
+  __resetRecoveryStateForTests,
+  enterRecoveryMode,
+  exitRecoveryMode,
+  getRecoveryState,
+  isRecoveryActive,
+  MORPHIC_RECOVERY_EVENT_ENTER,
+  MORPHIC_RECOVERY_EVENT_EXIT,
+  MORPHIC_RECOVERY_MARKER,
+  RECOVERY_PROFILE_DEFAULT,
+  type RecoveryModeOptions,
+  type RecoveryModeState,
+  type RecoveryPrefsSnapshot,
+  type RecoveryProfile,
+} from './recovery-mode.js';
+export {
   getTheme,
   type ResolvedTheme,
   resolveAutoTheme,
@@ -177,6 +177,22 @@ export {
   type Theme,
   ThemeSchema,
 } from './tokens.js';
+export {
+  clearTremorFilter,
+  type FilteredPosition,
+  getDiagnostics,
+  getTremorFilter,
+  getTremorFilterState,
+  MORPHIC_TREMOR_FILTER_MARKER,
+  movingAverage,
+  setTremorFilter,
+  TREMOR_FILTER_WINDOW_DEFAULT,
+  TREMOR_FILTER_WINDOW_MAX,
+  TREMOR_FILTER_WINDOW_MIN,
+  type TremorFilterOptions,
+  type TremorFilterState,
+  validateWindowSize,
+} from './tremor-filter.js';
 export {
   type FontSizeChoice,
   getFontSize,
