@@ -97,6 +97,7 @@ Toute fonction listée Critical (§7 CDC) doit contenir ≥ 2 assertions défens
 | `morphic_validate_prefs()` | `crates/wasm-core/src/validators.rs` | type schema + range axes + invariant non-empty | À implémenter B-018 |
 | `morphic_encrypt_box()` | `crates/wasm-core/src/crypto.rs` | nonce length 24 + key length 32 + nonce CSPRNG-derived | À implémenter B-017 |
 | `morphicInit()` | `packages/engine/src/init.ts` | try/catch localStorage + try/catch JSON.parse + typeof/null/Array check + enum validation | ✅ Done B-004 (69941b4) |
+| `safeValidatePrefs()` | `packages/engine/src/tokens.ts` | safeParse never throws + non-object rejected + unknown enum rejected + unknown props stripped | ✅ Done B-005 (e052f76) |
 | `morphic_idb_persist()` | `packages/engine/src/storage/idb.ts` | quota check + schema version match + value sanitized | À implémenter B-015 |
 | `morphic_yjs_apply_update()` | `packages/engine/src/storage/crdt.ts` | update validated WASM AVANT apply + Y.Doc not null | À implémenter B-016 |
 | `morphic_onboarding_step_render()` | `packages/engine/src/onboarding/step.ts` | step.identity_collected === false BEFORE sensoriel done | À implémenter B-013 |
@@ -116,7 +117,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-002 | CI GitHub Actions : build matrix (Node 20+22) + lint Biome + type check tsc + coverage v8 upload Codecov. Rust/Elixir CI deferred to B-005/B-017b (no code yet). | F-001 | ✅ Done | Tooling 60% | checkout@v4, setup-node@v4, pnpm/action-setup@v4, codecov@v5, rust-toolchain@v1, setup-beam@v1 (2026-05-22) | 3cfe2bd..88348fd | 2026-05-22 |
 | B-003 | `<morphic-provider>` Custom Element v1 zero-config (shadow DOM, customElements.whenDefined, fallback inert) | F-002 | ✅ Done | Sensitive 90% (atteint 100%) | jsdom@29.1.1 (2026-05-22) | _à compléter au push_ | 2026-05-22 |
 | B-004 | Synchronous head-read init.ts (zero flash) — CSS vars injection via style.setProperty, lecture localStorage sync, fallback `prefers-*` media queries, validation closed enums | F-003 | ✅ Done | **Critical 95%** (atteint 100%) | localStorage WHATWG stable, prefers-* 94-95%, fast-check@4.8.0 (2026-05-22) | 69941b4 | 2026-05-22 |
-| B-005 | Token system DTCG (Design Token Format) + schémas axes morphiques + validation Zod (TS) / Pydantic miroir backend | F-004 | ⬜ Pending | Sensitive 90% | DTCG spec stable | — | — |
+| B-005 | Token system DTCG (Design Token Format) + schémas axes morphiques + validation Zod 4.x. Pydantic miroir backend deferré (pas de backend). | F-004 | ✅ Done | Sensitive 90% (atteint 100%) | W3C DTCG 2025.10 stable, zod@4.4.3, style-dictionary@5.4.1, stryker@9.6.1 (2026-05-22) | e052f76 | 2026-05-22 |
 | B-006 | Style Dictionary 5.4.1 build pipeline : tokens → CSS vars + Tailwind config + JSON | F-005 | ⬜ Pending | Sensitive 90% | style-dictionary@5.4.1 | — | — |
 
 ### Phase 1.1 — Axes morphiques sensoriels (B-007 à B-011)
@@ -572,6 +573,89 @@ CI : Node 22 (19s) + Node 24 (15s) vert.
 
 ---
 
+### B-005 — Token system DTCG + Zod 4 validation
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-004 (Token system W3C DTCG)
+**Risk level** : Sensitive (cible 90%, atteint 100%)
+**Scope** : Module `tokens.ts` — source unique de vérité pour les 5 axes morphiques (theme/motion/contrast/density/fontSize) sous forme de constantes enum + schémas Zod 4 + arbre DTCG-compliant. Fonction publique `safeValidatePrefs()` à contrat défensif (never throws). Pas de DOM, pas d'effets de bord, SSR-safe.
+
+**Fichiers impactés** :
+- `packages/engine/src/tokens.ts` (nouveau, 152 lignes)
+- `packages/engine/src/init.ts` (3 `export` additifs sur constantes — zéro changement runtime)
+- `packages/engine/src/index.ts` (exports publics tokens)
+- `packages/engine/tests/tokens.test.ts` (nouveau, 54 tests)
+- `packages/engine/package.json` (devDep `zod@4.4.3`)
+
+#### Veille préalable
+
+| Sujet | Vérifié le | Source | Conclusion |
+|-------|-----------|--------|------------|
+| W3C DTCG spec | 2026-05-22 | designtokens.org | Format 2025.10 stable Community Group Report (oct 2025). Supporté Style Dictionary, Tokens Studio, Figma, Penpot. |
+| Zod | 2026-05-22 | npm view zod | 4.4.3 latest. **Major 4.x** (CDC initial mentionnait 3.x — décision Jay : adopter 4.x). API changes: `SafeParseReturnType` → `ZodSafeParseResult<T>`. |
+| Style Dictionary | 2026-05-22 | npm view | 5.4.1 (conforme CDC). Consommation prévue en B-006. |
+| StrykerJS | 2026-05-22 | npm view @stryker-mutator/core | 9.6.1 latest. Installation reportée à B-018 (premier module avec logique non-triviale post-WASM). |
+
+#### Tests préalables (TDG — écrits AVANT le code)
+
+54 tests across 9 describe blocks. Workflow TDG respecté : RED (import inexistant) → GREEN.
+
+#### Tests post (preuves d'exécution)
+
+```
+Test Files  4 passed (4)
+Tests       102 passed (102)
+- init.test.ts        : 32
+- morphic-provider    :  7
+- smoke.test.ts       :  9
+- tokens.test.ts      : 54  ← new
+
+Coverage v8 (workspace @morphic/engine) :
+Statements   : 100% ( 85/85 )
+Branches     : 100% ( 49/49 )
+Functions    : 100% ( 14/14 )
+Lines        : 100% ( 78/78 )
+```
+
+5 métriques de fiabilité tests :
+- Empty tests : 0
+- Trivial tests : 0
+- Mock:assert ratio : 0 mocks (validation pure, pas de surface mockée)
+- Type coverage : 100% (tsc strict)
+- Line coverage : 100% (cible Sensitive 90% dépassée)
+
+#### Erreurs rencontrées
+
+| Erreur | Cause | Correction |
+|--------|-------|-----------|
+| `TS2694: Namespace ... no exported member 'SafeParseReturnType'` | Zod 4 a renommé le type retour de `safeParse` en `ZodSafeParseResult<T>` (breaking change v3 → v4) | Remplacement signature : `z.SafeParseReturnType<unknown, MorphicPrefs>` → `z.ZodSafeParseResult<MorphicPrefs>` |
+| Biome lint — ordre des imports | Imports tests dans l'ordre alphabétique groupes (init avant tokens) | `biome check --write` |
+
+#### Décisions in-flight
+
+| Décision | Justification |
+|----------|---------------|
+| Adopter Zod 4.x (Jay validé) | Conventions globales mentionnaient 3.x mais 4.4.3 stable, écosystème migre, dette évitée. CDC §Historique tracé. |
+| Garder `init.ts` autonome avec ses constantes locales + export | Évite refactor du Critical 95% B-004. Sync test cross-module enforce la cohérence. Refactor consolidation reporté à B-006. |
+| `safeValidatePrefs()` retourne le résultat Zod brut (pas un wrapper custom) | Pas d'abstraction prématurée. Consommateurs ont accès direct à `.success`, `.data`, `.error` Zod natifs. |
+| DTCG `$value` = même string que l'enum value (pas alias indirect) | Permet à Style Dictionary B-006 de consommer directement sans table de mapping. Aligne tokens et runtime values. |
+| Enum closed reject (Zod `z.enum` strict) | FMEA #1 : données corrompues silencieuses = thème incohérent. Poka-yoke. |
+
+#### Anti-Circular review (Layer 1)
+
+| Layer | Méthode | Statut |
+|-------|---------|--------|
+| L1 — Algorithmic | 3 propriétés fast-check (700 runs total : 200+200+300). Property A : tout string hors enum rejeté. Property B : combinaisons valides round-trip. Property C : safeValidatePrefs ne throw jamais (oracle de robustesse). | ✅ Fait |
+| L2/L3 | Non requis pour Sensitive (recommandé Critical uniquement). | N/A |
+
+#### Commit
+
+- SHA : `e052f76`
+- Branch : `main` (direct)
+- CI : à vérifier post-push (Node 22+24 attendus verts)
+
+---
+
 ## 8. PII Detection — configuration
 
 | Tool | Scope | Mode | Statut |
@@ -705,7 +789,9 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-002 | B-002 CI complète (lint+typecheck+coverage Codecov, Rust/Elixir deferred) | 3cfe2bd..88348fd | `docs/Sessions/Session-2026-05-22-002.md` |
 | 2026-05-22 | Session-2026-05-22-003 | B-003 `<morphic-provider>` Custom Element v1 zero-config (Sensitive, coverage 100%) | 6c30f0d | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-004 | CI fix Node EOL (20→22+24, actions v4/v5→v6) + veille rigoureuse versions | bdb461b | _à rédiger_ |
-| 2026-05-22 | Session-2026-05-22-005 | CDC §5 alignement versions installées (Node ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1, Vite 8.0.14, pnpm 10.33.0) | _en cours_ | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-005 | CDC §5 alignement versions installées (Node ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1, Vite 8.0.14, pnpm 10.33.0) | a63d4e7 | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-006 | B-004 `morphicInit()` zero-flash (Critical 95%, atteint 100%) + PBT fast-check + MC/DC + note Anti-Circular L2/L3 (Kobo/DeepSeek planifié) | 69941b4..b2a855d | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-007 | B-005 token system DTCG + Zod 4 validation (Sensitive 90%, atteint 100%) + ajout Zod 4.x au CDC §5 (override conventions Shinkofa 3.x) | d8a69f9..e052f76 | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
