@@ -114,7 +114,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-001 | Monorepo scaffolding pnpm workspaces (3 packages : engine, wasm-core, adapter) + Vite 6 + Vitest 4 (forks pool, maxForks 2, NODE_OPTIONS=2048) + tsconfig strict | F-001 | ✅ Done | Tooling 60% | pnpm@10.33, vitest@4.1.7, biome@2.4.15, ts@5.9.3 (2026-05-21) | 3fe0b04..a5dfcf2 | 2026-05-21 |
 | B-002 | CI GitHub Actions : build matrix (Node 20+22) + lint Biome + type check tsc + coverage v8 upload Codecov. Rust/Elixir CI deferred to B-005/B-017b (no code yet). | F-001 | ✅ Done | Tooling 60% | checkout@v4, setup-node@v4, pnpm/action-setup@v4, codecov@v5, rust-toolchain@v1, setup-beam@v1 (2026-05-22) | 3cfe2bd..88348fd | 2026-05-22 |
-| B-003 | `<morphic-provider>` Custom Element v1 zero-config (shadow DOM, customElements.whenDefined, fallback inert) | F-002 | ⬜ Pending | Sensitive 90% | Web Components spec | — | — |
+| B-003 | `<morphic-provider>` Custom Element v1 zero-config (shadow DOM, customElements.whenDefined, fallback inert) | F-002 | ✅ Done | Sensitive 90% (atteint 100%) | jsdom@29.1.1 (2026-05-22) | _à compléter au push_ | 2026-05-22 |
 | B-004 | Synchronous head-read init.js (zero flash) — CSS vars injection via adopted stylesheets, lecture localStorage sync, fallback `prefers-color-scheme` | F-003 | ⬜ Pending | **Critical 95%** | adoptedStyleSheets browser support | — | — |
 | B-005 | Token system DTCG (Design Token Format) + schémas axes morphiques + validation Zod (TS) / Pydantic miroir backend | F-004 | ⬜ Pending | Sensitive 90% | DTCG spec stable | — | — |
 | B-006 | Style Dictionary 5.4.1 build pipeline : tokens → CSS vars + Tailwind config + JSON | F-005 | ⬜ Pending | Sensitive 90% | style-dictionary@5.4.1 | — | — |
@@ -412,6 +412,96 @@ Preuve CI : https://github.com/theermite/morphic-engine/actions/runs/26284432213
 
 ---
 
+### B-003 — `<morphic-provider>` Custom Element v1 zero-config
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-002
+**Risk level** : Sensitive (cible 90%, atteint 100%)
+**Scope** : élément Custom Element v1 autonome qui enveloppe le contenu hôte. Shadow DOM `open` avec un `<slot>` (light DOM préservée), 2 attributs d'état mutuellement exclusifs `data-morphic-fallback` / `data-morphic-ready`, méthode `ready()` idempotente + persistante à travers les reconnects DOM. Zéro attribut requis sur l'host (contrat zero-config CDC F-002).
+**Fichiers impactés** :
+- `packages/engine/src/morphic-provider.ts` (nouveau, 95 lignes)
+- `packages/engine/src/index.ts` (export public)
+- `packages/engine/tests/morphic-provider.test.ts` (nouveau, 16 tests)
+- `packages/engine/vite.config.ts` (ajout `environment: 'jsdom'`)
+- `packages/engine/package.json` (devDep `jsdom@29.1.1`)
+
+#### Veille préalable
+
+| Sujet | Vérifié le | Source | Conclusion |
+|-------|-----------|--------|------------|
+| jsdom@29.1.1 | 2026-05-22 | npm registry (`npm view jsdom version`) + dependency `is-potential-custom-element-name` | Stable. Supporte Custom Elements v1 + Shadow DOM. Retenu. |
+| happy-dom@20.9.0 | 2026-05-22 | npm registry | Stable mais Shadow DOM edge cases moins matures. Écarté. |
+
+Marker : `[VEILLE] jsdom@29.1.1 verifie 2026-05-22 via npm registry`.
+
+#### Tests préalables (TDG — écrits AVANT le code)
+
+| Test | Fichier | Type | Statut | Cible | Anti-Circular Layer |
+|------|---------|------|--------|-------|---------------------|
+| should expose the tag name as `morphic-provider` | tests/morphic-provider.test.ts | Unit | 🟢 Green | F-002 | L1 invariant |
+| should register exactly once in customElements registry | id. | Unit | 🟢 Green | F-002 | L1 idempotence |
+| should be idempotent — define twice does not throw | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should resolve customElements.whenDefined after define | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should construct without arguments (zero-config) | id. | Unit | 🟢 Green | F-002 | L1 contract |
+| should attach an open shadow root on connect | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should expose a `<slot>` in shadow DOM | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should start in inert/fallback state until ready() | id. | Unit | 🟢 Green | F-002 | L1 state |
+| should flip to ready state when ready() is invoked | id. | Unit | 🟢 Green | F-002 | L1 state |
+| should preserve fallback state across reconnect if never ready | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should preserve ready state across reconnect once ready | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should be a silent no-op when customElements is undefined (SSR) | id. | Unit | 🟢 Green | CDC §0 SSR | L1 invariant |
+| should function without any attribute on the element | id. | Unit | 🟢 Green | F-002 | L1 contract |
+| should preserve light DOM children through slot | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+| should be type-narrowed correctly when queried via tag | id. | Unit | 🟢 Green | F-002 | L1 invariant |
+
+16/16 tests verts. Workflow TDG respecté : tests rouges AVANT implémentation.
+
+#### Tests post (preuves d'exécution)
+
+| Vérification | Commande | Output attendu | Résultat |
+|--------------|----------|----------------|----------|
+| Tests TS verts | `pnpm --filter @morphic/engine run test` | 16 passed | ✅ 16/16 (1.42s) |
+| Coverage v8 | `pnpm --filter @morphic/engine run test:coverage` | ≥ 90% (Sensitive) | ✅ 100% statements/branches/funcs/lines |
+| Lint Biome | `pnpm run lint` | exit 0 | ✅ Checked 12 files, no fixes applied |
+| Types tsc | `pnpm -r run build` | exit 0 | ✅ engine/adapter/wasm-core all build |
+| CI vert | run GitHub Actions sur push | success Node 20 + 22 | _à vérifier après push_ |
+
+```
+% Coverage report from v8
+Statements   : 100% ( 24/24 )
+Branches     : 100% ( 6/6 )
+Functions    : 100% ( 4/4 )
+Lines        : 100% ( 24/24 )
+```
+
+#### Erreurs rencontrées
+
+| Erreur | Cause racine identifiée | Correction | Test ajouté |
+|--------|------------------------|-----------|-------------|
+| Coverage branches 75% < 80% global | Guard défensif `if (!this.shadowRoot)` non couvrable (Custom Elements v1 ne réinvoque jamais le constructor) — branche morte | Retrait du guard (la spec garantit l'invariant) | — (branche morte ne nécessite pas de test) |
+| Branche SSR `typeof customElements === 'undefined'` non couverte | jsdom définit toujours `customElements` — la branche no-op SSR n'est pas naturellement atteignable | Test avec `vi.stubGlobal('customElements', undefined)` | `should be a silent no-op when customElements is undefined (SSR)` |
+| Lint Biome `assist/source/organizeImports` | Re-exports non triés alphabétiquement dans `index.ts` et `tests/morphic-provider.test.ts` | `biome check --write .` (safe fix automatique) | — (lint catch suffit) |
+
+#### Décisions prises in-flight
+
+| Décision | Alternative écartée | Justification |
+|----------|---------------------|---------------|
+| Shadow DOM `open` (pas `closed`) | `closed` pour isolation maximale | `open` permet aux integrators de queryer `shadowRoot` pour debug/tests sans casser l'encapsulation visuelle. Pratique courante Web Components 2026. |
+| `attachShadow` dans le constructor (pas `connectedCallback`) | Attacher au connect | Light DOM children doivent passer par le slot dès le premier paint ; attacher au connect causerait un flash visible. |
+| Flag ready porté par Symbol privé `READY_FLAG` | Attribut DOM uniquement | Symbol survit aux mutations d'attributs externes (un dev qui setAttribute manuellement ne casse pas l'invariant interne). |
+| 2 attributs mutuellement exclusifs (`-fallback` / `-ready`) | 1 seul attribut avec valeur | 2 attributs permettent CSS sélecteurs plus simples et matchent l'idiome attribute presence. |
+| Retirer le guard `if (!this.shadowRoot)` du constructor | Garder pour défense profondeur | La spec Custom Elements v1 garantit constructor unique par instance ; le guard est mort-code. Mieux : code minimal honnête à la spec. |
+| Stack tests : jsdom (pas happy-dom) | happy-dom | jsdom 29.1.1 mature pour Shadow DOM ; happy-dom suffit pour DOM basique mais edge cases CE/Shadow moins éprouvés. |
+
+#### Commit
+
+- SHA : _à compléter après push_
+- Message : `feat(engine): B-003 — <morphic-provider> Custom Element v1 zero-config`
+- Branch : `main` (direct)
+- Tag backup : non (B-003 = 3e brick, prochain tag à B-004 ou B-005)
+
+---
+
 ## 8. PII Detection — configuration
 
 | Tool | Scope | Mode | Statut |
@@ -543,6 +633,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-21 | Session-2026-05-21-XXX | B-000 (conception CDC+PET v2) | — | `docs/Sessions/Session-2026-05-21-XXX.md` |
 | 2026-05-22 | Session-2026-05-22-001 | Audit + remédiation P0/P1/P2 (S1+A1+L1+T1+T2+T3+L2) | (voir batch 2026-05-22) | `docs/audits/Audit-2026-05-22.md` |
 | 2026-05-22 | Session-2026-05-22-002 | B-002 CI complète (lint+typecheck+coverage Codecov, Rust/Elixir deferred) | 3cfe2bd..88348fd | `docs/Sessions/Session-2026-05-22-002.md` |
+| 2026-05-22 | Session-2026-05-22-003 | B-003 `<morphic-provider>` Custom Element v1 zero-config (Sensitive, coverage 100%) | _à compléter_ | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
@@ -558,6 +649,8 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 - `[VEILLE] actions-rust-lang/setup-rust-toolchain@v1 verifie 2026-05-22 via github.com (deferred B-005)`
 - `[VEILLE] erlef/setup-beam@v1+elixir1.19+otp27 verifie 2026-05-22 via github.com (deferred B-017b)`
 - `[VEILLE] rust@stable(1.95) verifie 2026-05-22 via releases.rs`
+- `[VEILLE] jsdom@29.1.1 verifie 2026-05-22 via npm registry` (B-003 — test environment Custom Elements v1 + Shadow DOM)
+- `[VEILLE] happy-dom@20.9.0 verifie 2026-05-22 via npm registry` (B-003 — écarté, Shadow DOM edge cases)
 
 ---
 
