@@ -12,6 +12,18 @@
 export const VERSION = '2.0.0-alpha.0' as const;
 
 export {
+  CLICK_DELAY_MAX,
+  CLICK_DELAY_MIN,
+  type ClickDelayOptions,
+  type ClickDelayState,
+  clearClickDelay,
+  getClickDelay,
+  getClickDelayState,
+  MORPHIC_CLICK_DELAY_MARKER,
+  setClickDelay,
+  validateClickDelay,
+} from './click-delay.js';
+export {
   getDecisionPointsCap,
   MORPHIC_DECISION_POINTS_CAP_DEFAULT,
   MORPHIC_DECISION_POINTS_CAP_MAX,
