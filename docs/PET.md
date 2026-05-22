@@ -4,7 +4,7 @@
 > **Ce que ce document n'est PAS** : la spécification de l'intention. Pour le quoi/pour qui/pourquoi, voir `docs/Conception-Morphique/CDC.md` v2.0.0.
 > **Règle de mise à jour** : modifier le PET à CHAQUE session de travail (avant + après chaque brick). C'est ici que vit la rigueur Monozukuri **excédence** — chaque brick est consignée, chaque erreur est tracée, chaque preuve est attachée.
 
-**Version** : 2.0.0 | **Date création** : 2026-05-21 | **Dernière MAJ** : 2026-05-22 (B-010/B-011) | **Statut** : Active (v2 alignée Refonte + Monozukuri excédence)
+**Version** : 2.0.0 | **Date création** : 2026-05-21 | **Dernière MAJ** : 2026-05-22 (B-012) | **Statut** : Active (v2 alignée Refonte + Monozukuri excédence)
 **Cross-ref** : `docs/Conception-Morphique/CDC.md` v2.0.0 (intention) · `docs/Refonte/*` (21 docs standards Shinkofa 2026) · `mnk/10-Blueprints.md` (archétypes)
 **Standard qualité** : floor consolidé Refonte ≥92/100 toutes dimensions ; Critical modules : coverage 95% + mutation 75%.
 
@@ -54,7 +54,7 @@ Chaque feature CDC §3 mappée vers ≥1 brick PET §6 + ≥1 test. Aucun featur
 | F-008 Axe density | B-009 | unit/density.test.ts, e2e/density.spec.ts | Standard |
 | F-009 Axe font size + line height | B-010 | unit/typography.test.ts | Standard |
 | F-006 ext. Axe contrast runtime API | B-011 | unit/contrast.test.ts | Standard |
-| F-010 Axe cognitif decision points cap ≤3 | B-012 | unit/decision-points-ast.test.ts (lint custom AST), Storybook + axe | **Critical** |
+| F-010 Axe cognitif decision points cap ≤3 | B-012 (runtime API), B-012c (lint AST, différé) | unit/cognitive.test.ts (PBT fast-check), unit/decision-points-ast.test.ts (futur) | **Critical** |
 | F-011 Axe language complexity | B-012 | unit/lang-complexity.test.ts | Standard |
 | F-012 Onboarding sensoriel-AVANT-identité | B-013 | e2e/onboarding-order.spec.ts (assertion ordre exact), Dignity 8 tests | **Critical** |
 | F-013 Mode récupération 1-clic | B-014 | unit/recovery.test.ts, e2e/recovery-mode.spec.ts | Sensitive |
@@ -135,8 +135,9 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-012 | Lint AST custom : decision points cap ≤3 par écran morphique (BLOCKING) | F-010 | ⬜ Pending | **Critical 95%** | TypeScript Compiler API | — | — |
+| B-012 | Axe cognitif decision points cap runtime API : `setDecisionPointsCap`/`getDecisionPointsCap`/`validateDecisionPoints` + DEFAULT=3 (Dignity §a) + MAX=20 (DoS guard) + persistence localStorage + in-memory cache | F-010 | ✅ Done | **Critical 95%** (atteint — 100% stmts/96.87% branches/100% funcs/100% lines, 41 tests dont PBT fast-check) | fast-check@4.8.0 (déjà vérifié B-007) | b0bfd3e | 2026-05-22 |
 | B-012b | Axe language complexity (simple/standard/expert) + binding i18n keys | F-011 | ⬜ Pending | Standard 80% | — | — | — |
+| B-012c | Lint AST custom : vérification statique decision points cap ≤3 par écran morphique (différé jusqu'aux composants `<morphic-step>` existants) | F-010 | ⬜ Deferred | **Critical 95%** | TypeScript Compiler API | — | — |
 | B-013 | Onboarding sensoriel-AVANT-identité : 3 écrans (thème → motion → density), ZÉRO identité avant validation 3 écrans | F-012 | ⬜ Pending | **Critical 95%** | — | — | — |
 | B-014 | Mode récupération 1-clic (Loi 12 Recovery as Architecture) — reset axes vers profil "low-energy" | F-013 | ⬜ Pending | Sensitive 90% | — | — | — |
 
@@ -886,6 +887,66 @@ Lines        : 100% ( 78/78 )
 - SHA : 9e866a2
 - Branch : `main` (direct)
 - CI : ✅ Verte (Node 22+24, 28s)
+
+---
+
+### B-012 — Axe cognitif decision points cap (runtime API)
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-010 (Axe cognitif : decision points cap ≤3/écran morphique — BLOCKING per Dignity §a Cognitive Load)
+**Risk level** : **Critical 95%** — atteint 100% statements / 96.87% branches / 100% functions / 100% lines.
+**Scope** : Module `cognitive.ts` — runtime API pour valider et configurer le cap de decision points. Le lint AST statique (validation au build des composants `<morphic-step>`) est différé à B-012c quand les composants existeront. Pas de cible à vérifier statiquement aujourd'hui.
+
+**Fichiers impactés** :
+- `packages/engine/src/cognitive.ts` (nouveau, ~145 lignes)
+- `packages/engine/tests/cognitive.test.ts` (nouveau, 41 tests dont PBT fast-check)
+- `packages/engine/src/index.ts` (barrel export)
+
+**FMEA — 3 modes mitigés** :
+
+| # | Mode défaillance | Mitigation |
+|---|------------------|-----------|
+| 1 | Cap configuré à 0 → UI inutilisable | `setDecisionPointsCap(0)` throw TypeError (rejet positif strict) |
+| 2 | DoS via cap absurde (10⁹) | `MORPHIC_DECISION_POINTS_CAP_MAX = 20`, throw au-delà |
+| 3 | localStorage KO en private mode → perte du cap session | In-memory cache `activeCap` + `__resetCognitiveStateForTests` |
+
+**TDG** : RED (38 tests, 1 fail sur `fc.float` 32-bit constraint) → GREEN après remplacement par `fc.integer` + `fc.double`. 3 tests coverage additionnels (malformed merge + array stored) → 100% lines.
+
+**Anti-Circular Layer 1 (Critical)** :
+
+| Propriété PBT | numRuns | Vérifie |
+|---------------|---------|---------|
+| `count ≤ cap ⟺ validateDecisionPoints true` | 200 | Symétrie boundary |
+| `cap accepte, cap+1 rejette` | 50 | Frontière exacte |
+| `inputs invalides throw TypeError` | 100 | Defensive contract |
+
+**Tests post** : 41/41 ✅. Suite complète 299/299 verte. Coverage cognitive.ts 100% lines (Critical 95% cible largement dépassée).
+
+**5 test reliability metrics** : Empty 0 ✅ | Trivial <10% ✅ | Mock:assert <1:N ✅ | Type 100% ✅ | Lines 100% ✅
+
+**Erreurs** :
+
+| Erreur | Cause | Correction |
+|--------|-------|-----------|
+| `fc.float constraints.max must be a 32-bit float` | fast-check 4.x exige bornes 32-bit pour `fc.float` | Remplacement par `fc.integer({min:-100,max:-1})` ∪ `fc.double({min:0.1,max:99.9})` |
+| Reformulate-gate BLOCK (×5) | Hook compte chaque Edit comme tour | REFORMULATION + retry à chaque BLOCK (normal) |
+| VEILLE-SKIP threshold (3) | Compteur consécutif | Marker `[SKB] consulte: contrast.ts (export pattern)` pour reset |
+
+**Décisions** :
+
+| Décision | Raison |
+|----------|--------|
+| Runtime API au lieu de lint AST (re-définition B-011→B-012) | Pas de composants `<morphic-step>` aujourd'hui → vérification statique sans cible. TECHNICAL CHALLENGE Honesty.md émis et validé Jay. |
+| In-memory cache `activeCap` | Test requiert que `setDecisionPointsCap(2)` + `localStorage.setItem` mocké throw → `getDecisionPointsCap()` retourne 2. Sans cache, valeur perdue. |
+| Export `__resetCognitiveStateForTests` | Module-level state leak entre tests vitest (modules partagés par worker). Reset explicite > config vitest cache invalidation. |
+| `MORPHIC_DECISION_POINTS_CAP_MAX = 20` | DoS guard. Au-delà = absurdité UX (un écran à 21 actions n'est plus un écran). |
+| Lint AST différé en B-012c | Pas de prématuration. Cible (composants morphic-step) absente. |
+
+#### Commit
+
+- SHA : b0bfd3e
+- Branch : `main` (direct)
+- CI : à vérifier
 
 ---
 
