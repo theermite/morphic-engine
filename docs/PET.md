@@ -555,6 +555,16 @@ CI : Node 22 (19s) + Node 24 (15s) vert.
 | fast-check@4.8.0 (major 4.x) | Stable, meilleur shrinking, CDC floor respecté (4 > 3.21). |
 | Enum fermé (reject unknown) | FMEA §8.3 : données corrompues → flash. Poka-yoke. |
 
+#### Anti-Circular review (Layer 2/3) — planifiée
+
+| Layer | Méthode | Statut | Exécutant |
+|-------|---------|--------|-----------|
+| L1 — Algorithmic | PBT fast-check (2 props, 300 runs) + MC/DC 3 conditions | ✅ Fait dans B-004 | Takumi (session courante) |
+| L2 — Different Context (Test Auditor) | Session séparée, lecture indépendante de `init.ts` + `init.test.ts`, recherche gaps / assertions faibles / mocks excessifs | 🟡 Planifié | Jay — session dédiée depuis **Kobo** |
+| L3 — Different Model (Cross-model) | Review par un LLM différent de l'écrivain (Opus) | 🟡 Planifié | Jay — **DeepSeek** via Kobo |
+
+**Note** : Layer 2 et Layer 3 seront effectuées dans une même session dédiée depuis Kobo (super-assistant Jay), en utilisant DeepSeek comme reviewer. Cette session produira un rapport (gaps détectés, tests manquants, contre-arguments) qui sera reporté ici en `§7 B-004` sous "Anti-Circular review — résultats" une fois exécutée.
+
 #### Commit
 
 - SHA : `69941b4`
