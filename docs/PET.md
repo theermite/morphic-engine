@@ -124,7 +124,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | _pending_ | 2026-05-22 |
+| B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | a590dc9 | 2026-05-22 |
 | B-008 | Axe motion (full/reduced/none) + override `prefers-reduced-motion` | F-007 | ⬜ Pending | Standard 80% | prefers-reduced-motion | — | — |
 | B-009 | Axe density (compact/comfortable/spacious) + CSS scale tokens | F-008 | ⬜ Pending | Standard 80% | — | — | — |
 | B-010 | Axe font size + line height + max-width (75ch prose) | F-009 | ⬜ Pending | Standard 80% | — | — | — |
@@ -785,9 +785,9 @@ Lines        : 100% ( 78/78 )
 
 #### Commit
 
-- SHA : _renseigné après push_
+- SHA : `a590dc9`
 - Branch : `main` (direct)
-- CI : _attendu vert (vitest + biome + tsc)_
+- CI : ✅ Verte (Node 22+24, 29s)
 
 ---
 
@@ -928,7 +928,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-006 | B-004 `morphicInit()` zero-flash (Critical 95%, atteint 100%) + PBT fast-check + MC/DC + note Anti-Circular L2/L3 (Kobo/DeepSeek planifié) | 69941b4..b2a855d | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-007 | B-005 token system DTCG + Zod 4 validation (Sensitive 90%, atteint 100%) + ajout Zod 4.x au CDC §5 (override conventions Shinkofa 3.x) | d8a69f9..e052f76 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | cafe641 | _à rédiger_ |
-| 2026-05-22 | Session-2026-05-22-009 | B-007 axe thème — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` (Standard 80%, atteint 93.54% lines / 92.3% branches) + persistence localStorage user choice (pas la valeur résolue) + matchMedia bridge SSR-safe | _pending_ | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-009 | B-007 axe thème — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` (Standard 80%, atteint 93.54% lines / 92.3% branches) + persistence localStorage user choice (pas la valeur résolue) + matchMedia bridge SSR-safe | a590dc9 | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
