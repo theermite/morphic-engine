@@ -26,6 +26,20 @@ export {
   setContrast,
 } from './contrast.js';
 export {
+  COLOR_VISION_TYPES,
+  type ColorVisionCorrection,
+  type ColorVisionType,
+  clearColorVisionCorrection,
+  computeDaltonizationMatrix,
+  daltonize,
+  delinearizeSrgb,
+  getColorVisionCorrection,
+  linearizeSrgb,
+  MORPHIC_DALTONIZE_DEFAULT_SEVERITY,
+  MORPHIC_DALTONIZE_FILTER_ID,
+  setColorVisionCorrection,
+} from './daltonization.js';
+export {
   type DensityChoice,
   getDensity,
   type ResolvedDensity,
