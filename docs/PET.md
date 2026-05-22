@@ -118,7 +118,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-003 | `<morphic-provider>` Custom Element v1 zero-config (shadow DOM, customElements.whenDefined, fallback inert) | F-002 | ✅ Done | Sensitive 90% (atteint 100%) | jsdom@29.1.1 (2026-05-22) | _à compléter au push_ | 2026-05-22 |
 | B-004 | Synchronous head-read init.ts (zero flash) — CSS vars injection via style.setProperty, lecture localStorage sync, fallback `prefers-*` media queries, validation closed enums | F-003 | ✅ Done | **Critical 95%** (atteint 100%) | localStorage WHATWG stable, prefers-* 94-95%, fast-check@4.8.0 (2026-05-22) | 69941b4 | 2026-05-22 |
 | B-005 | Token system DTCG (Design Token Format) + schémas axes morphiques + validation Zod 4.x. Pydantic miroir backend deferré (pas de backend). | F-004 | ✅ Done | Sensitive 90% (atteint 100%) | W3C DTCG 2025.10 stable, zod@4.4.3, style-dictionary@5.4.1, stryker@9.6.1 (2026-05-22) | e052f76 | 2026-05-22 |
-| B-006 | Style Dictionary 5.4.1 build pipeline : tokens → CSS vars + Tailwind config + JSON | F-005 | ✅ Done | Tooling 60% (atteint 100% lines / 96.4% branches) | style-dictionary@5.4.1 (2026-05-22) | _à compléter au push_ | 2026-05-22 |
+| B-006 | Style Dictionary 5.4.1 build pipeline : tokens → CSS vars + Tailwind config + JSON | F-005 | ✅ Done | Tooling 60% (atteint 100% lines / 96.4% branches) | style-dictionary@5.4.1 (2026-05-22) | cafe641 | 2026-05-22 |
 
 ### Phase 1.1 — Axes morphiques sensoriels (B-007 à B-011)
 
@@ -718,9 +718,9 @@ Lines        : 100% ( 78/78 )
 
 #### Commit
 
-- SHA : _à compléter au push_
+- SHA : `cafe641`
 - Branch : `main` (direct)
-- CI : à vérifier post-push (Node 22+24 attendus verts)
+- CI : ✅ Verte (Node 22+24, 27s)
 
 ---
 
@@ -860,7 +860,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-005 | CDC §5 alignement versions installées (Node ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1, Vite 8.0.14, pnpm 10.33.0) | a63d4e7 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-006 | B-004 `morphicInit()` zero-flash (Critical 95%, atteint 100%) + PBT fast-check + MC/DC + note Anti-Circular L2/L3 (Kobo/DeepSeek planifié) | 69941b4..b2a855d | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-007 | B-005 token system DTCG + Zod 4 validation (Sensitive 90%, atteint 100%) + ajout Zod 4.x au CDC §5 (override conventions Shinkofa 3.x) | d8a69f9..e052f76 | _à rédiger_ |
-| 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | _à compléter au push_ | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | cafe641 | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
