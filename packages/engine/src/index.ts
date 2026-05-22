@@ -126,6 +126,21 @@ export {
   setMotion,
 } from './motion.js';
 export {
+  __resetOnboardingStateForTests,
+  canCollectIdentity,
+  completeStep,
+  getOnboardingState,
+  MORPHIC_ONBOARDING_EVENT_COMPLETE,
+  MORPHIC_ONBOARDING_EVENT_STEP_COMPLETE,
+  MORPHIC_ONBOARDING_MARKER,
+  ONBOARDING_STEPS,
+  type OnboardingState,
+  type OnboardingStep,
+  resetOnboarding,
+  skipStep,
+  startOnboarding,
+} from './onboarding.js';
+export {
   __resetPomodoroStateForTests,
   getPomodoroState,
   MORPHIC_POMODORO_CYCLES_DEFAULT,
