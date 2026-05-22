@@ -65,3 +65,10 @@ export {
   type Theme,
   ThemeSchema,
 } from './tokens.js';
+export {
+  type FontSizeChoice,
+  getFontSize,
+  type ResolvedFontSize,
+  resolveAutoFontSize,
+  setFontSize,
+} from './typography.js';

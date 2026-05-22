@@ -40,6 +40,10 @@ type Motion = (typeof VALID_MOTIONS)[number];
 export const VALID_CONTRASTS = ['no-preference', 'more', 'less', 'custom'] as const;
 type Contrast = (typeof VALID_CONTRASTS)[number];
 
+/** Valid font-size values (closed enum). Exported for cross-module sync check (B-010). */
+export const VALID_FONT_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
+type FontSize = (typeof VALID_FONT_SIZES)[number];
+
 // ---------------------------------------------------------------------------
 // Type
 // ---------------------------------------------------------------------------
@@ -49,6 +53,7 @@ export interface MorphicPrefs {
   theme?: string;
   motion?: string;
   contrast?: string;
+  fontSize?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +70,10 @@ function isValidMotion(value: unknown): value is Motion {
 
 function isValidContrast(value: unknown): value is Contrast {
   return typeof value === 'string' && (VALID_CONTRASTS as readonly string[]).includes(value);
+}
+
+function isValidFontSize(value: unknown): value is FontSize {
+  return typeof value === 'string' && (VALID_FONT_SIZES as readonly string[]).includes(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -168,4 +177,9 @@ export function morphicInit(): void {
   const contrast: Contrast =
     prefs !== null && isValidContrast(prefs.contrast) ? prefs.contrast : readMediaContrast();
   root.style.setProperty('--morphic-contrast', contrast);
+
+  // --- Font Size ---
+  const fontSize: FontSize =
+    prefs !== null && isValidFontSize(prefs.fontSize) ? prefs.fontSize : 'md';
+  root.style.setProperty('--morphic-font-size', fontSize);
 }
