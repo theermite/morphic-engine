@@ -12,6 +12,13 @@
 export const VERSION = '2.0.0-alpha.0' as const;
 
 export {
+  type DensityChoice,
+  getDensity,
+  type ResolvedDensity,
+  resolveAutoDensity,
+  setDensity,
+} from './density.js';
+export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
   morphicInit,

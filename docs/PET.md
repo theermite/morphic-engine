@@ -126,7 +126,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | a590dc9 | 2026-05-22 |
 | B-008 | Axe motion (full/reduced/none/auto) — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` + CSS var + persistence localStorage | F-007 | ✅ Done | Standard 80% (atteint 93.33% lines / 92.3% branches) | prefers-reduced-motion (matchMedia API stable) | 7b75025 | 2026-05-22 |
-| B-009 | Axe density (compact/comfortable/spacious) + CSS scale tokens | F-008 | ⬜ Pending | Standard 80% | — | — | — |
+| B-009 | Axe density (compact/comfortable/spacious/auto) — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` + CSS var + persistence localStorage | F-008 | ✅ Done | Standard 80% (atteint 93.1% lines / 90.9% branches) | Aucune veille requise (pas de media query OS) | _pending_ | 2026-05-22 |
 | B-010 | Axe font size + line height + max-width (75ch prose) | F-009 | ⬜ Pending | Standard 80% | — | — | — |
 | B-011 | Lint AST custom : decision points cap ≤3 par écran morphique (BLOCKING) | F-010 | ⬜ Pending | **Critical 95%** | TypeScript Compiler API | — | — |
 
@@ -850,6 +850,41 @@ Lines        : 100% ( 78/78 )
 - Branch : `main` (direct)
 - CI : ✅ Verte (Node 22+24, 30s)
 
+### B-009 — Axe density (runtime API)
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-008 (Axe sensoriel : density compact/comfortable/spacious)
+**Risk level** : Standard 80% — atteint 93.1% lines / 90.9% branches / 100% functions.
+**Scope** : Module `density.ts` — runtime API pour l'axe density. Différence clé vs theme/motion : pas de `prefers-*` media query OS → `resolveAutoDensity()` retourne `'comfortable'` (défaut raisonnable).
+
+**Fichiers impactés** :
+- `packages/engine/src/density.ts` (nouveau, ~120 lignes)
+- `packages/engine/tests/density.test.ts` (nouveau, 23 tests)
+- `packages/engine/src/index.ts` (barrel export)
+
+**FMEA** : 3 modes mitigés (pas d'auto OS → défaut comfortable, preserve other axes, closed enum throw).
+
+**TDG** : RED (import resolution failure) → GREEN en 1 itération.
+
+**Tests post** : 23/23. Suite complète 206/206 verte. Coverage 93.1% > cible 80%.
+
+**5 test reliability metrics** : Empty 0 ✅ | Trivial <10% ✅ | Mock:assert <1:N ✅ | Type 100% ✅ | Lines 93.1% ✅
+
+**Erreurs** : aucune.
+
+**Décisions** :
+
+| Décision | Raison |
+|----------|--------|
+| `auto` → `comfortable` (pas matchMedia) | Aucune media query OS pour density. `comfortable` = centre de la gamme, défaut safe. |
+| DENSITIES importé de tokens.ts (pas init.ts) | init.ts ne définit pas VALID_DENSITIES. Source de vérité = tokens.ts B-005. |
+
+#### Commit
+
+- SHA : _pending_
+- Branch : `main` (direct)
+- CI : _attendu vert_
+
 ---
 
 ## 8. PII Detection — configuration
@@ -991,6 +1026,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | cafe641 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-009 | B-007 axe thème — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` (Standard 80%, atteint 93.54% lines / 92.3% branches) + persistence localStorage user choice (pas la valeur résolue) + matchMedia bridge SSR-safe | a590dc9 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-010 | B-008 axe motion — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` (Standard 80%, atteint 93.33% lines / 92.3% branches) + enum étendu auto local + prefers-reduced-motion bridge | 7b75025 | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-011 | B-009 axe density — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` (Standard 80%, atteint 93.1% lines / 90.9% branches) + auto → comfortable (pas de media query OS) | _pending_ | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
