@@ -4,7 +4,7 @@
 > **Ce que ce document n'est PAS** : la spécification de l'intention. Pour le quoi/pour qui/pourquoi, voir `docs/Conception-Morphique/CDC.md` v2.0.0.
 > **Règle de mise à jour** : modifier le PET à CHAQUE session de travail (avant + après chaque brick). C'est ici que vit la rigueur Monozukuri **excédence** — chaque brick est consignée, chaque erreur est tracée, chaque preuve est attachée.
 
-**Version** : 2.0.0 | **Date création** : 2026-05-21 | **Dernière MAJ** : 2026-05-21 | **Statut** : Active (v2 alignée Refonte + Monozukuri excédence)
+**Version** : 2.0.0 | **Date création** : 2026-05-21 | **Dernière MAJ** : 2026-05-22 | **Statut** : Active (v2 alignée Refonte + Monozukuri excédence)
 **Cross-ref** : `docs/Conception-Morphique/CDC.md` v2.0.0 (intention) · `docs/Refonte/*` (21 docs standards Shinkofa 2026) · `mnk/10-Blueprints.md` (archétypes)
 **Standard qualité** : floor consolidé Refonte ≥92/100 toutes dimensions ; Critical modules : coverage 95% + mutation 75%.
 
@@ -113,7 +113,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-001 | Monorepo scaffolding pnpm workspaces (3 packages : engine, wasm-core, adapter) + Vite 6 + Vitest 4 (forks pool, maxForks 2, NODE_OPTIONS=2048) + tsconfig strict | F-001 | ✅ Done | Tooling 60% | pnpm@10.33, vitest@4.1.7, biome@2.4.15, ts@5.9.3 (2026-05-21) | 3fe0b04..a5dfcf2 | 2026-05-21 |
-| B-002 | CI GitHub Actions : build matrix (Node 22 LTS) + Rust toolchain 1.87 + Elixir 1.19 + lint Biome/clippy/Credo + coverage upload | F-001 | ⬜ Pending | Tooling 60% | GH Actions versions | — | — |
+| B-002 | CI GitHub Actions : build matrix (Node 20+22) + lint Biome + type check tsc + coverage v8 upload Codecov. Rust/Elixir CI deferred to B-005/B-017b (no code yet). | F-001 | ✅ Done | Tooling 60% | checkout@v4, setup-node@v4, pnpm/action-setup@v4, codecov@v5, rust-toolchain@v1, setup-beam@v1 (2026-05-22) | 3cfe2bd..88348fd | 2026-05-22 |
 | B-003 | `<morphic-provider>` Custom Element v1 zero-config (shadow DOM, customElements.whenDefined, fallback inert) | F-002 | ⬜ Pending | Sensitive 90% | Web Components spec | — | — |
 | B-004 | Synchronous head-read init.js (zero flash) — CSS vars injection via adopted stylesheets, lecture localStorage sync, fallback `prefers-color-scheme` | F-003 | ⬜ Pending | **Critical 95%** | adoptedStyleSheets browser support | — | — |
 | B-005 | Token system DTCG (Design Token Format) + schémas axes morphiques + validation Zod (TS) / Pydantic miroir backend | F-004 | ⬜ Pending | Sensitive 90% | DTCG spec stable | — | — |
@@ -352,6 +352,64 @@ Preuve CI : https://github.com/theermite/morphic-engine/actions/runs/26245882698
 **Tag backup** : pas encore (1 brick seulement, cadence 3-4)
 **Repo** : https://github.com/theermite/morphic-engine
 
+### B-002 — CI GitHub Actions complète + coverage upload
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-001
+**Risk level** : Tooling (60%)
+**Scope** : étendre CI avec type check (tsc), coverage v8 upload Codecov, lint Biome BLOCKING. Jobs Rust (clippy/fmt) et Elixir (credo/format) préparés mais retirés car hashFiles() au niveau job cause un workflow parse failure — seront ajoutés quand le code existe (B-005 et B-017b respectivement).
+**Fichiers impactés** : `.github/workflows/ci.yml`, `packages/engine/vite.config.ts` (ajout reporter JSON pour Codecov)
+
+#### Veille préalable
+
+| Sujet | Vérifié le | Source | Conclusion |
+|-------|-----------|--------|------------|
+| actions/checkout | 2026-05-22 | github.com/actions/checkout/releases | v4 prouvé, v6 non vérifié (veille "Probable" invalidée par CI failure) |
+| actions/setup-node | 2026-05-22 | github.com/actions/setup-node | v4 prouvé |
+| pnpm/action-setup | 2026-05-22 | github.com/pnpm/action-setup/releases | v4 prouvé |
+| codecov/codecov-action | 2026-05-22 | github.com/codecov/codecov-action | v5 — tokenless pour repos publics |
+| actions-rust-lang/setup-rust-toolchain | 2026-05-22 | github.com releases | v1 — deferred to B-005 |
+| erlef/setup-beam | 2026-05-22 | github.com releases | v1 — deferred to B-017b |
+| Rust stable | 2026-05-22 | releases.rs | 1.95 (PET original disait 1.87 — mis à jour) |
+| Elixir | 2026-05-22 | hexdocs.pm | 1.19.5 + OTP 27 |
+
+#### Tests post (preuves)
+
+| Vérification | Commande | Résultat |
+|--------------|----------|----------|
+| Tests TS verts (local) | `pnpm test` | ✅ 2 passed, 0 failed |
+| Coverage (local) | `pnpm -r --filter @morphic/engine run test:coverage` | ✅ 100% (1/1 stmts) |
+| coverage-final.json généré | `ls packages/engine/coverage/coverage-final.json` | ✅ présent |
+| Lint Biome (local) | `pnpm run lint` | ✅ exit 0 |
+| CI Node 20 | GH Actions run 26284432213 | ✅ success |
+| CI Node 22 | GH Actions run 26284432213 | ✅ success |
+
+Preuve CI : https://github.com/theermite/morphic-engine/actions/runs/26284432213
+
+#### Erreurs rencontrées
+
+| Erreur | Cause racine | Correction | Test ajouté |
+|--------|--------------|------------|-------------|
+| CI failure "workflow file issue" (run 26284294608) | Veille Deep Research reporta v6 pour checkout/setup-node/pnpm comme "Probable" — inexact. Actions v6 n'existaient pas ou causaient une erreur de résolution. | Revert vers v4 (prouvé B-001) | — |
+| CI failure persistante après revert v4 (run 26284404180) | `hashFiles('**/Cargo.toml')` au niveau `if:` job (même wrappé en `${{ }}`) cause un workflow parse failure quand aucun checkout n'a encore eu lieu | Retrait complet des jobs Rust/Elixir (pas de code à tester) — anti-overengineering | — |
+
+#### Décisions prises in-flight
+
+| Décision | Alternative écartée | Justification |
+|----------|---------------------|---------------|
+| Retirer jobs Rust/Elixir CI pour l'instant | Garder avec hashFiles conditionnel | hashFiles au niveau job = parse failure. Pas de code Rust/Elixir = pas de CI à exécuter. Anti-overengineering : on ajoute le job quand on ajoute le code. |
+| Rester sur actions v4 | Bumper à v6 | Veille "Probable" invalidée par CI failure. v4 prouvé. On bumpera quand v6 sera vérifié. |
+| Coverage upload Node 22 only | Upload sur les 2 nodes | Évite upload dupliqué. Node 22 = LTS courant. |
+
+#### Commits
+
+- `3cfe2bd` ci(B-002): complete CI matrix — Rust + Elixir jobs, coverage upload Codecov, bump actions v6
+- `8d52db9` fix(ci): revert actions to v4, wrap hashFiles in explicit ${{ }}
+- `88348fd` fix(ci): remove Rust/Elixir jobs until code exists (B-005/B-017b)
+
+**Branch** : `main` (direct, seul contributeur)
+**Tag backup** : non (2 bricks, cadence 3-4)
+
 ---
 
 ## 8. PII Detection — configuration
@@ -484,6 +542,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 |------|-----------|-----------------|---------|---------|
 | 2026-05-21 | Session-2026-05-21-XXX | B-000 (conception CDC+PET v2) | — | `docs/Sessions/Session-2026-05-21-XXX.md` |
 | 2026-05-22 | Session-2026-05-22-001 | Audit + remédiation P0/P1/P2 (S1+A1+L1+T1+T2+T3+L2) | (voir batch 2026-05-22) | `docs/audits/Audit-2026-05-22.md` |
+| 2026-05-22 | Session-2026-05-22-002 | B-002 CI complète (lint+typecheck+coverage Codecov, Rust/Elixir deferred) | 3cfe2bd..88348fd | `docs/Sessions/Session-2026-05-22-002.md` |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
@@ -492,8 +551,13 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 - `[VEILLE] typescript@5.9.3 verifie 2026-05-21 via npmjs.com`
 - `[VEILLE] nlnet@round-2026-06-01 verifie 2026-05-22 via nlnet.nl/propose/` (rectification finding A1)
 
-**Marqueur Veille session 2026-05-22** :
+**Marqueurs Veille session 2026-05-22** :
 - `[VEILLE] @vitest/coverage-v8@4.1.7 verifie 2026-05-22 via npmjs.com` (T1 — peer aligné vitest 4.1.7)
+- `[VEILLE] actions/checkout@v4 verifie 2026-05-22 via github.com (v6 invalide, v4 prouvé)`
+- `[VEILLE] codecov/codecov-action@v5 verifie 2026-05-22 via github.com`
+- `[VEILLE] actions-rust-lang/setup-rust-toolchain@v1 verifie 2026-05-22 via github.com (deferred B-005)`
+- `[VEILLE] erlef/setup-beam@v1+elixir1.19+otp27 verifie 2026-05-22 via github.com (deferred B-017b)`
+- `[VEILLE] rust@stable(1.95) verifie 2026-05-22 via releases.rs`
 
 ---
 
