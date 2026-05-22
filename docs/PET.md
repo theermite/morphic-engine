@@ -149,7 +149,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-101 | Axe daltonization corrective — matrices Brettel 1997 + Viénot 1999 pour protanopia/deuteranopia/tritanopia. Runtime API `setColorVisionCorrection(type, severity)` + CSS filter feColorMatrix injection + persistence localStorage + PBT fast-check sur invariants matrices (idempotence, identité quand severity=0). | F-025 | ⬜ Pending | **Critical 95%** + mutation 75% | Brettel et al. 1997 (J. Opt. Soc. Am. A), Viénot et al. 1999, SVG feColorMatrix spec WHATWG | — | — |
+| B-101 | Axe daltonization corrective — matrices Machado-Oliveira 2009 (grayscale-preserving) + Fidaner 2005 LMS-shift correction pour protan/deutan/tritan. Runtime API `setColorVisionCorrection(type, severity)` + `getColorVisionCorrection()` + `clearColorVisionCorrection()` + helpers purs (`computeDaltonizationMatrix`, `daltonize`, `linearizeSrgb`, `delinearizeSrgb`). SVG `<filter color-interpolation-filters="linearRGB">` + `<feColorMatrix>` injection sur `<html>`. Persistance localStorage sous-clé `colorVision`. 76 tests dont 8 propriétés PBT fast-check (round-trip sRGB, linéarité matrice en severity, identité quand severity=0, clamping, etc.). | F-025 | 🟢 Done | **Critical 95%** + mutation 75% | Machado-Oliveira 2009, Fidaner et al. 2005, sRGB IEC 61966-2-1, SVG2 feColorMatrix WHATWG | 0e9cab8 | 2026-05-22 |
 
 #### Phase 1.2-Dyslexie
 
