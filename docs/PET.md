@@ -126,7 +126,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | a590dc9 | 2026-05-22 |
 | B-008 | Axe motion (full/reduced/none/auto) — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` + CSS var + persistence localStorage | F-007 | ✅ Done | Standard 80% (atteint 93.33% lines / 92.3% branches) | prefers-reduced-motion (matchMedia API stable) | 7b75025 | 2026-05-22 |
-| B-009 | Axe density (compact/comfortable/spacious/auto) — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` + CSS var + persistence localStorage | F-008 | ✅ Done | Standard 80% (atteint 93.1% lines / 90.9% branches) | Aucune veille requise (pas de media query OS) | _pending_ | 2026-05-22 |
+| B-009 | Axe density (compact/comfortable/spacious/auto) — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` + CSS var + persistence localStorage | F-008 | ✅ Done | Standard 80% (atteint 93.1% lines / 90.9% branches) | Aucune veille requise (pas de media query OS) | 9e866a2 | 2026-05-22 |
 | B-010 | Axe font size + line height + max-width (75ch prose) | F-009 | ⬜ Pending | Standard 80% | — | — | — |
 | B-011 | Lint AST custom : decision points cap ≤3 par écran morphique (BLOCKING) | F-010 | ⬜ Pending | **Critical 95%** | TypeScript Compiler API | — | — |
 
@@ -881,9 +881,9 @@ Lines        : 100% ( 78/78 )
 
 #### Commit
 
-- SHA : _pending_
+- SHA : 9e866a2
 - Branch : `main` (direct)
-- CI : _attendu vert_
+- CI : ✅ Verte (Node 22+24, 28s)
 
 ---
 
@@ -1026,7 +1026,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | cafe641 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-009 | B-007 axe thème — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` (Standard 80%, atteint 93.54% lines / 92.3% branches) + persistence localStorage user choice (pas la valeur résolue) + matchMedia bridge SSR-safe | a590dc9 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-010 | B-008 axe motion — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` (Standard 80%, atteint 93.33% lines / 92.3% branches) + enum étendu auto local + prefers-reduced-motion bridge | 7b75025 | _à rédiger_ |
-| 2026-05-22 | Session-2026-05-22-011 | B-009 axe density — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` (Standard 80%, atteint 93.1% lines / 90.9% branches) + auto → comfortable (pas de media query OS) | _pending_ | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-011 | B-009 axe density — runtime API `setDensity`/`getDensity`/`resolveAutoDensity` (Standard 80%, atteint 93.1% lines / 90.9% branches) + auto → comfortable (pas de media query OS) | 9e866a2 | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
