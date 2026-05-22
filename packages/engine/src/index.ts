@@ -23,6 +23,13 @@ export {
   MorphicProvider,
 } from './morphic-provider.js';
 export {
+  getMotion,
+  type MotionChoice,
+  type ResolvedMotion,
+  resolveAutoMotion,
+  setMotion,
+} from './motion.js';
+export {
   getTheme,
   type ResolvedTheme,
   resolveAutoTheme,

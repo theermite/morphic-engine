@@ -125,7 +125,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-007 | Axe thème (light/dark/auto/high-contrast/sepia) — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` + CSS vars + persistence localStorage | F-006 | ✅ Done | Standard 80% (atteint 93.54% lines / 92.3% branches) | prefers-color-scheme (matchMedia API stable) | a590dc9 | 2026-05-22 |
-| B-008 | Axe motion (full/reduced/none) + override `prefers-reduced-motion` | F-007 | ⬜ Pending | Standard 80% | prefers-reduced-motion | — | — |
+| B-008 | Axe motion (full/reduced/none/auto) — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` + CSS var + persistence localStorage | F-007 | ✅ Done | Standard 80% (atteint 93.33% lines / 92.3% branches) | prefers-reduced-motion (matchMedia API stable) | _pending_ | 2026-05-22 |
 | B-009 | Axe density (compact/comfortable/spacious) + CSS scale tokens | F-008 | ⬜ Pending | Standard 80% | — | — | — |
 | B-010 | Axe font size + line height + max-width (75ch prose) | F-009 | ⬜ Pending | Standard 80% | — | — | — |
 | B-011 | Lint AST custom : decision points cap ≤3 par écran morphique (BLOCKING) | F-010 | ⬜ Pending | **Critical 95%** | TypeScript Compiler API | — | — |
@@ -789,6 +789,67 @@ Lines        : 100% ( 78/78 )
 - Branch : `main` (direct)
 - CI : ✅ Verte (Node 22+24, 29s)
 
+### B-008 — Axe motion (runtime API)
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-007 (Axe sensoriel : motion full/reduced/none)
+**Risk level** : Standard 80% — atteint 93.33% lines / 92.3% branches / 100% functions.
+**Scope** : Module `motion.ts` — runtime API pour l'axe motion :
+- `setMotion(motion)` : valide via closed enum étendu (full/reduced/none/auto), résout `auto` via `prefers-reduced-motion: reduce`, met à jour `--morphic-motion`, persiste le choix utilisateur, retourne le motion concret appliqué.
+- `getMotion()` : relit le choix persisté (peut être `'auto'`), renvoie `null` si absent/malformé/invalide.
+- `resolveAutoMotion()` : interroge `matchMedia('(prefers-reduced-motion: reduce)')`, fallback `'full'` si `matchMedia` indisponible (SSR).
+
+**Fichiers impactés** :
+- `packages/engine/src/motion.ts` (nouveau, ~140 lignes — extended enum local avec 'auto', pas de modification init.ts)
+- `packages/engine/tests/motion.test.ts` (nouveau, 25 tests)
+- `packages/engine/src/index.ts` (barrel export : `getMotion`, `setMotion`, `resolveAutoMotion`, types `MotionChoice` + `ResolvedMotion`)
+
+**FMEA modes (Gate 1 enrichment)** :
+
+| # | Mode défaillance | Probabilité | Impact | Mitigation effective |
+|---|------------------|-------------|--------|----------------------|
+| 1 | `setMotion('reduced')` ne persiste pas → animation revient au reload | Moyenne | UX flashy pour utilisateur sensible | Test round-trip set/get + persistence test |
+| 2 | `resolveAutoMotion()` ne détecte pas `prefers-reduced-motion: reduce` | Moyenne | Animations non réduites malgré réglage OS | Test matchMedia stub matches=true |
+| 3 | Override écrase les autres axes en storage | Moyenne | Préférences perdues | Test `preserves other axes` |
+
+**TDG (Gate 3)** :
+- Red : 25 tests écrits avant `motion.ts`. Import resolution failure confirme RED.
+- Green : 1 itération — implémentation directe passe 25/25 puis 183/183 (suite complète).
+
+**Tests post (Gate 6)** :
+- 25/25 tests. Suite complète 183/183 (B-001 → B-008).
+- Coverage `motion.ts` : 100% functions, 93.33% lines, 92.3% branches.
+- Cible Standard 80% largement dépassée.
+
+**5 test reliability metrics** :
+- Empty tests : 0 ✅
+- Trivial tests : <10% ✅
+- Mock:assert ratio : <1:N ✅ (3 stubs matchMedia, 1 spy setItem ; reste = real DOM + localStorage)
+- Type coverage : 100% TS strict ✅
+- Line coverage : 93.33% (cible 80%) ✅
+
+**Erreurs rencontrées** : aucune (pattern aligné B-007).
+
+**Décisions techniques** :
+
+| Décision | Raison |
+|----------|--------|
+| Enum étendu `VALID_MOTIONS_WITH_AUTO` local à motion.ts | CDC F-007 enum = full/reduced/none. Onboarding CDC dit "défaut auto". `auto` ajouté dans motion.ts sans modifier init.ts/tokens.ts. init.ts lisant 'auto' ne le reconnaît pas → fallthrough vers readMediaMotion() = comportement auto correct. |
+| Pattern identique à theme.ts | DOM avant try/catch, USER choice persisté, preserves other axes. Cohérence API. |
+
+#### Anti-Circular review (Layer 1)
+
+| Layer | Méthode | Statut |
+|-------|---------|--------|
+| L1 — Algorithmic | Coverage 93.33%, round-trip set/get, defensive null/undefined/invalid, matchMedia true/false/undefined. | ✅ Fait |
+| L2/L3 | Non requis pour Standard. | N/A |
+
+#### Commit
+
+- SHA : _renseigné après push_
+- Branch : `main` (direct)
+- CI : _attendu vert_
+
 ---
 
 ## 8. PII Detection — configuration
@@ -929,6 +990,7 @@ Référence vers les rapports de session qui ont fait avancer ce PET.
 | 2026-05-22 | Session-2026-05-22-007 | B-005 token system DTCG + Zod 4 validation (Sensitive 90%, atteint 100%) + ajout Zod 4.x au CDC §5 (override conventions Shinkofa 3.x) | d8a69f9..e052f76 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-008 | B-006 Style Dictionary 5.4.1 build pipeline (Tooling 60%, atteint 100% lines / 96.4% branches) — CSS vars + JSON + Tailwind ESM custom format | cafe641 | _à rédiger_ |
 | 2026-05-22 | Session-2026-05-22-009 | B-007 axe thème — runtime API `setTheme`/`getTheme`/`resolveAutoTheme` (Standard 80%, atteint 93.54% lines / 92.3% branches) + persistence localStorage user choice (pas la valeur résolue) + matchMedia bridge SSR-safe | a590dc9 | _à rédiger_ |
+| 2026-05-22 | Session-2026-05-22-010 | B-008 axe motion — runtime API `setMotion`/`getMotion`/`resolveAutoMotion` (Standard 80%, atteint 93.33% lines / 92.3% branches) + enum étendu auto local + prefers-reduced-motion bridge | _pending_ | _à rédiger_ |
 
 **Marqueurs Veille rétroactifs (session 2026-05-21 conception)** :
 - `[VEILLE] pnpm@10.33.0 verifie 2026-05-21 via pnpm.io`
