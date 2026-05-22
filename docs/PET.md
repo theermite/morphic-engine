@@ -155,7 +155,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-102 | Axe Bionic Reading — runtime API `setBionicReading(enabled, intensity)` + DOM walker (TreeWalker.NodeFilter.SHOW_TEXT) qui découpe les mots et applique `<b>` sur les premières lettres selon intensité (30/50/70%). Toggle OFF par défaut (evidence-based contesté, opt-in user). | F-026 | ⬜ Pending | Standard 80% | TreeWalker WHATWG, bionic-reading.com méthode (référence — pas dépendance) | — | — |
+| B-102 | Axe **Reading Focus** (renommé pour éviter trademark "Bionic Reading" US #5557651) — runtime API `setReadingFocus(intensity)` + helper pur `applyReadingFocus(text, ratio)` + DOM walker (TreeWalker SHOW_TEXT) qui découpe les mots et wrap `<b>` sur les premières lettres selon intensité (low=0.3, medium=0.4, high=0.5). Toggle OFF par défaut (evidence scientifique mixte 2022-2025 ; opt-in user explicite). Cible `<main>`, `<article>`, ou `[data-morphic-reading-focus]` (pas le body entier — préserve nav/UI). | F-026 | ⬜ Pending | Standard 80% | TreeWalker WHATWG, text-vide@1.8.5 MIT (référence open-source, pas dépendance) | — | — |
 | B-103 | Axe Reading Guide — 3 modes : (a) line focus (highlight ligne courante via IntersectionObserver), (b) mask (overlay opaque sauf zone lecture), (c) vertical ruler (barre verticale suivant pointer/clavier). Runtime API `setReadingGuide(mode)`. | F-027 | ⬜ Pending | Sensitive 90% | IntersectionObserver spec, pointerlock spec | — | — |
 
 #### Phase 1.2-Cognitif-Plus
