@@ -526,7 +526,7 @@ Tout écart entre l'exécution réelle et l'intention du CDC v2.0.0.
 
 | Quoi (CDC §) | Déviation | Justification | Mesure compensatoire | Date |
 |--------------|-----------|---------------|----------------------|------|
-| — | (rien pour le moment) | — | — | — |
+| CDC §10 (CI build matrix Rust 1.87 + Elixir 1.19) | Jobs Rust et Elixir non inclus dans CI B-002 — seulement job `test` (Node 20 + 22) | (1) Aucun code Rust ou Elixir n'existe encore (anti-overengineering : CI sans code à compiler = bruit). (2) `hashFiles('**/Cargo.toml') != ''` au niveau `if:` du job a causé un échec "workflow file issue" — GitHub Actions n'évalue pas `hashFiles` au scope job-conditional. | Jobs Rust à ajouter dans B-005 (Rust→WASM critical paths) quand `crates/*/Cargo.toml` existe ; jobs Elixir à ajouter dans B-017b (Phoenix backend) quand `apps/backend/mix.exs` existe. Squelette des jobs conservé dans l'historique git (commit `3cfe2bd` reverté en `88348fd`) pour copier-coller futur. | 2026-05-22 |
 
 Si une déviation devient permanente → mettre à jour le CDC v2.0.0 (et le noter dans son §Historique de l'intention).
 
