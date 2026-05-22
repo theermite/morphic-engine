@@ -19,6 +19,25 @@ export {
   validateDecisionPoints,
 } from './cognitive.js';
 export {
+  COMMAND_PALETTE_DEFAULT_TRIGGER,
+  type Command,
+  type CommandPaletteOptions,
+  type CommandPaletteState,
+  closeCommandPalette,
+  detectOS,
+  disableCommandPalette,
+  enableCommandPalette,
+  getCommandPaletteState,
+  MORPHIC_COMMAND_PALETTE_DEFAULT_Z_INDEX,
+  MORPHIC_COMMAND_PALETTE_MARKER,
+  MORPHIC_COMMAND_PALETTE_TAG,
+  matchesCombo,
+  type OS,
+  openCommandPalette,
+  type ParsedCombo,
+  parseCombo,
+} from './command-palette.js';
+export {
   type ContrastChoice,
   getContrast,
   type ResolvedContrast,

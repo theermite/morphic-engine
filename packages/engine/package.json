@@ -33,6 +33,7 @@
     "vitest": "^4.0.0"
   },
   "dependencies": {
+    "fuse.js": "^7.3.0",
     "zod": "4.4.3"
   }
 }
