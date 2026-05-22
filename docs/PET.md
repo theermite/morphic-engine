@@ -96,7 +96,7 @@ Toute fonction listée Critical (§7 CDC) doit contenir ≥ 2 assertions défens
 |----------|---------|----------------------|--------|
 | `morphic_validate_prefs()` | `crates/wasm-core/src/validators.rs` | type schema + range axes + invariant non-empty | À implémenter B-018 |
 | `morphic_encrypt_box()` | `crates/wasm-core/src/crypto.rs` | nonce length 24 + key length 32 + nonce CSPRNG-derived | À implémenter B-017 |
-| `morphic_init_head()` | `packages/engine/src/init.ts` | `document.readyState !== 'loading'` invariant + localStorage parseable + theme in enum | À implémenter B-004 |
+| `morphicInit()` | `packages/engine/src/init.ts` | try/catch localStorage + try/catch JSON.parse + typeof/null/Array check + enum validation | ✅ Done B-004 (69941b4) |
 | `morphic_idb_persist()` | `packages/engine/src/storage/idb.ts` | quota check + schema version match + value sanitized | À implémenter B-015 |
 | `morphic_yjs_apply_update()` | `packages/engine/src/storage/crdt.ts` | update validated WASM AVANT apply + Y.Doc not null | À implémenter B-016 |
 | `morphic_onboarding_step_render()` | `packages/engine/src/onboarding/step.ts` | step.identity_collected === false BEFORE sensoriel done | À implémenter B-013 |
@@ -115,7 +115,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-001 | Monorepo scaffolding pnpm workspaces (3 packages : engine, wasm-core, adapter) + Vite 6 + Vitest 4 (forks pool, maxForks 2, NODE_OPTIONS=2048) + tsconfig strict | F-001 | ✅ Done | Tooling 60% | pnpm@10.33, vitest@4.1.7, biome@2.4.15, ts@5.9.3 (2026-05-21) | 3fe0b04..a5dfcf2 | 2026-05-21 |
 | B-002 | CI GitHub Actions : build matrix (Node 20+22) + lint Biome + type check tsc + coverage v8 upload Codecov. Rust/Elixir CI deferred to B-005/B-017b (no code yet). | F-001 | ✅ Done | Tooling 60% | checkout@v4, setup-node@v4, pnpm/action-setup@v4, codecov@v5, rust-toolchain@v1, setup-beam@v1 (2026-05-22) | 3cfe2bd..88348fd | 2026-05-22 |
 | B-003 | `<morphic-provider>` Custom Element v1 zero-config (shadow DOM, customElements.whenDefined, fallback inert) | F-002 | ✅ Done | Sensitive 90% (atteint 100%) | jsdom@29.1.1 (2026-05-22) | _à compléter au push_ | 2026-05-22 |
-| B-004 | Synchronous head-read init.js (zero flash) — CSS vars injection via adopted stylesheets, lecture localStorage sync, fallback `prefers-color-scheme` | F-003 | ⬜ Pending | **Critical 95%** | adoptedStyleSheets browser support | — | — |
+| B-004 | Synchronous head-read init.ts (zero flash) — CSS vars injection via style.setProperty, lecture localStorage sync, fallback `prefers-*` media queries, validation closed enums | F-003 | ✅ Done | **Critical 95%** (atteint 100%) | localStorage WHATWG stable, prefers-* 94-95%, fast-check@4.8.0 (2026-05-22) | 69941b4 | 2026-05-22 |
 | B-005 | Token system DTCG (Design Token Format) + schémas axes morphiques + validation Zod (TS) / Pydantic miroir backend | F-004 | ⬜ Pending | Sensitive 90% | DTCG spec stable | — | — |
 | B-006 | Style Dictionary 5.4.1 build pipeline : tokens → CSS vars + Tailwind config + JSON | F-005 | ⬜ Pending | Sensitive 90% | style-dictionary@5.4.1 | — | — |
 
@@ -499,6 +499,66 @@ Lines        : 100% ( 24/24 )
 - Message : `feat(engine): B-003 — <morphic-provider> Custom Element v1 zero-config`
 - Branch : `main` (direct)
 - Tag backup : non (B-003 = 3e brick, prochain tag à B-004 ou B-005)
+
+---
+
+### B-004 — Synchronous head-read init.ts (zero flash)
+
+**Statut** : ✅ Done (2026-05-22)
+**CDC ref** : F-003
+**Risk level** : Critical (cible 95%, atteint 100%)
+**Scope** : `morphicInit()` lit les préférences morphiques de `localStorage` de façon synchrone, valide chaque axe contre un enum fermé (poka-yoke), injecte les CSS custom properties `--morphic-theme`, `--morphic-motion`, `--morphic-contrast` sur `document.documentElement`. Fallback aux media queries `prefers-*` si localStorage absent/invalide/inaccessible. SSR-safe (no-op). Idempotent.
+**Fichiers impactés** :
+- `packages/engine/src/init.ts` (nouveau, 171 lignes)
+- `packages/engine/src/index.ts` (export public)
+- `packages/engine/tests/init.test.ts` (nouveau, 32 tests)
+- `packages/engine/package.json` (devDep `fast-check@4.8.0`)
+
+#### Veille préalable
+
+| Sujet | Vérifié le | Source | Conclusion |
+|-------|-----------|--------|------------|
+| localStorage | 2026-05-22 | WHATWG HTML Living Standard | Spec stable, sync, aucune dépréciation. Read < 1KB = sub-ms. |
+| prefers-color-scheme | 2026-05-22 | caniuse.com | 95.01% support global. Safe. |
+| prefers-reduced-motion | 2026-05-22 | caniuse.com | 95.34% support global. Safe. |
+| prefers-contrast | 2026-05-22 | caniuse.com | 94.03% support global. Safe. |
+| document.documentElement.dataset | 2026-05-22 | caniuse.com | 96.27% support. Safe. |
+| fast-check@4.8.0 | 2026-05-22 | npm view | Latest PBT library. Major 4.x (CDC disait 3.21+). |
+
+#### Tests préalables (TDG — écrits AVANT le code)
+
+32 tests across 7 describe blocks. Workflow TDG respecté : tests rouges avant implémentation.
+
+#### Tests post (preuves d'exécution)
+
+```
+Statements   : 100% ( 68/68 )
+Branches     : 100% ( 49/49 )
+Functions    : 100% ( 12/12 )
+Lines        : 100% ( 61/61 )
+CI : Node 22 (19s) + Node 24 (15s) vert.
+```
+
+#### Erreurs rencontrées
+
+| Erreur | Cause | Correction |
+|--------|-------|-----------|
+| Lint `noUnusedImports` | Imports copiés de B-003 template | Retrait |
+| Branche `prefers-contrast: less` non couverte | Pas de test | Ajout test → 100% |
+
+#### Décisions in-flight
+
+| Décision | Justification |
+|----------|---------------|
+| `style.setProperty()` (pas adoptedStyleSheets) | CSP-safe, simple pour 3 vars. Future brick tokens pourra migrer. |
+| `data-morphic-theme` attribut HTML | Permet sélecteurs CSS cascade côté host. |
+| fast-check@4.8.0 (major 4.x) | Stable, meilleur shrinking, CDC floor respecté (4 > 3.21). |
+| Enum fermé (reject unknown) | FMEA §8.3 : données corrompues → flash. Poka-yoke. |
+
+#### Commit
+
+- SHA : `69941b4`
+- Branch : `main` (direct)
 
 ---
 
