@@ -12,6 +12,13 @@
 export const VERSION = '2.0.0-alpha.0' as const;
 
 export {
+  getDecisionPointsCap,
+  MORPHIC_DECISION_POINTS_CAP_DEFAULT,
+  MORPHIC_DECISION_POINTS_CAP_MAX,
+  setDecisionPointsCap,
+  validateDecisionPoints,
+} from './cognitive.js';
+export {
   type ContrastChoice,
   getContrast,
   type ResolvedContrast,
