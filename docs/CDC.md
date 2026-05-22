@@ -17,7 +17,7 @@
 | Périmètre | Couplé React/Next.js, MorphicProfile + MorphicPreferences + MorphicAdaptation typés, dépend `@shinkofa/types` | **Framework-agnostic** (Web Components + vanilla core), runtime injectable dans n'importe quel hôte |
 | Architecture | Mono-couche TypeScript | **Tri-layer client** : TS visible + Rust→WASM critique + Effect-TS résilience + Web Workers isolation + Phoenix backend |
 | Persistence | Aucune (objets en mémoire) | **CRDT Yjs lazy-loaded** + IndexedDB local-first + sync opt-in chiffré E2E |
-| Adaptation | Statique (générée par profil) | **13 axes morphiques** + 3-tier surfacing (4 onboarding sensoriel-first + 4 optionnels + 5 auto-derivés) |
+| Adaptation | Statique (générée par profil) | **Axes morphiques multi-catégories** (sensoriel, cognitif, moteur, énergétique) + 3-tier surfacing (onboarding sensoriel-first + optionnels + auto-derivés). Décompte mis à jour 2026-05-22 suite à matrice fonctionnelle exhaustive : 6 axes Phase 1.0/1.1 + 11 axes Phase 1.2 (visuel daltonization, dyslexie, moteur, cognitif W3C WAI-Adapt, énergétique) — cf. §3 F-025 à F-035. |
 | Standards | Quality.md baseline | **Refonte 2026 floors** + Dignity §a sensoriel-first + Anti-overlay (FTC AccessiBe 2025) |
 | Open source | Privé monorepo | **AGPL-3.0** + NLNet NGI0 (deadline 2026-06-01) |
 | Démo | Aucune | **The Ermite** (theermite.com) vitrine + case study citable IA |
@@ -101,6 +101,35 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
 | F-022 | API import préférences (depuis WAI-Adapt, GPII Morphic.org) | En tant qu'user GPII existant, j'importe mon profil dans Shinkofa | P2 | F-014 |
 | F-023 | Export préférences JSON (GDPR Art. 20 portabilité) | En tant qu'user, j'exporte mes données morphiques en 1 clic | P0 | F-014 |
 | F-024 | Delete préférences (GDPR Art. 17 erasure) | En tant qu'user, je supprime tout en 2 clics, sans guilt-trip | P0 | F-014 |
+
+### Phase 1.2 — Axes morphiques étendus (matrice fonctionnelle 2026-05-22)
+
+> Issu de `docs/veille/Matrice-Fonctionnelle-2026-05-22.md` (35 sources, 210 features × 12 acteurs cartographiés). Comble les gaps : daltonization corrective, dyslexie, moteur (clavier + pointer), cognitif W3C WAI-Adapt, énergétique. **Tous validés Jay 2026-05-22 — aucune priorisation par deadline.**
+
+| ID | Feature | User story | Priorité | Dépend de |
+|----|---------|-----------|----------|-----------|
+| F-025 | Axe visuel — Daltonization **corrective** (protanopia/deuteranopia/tritanopia) | En tant qu'user daltonien, le contenu m'est servi corrigé (matrices Brettel/Viénot) — pas simulé | P0 | F-002, F-004 |
+| F-026 | Axe dyslexie — Bionic Reading toggle + intensité (30%/50%/70%) | En tant qu'user à qui Bionic Reading parle, j'active le bionic avec intensité réglable | P1 | F-002 |
+| F-027 | Axe lecture — Reading guide (line focus + mask + vertical ruler) | En tant qu'user qui se perd dans le texte, j'utilise un guide visuel ligne par ligne | P0 | F-002 |
+| F-028 | Axe cognitif — WAI-Adapt Symbols overlay (`data-symbol` + AAC pictograms) | En tant qu'user à besoin de pictogrammes AAC, je vois les symboles W3C WAI-Adapt sur le contenu | P1 | F-002, F-022 |
+| F-029 | Axe moteur clavier — Command palette (Cmd/Ctrl+K) + raccourcis configurables | En tant qu'user clavier-first, je navigue tout le module au clavier sans souris | P1 | F-002 |
+| F-030 | Axe moteur pointer — Click delay configurable (0-500ms slider) | En tant qu'user avec tremblement / Parkinson léger, j'évite les double-clics involontaires | P1 | F-002 |
+| F-031 | Axe moteur pointer — Hover-to-click dwell (500-3000ms) | En tant qu'user qui ne peut pas cliquer (handicap moteur), je déclenche les actions par hover prolongé | P0 | F-002, F-030 |
+| F-032 | Axe moteur pointer — Tremor filter (moving average curseur sur N frames) | En tant qu'user avec tremblement essentiel, le curseur est stabilisé par filtrage | P1 | F-002 |
+| F-033 | Axe énergétique — Recovery mode (low-stim profile) couplé Ki Shinkofa | En tant qu'user en signal de fatigue, je bascule en mode récupération (motion=reduced, density=spacious, cap=3, theme calm) | P0 | F-007, F-008, F-010, F-013 |
+| F-034 | Axe énergétique — Auto-pause idle (visibilitychange + idle ≥60s configurable) | En tant qu'user qui s'éloigne sans se déconnecter, le module suspend animations + sauvegarde | P1 | F-002, F-014 |
+| F-035 | Axe énergétique — Pomodoro engine (state machine + events, défaut 25/5) | En tant qu'user qui veut des cycles de travail/pause cadencés, le module fournit le moteur — l'hôte fournit l'UI (ex. FAB Shinkofa.com) | P1 | F-002, F-014 |
+
+**Notes Phase 1.2** :
+
+- **F-025 Daltonization corrective** : blue ocean total (Helperbird simule, personne corrige). Matrices Brettel 1997 + Viénot 1999. Algorithmique → PBT idéal (Anti-Circular Layer 1).
+- **F-026 Bionic Reading** : feature culturelle, **demande utilisateurs forte mais evidence-based contesté** (méta-analyses 2022-2024 mitigées). Toggle OFF par défaut, opt-in user. Documenté factuellement dans la doc utilisateur.
+- **F-028 WAI-Adapt Symbols** : implémentation **`experimental`** — follows W3C WAI-Adapt Symbols Candidate Recommendation. API peut évoluer quand CR → Recommendation. Risque assumé pour blue ocean.
+- **F-031 Hover-to-click dwell** : crucial pour handicap moteur sévère, aucun équivalent web (présent macOS/Windows OS-natif uniquement).
+- **F-032 Tremor filter** : blue ocean total. Moving average sur position curseur (algorithmique → PBT idéal).
+- **F-033 Recovery mode + Ki couplage** : l'engine fournit l'API + events (`morphic:energy:recovery-enter/exit`, `setEnergyProfile`, etc.) — apps Shinkofa branchent leur logique Ki budget. **Engine reste framework-agnostic** (zéro dépendance vers Shinkofa-Shared).
+- **F-034 Idle vs F-035 Pomodoro** : les deux peuvent être actifs simultanément (cas d'usage distincts : HSP qui se perd ≠ HPI qui s'épuise faute de pauses cadencées). UI hôte décide de l'exposition.
+- **Bouton FAB Shinkofa.com existant** : sera refactorisé en consommateur de F-035 (traçabilité dans PET de Shinkofa.com, pas ici).
 
 ### Phase 2 — Browser extension (vision §13)
 
@@ -308,6 +337,13 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 | `apps/the-ermite-demo` (intégration démo theermite.com) | **Standard** | 80% | Non | Démo, pas le module. |
 | `scripts/build-tokens.ts` | **Tooling** | 60% | Non | Outillage dev, smoke test suffit. |
 | `scripts/release.ts` | **Tooling** | 60% | Non | Outillage CI. |
+| `@shinkofa/morphic-engine/axes/daltonization` (F-025 matrices Brettel/Viénot) | **Critical** | 95% + mutation 75% | Oui | Algorithmique (matrices linéaires) — faux résultat = contenu illisible pour daltonien. PBT obligatoire. |
+| `@shinkofa/morphic-engine/axes/reading-guide` (F-027 line/mask/ruler) | **Sensitive** | 90% | Non | Overlay visuel. Régression = guide cassé = perte assistance lecture. |
+| `@shinkofa/morphic-engine/axes/bionic` (F-026) | **Standard** | 80% | Non | Transformation typographique, low-risk algorithmique. |
+| `@shinkofa/morphic-engine/axes/wai-symbols` (F-028 `experimental`) | **Sensitive** | 90% | Non | Tag experimental — API peut changer. Tests robustes nécessaires car standard mouvant. |
+| `@shinkofa/morphic-engine/axes/kbd-shortcuts` (F-029) | **Standard** | 80% | Non | UI navigation, fallback OS toujours possible. |
+| `@shinkofa/morphic-engine/axes/motor` (F-030 click-delay + F-031 dwell + F-032 tremor) | **Critical** | 95% + mutation 75% | Oui | Accessibilité motrice — bug = utilisateur exclu. F-032 algorithmique (moyenne mobile) → PBT. |
+| `@shinkofa/morphic-engine/axes/energy` (F-033 recovery + F-034 idle + F-035 pomodoro) | **Critical** | 95% + mutation 75% | Oui | F-033 couplé Ki via API/events — contrat public stable. F-035 state machine timer — transitions exhaustives à tester. |
 
 **Source de référence** : `.claude/rules/Quality.md` § Critical Paths + Refonte `Quality-Gates-Refonte.md`.
 
@@ -486,6 +522,7 @@ Ce qu'on **ne fera PAS** dans cette v2.0.0 :
 | 2026-05-21 | Refonte CDC v2.0.0 — alignement Refonte folder + Monozukuri excédence + tri-layer architecture (TS + Rust→WASM + Effect-TS + Web Workers + Phoenix opt-in) | Mandat Jay : « pas moyenne haute, j'aimerais qu'on soit dans l'exceptionnel, applique Monozukuri pour l'excédence ». Lecture 21 docs Refonte. Réécriture intégrale. | Jay (validation) + Takumi (rédaction) |
 | 2026-05-22 | §5 Stack — alignement versions installées (Node ≥22 ajouté, TS 5.9.3, Vitest 4.1.7, Biome 2.4.15, jsdom 29.1.1 ajouté, Vite 6→8.0.14, pnpm 9→10.33.0). Aucun changement d'intention, mise en cohérence factuelle uniquement. | Jay : « je n'ai pas envie de prendre de risque de confusion ou d'erreur a cause d'une mauvaise lecture ». | Jay (demande) + Takumi (édition) |
 | 2026-05-22 | §5 Stack — ajout Zod 4.x (validation schémas). Conventions globales Shinkofa mentionnent Zod 3.x, mais Zod 4.4.3 stable disponible. Décision : adopter 4.x dès B-005 (dette évitée, écosystème migre). | Jay : « Partons sur Zod 4.x c'est bien mieux ». | Jay (décision) + Takumi (challenge technique) |
+| 2026-05-22 | §0 + §3 + §7 — **enrichissement scope axes morphiques** suite à matrice fonctionnelle exhaustive (`docs/veille/Matrice-Fonctionnelle-2026-05-22.md`, 35 sources, 210 features × 12 acteurs). Ajout de 11 features F-025 à F-035 : axe visuel daltonization corrective (F-025), axe dyslexie (F-026/F-027), axe cognitif W3C WAI-Adapt (F-028 experimental), axe moteur clavier (F-029), axe moteur pointer (F-030/F-031/F-032), axe énergétique couplé Ki Shinkofa (F-033/F-034/F-035). §7 Risk Classification mise à jour pour nouveaux modules. Engine reste framework-agnostic (couplage Ki = unidirectionnel apps → engine via API/events). | Jay : « Je les valide tous car ils sont tous pertinents. Ils seront tous utiles à quelqu'un. » + correction Jay sur deadline-thinking (mémoire `feedback_no-mvp-shortcut.md` étendue). | Jay (décision) + Takumi (matrice + rédaction) |
 
 ---
 

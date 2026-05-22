@@ -141,6 +141,48 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-013 | Onboarding sensoriel-AVANT-identité : 3 écrans (thème → motion → density), ZÉRO identité avant validation 3 écrans | F-012 | ⬜ Pending | **Critical 95%** | — | — | — |
 | B-014 | Mode récupération 1-clic (Loi 12 Recovery as Architecture) — reset axes vers profil "low-energy" | F-013 | ⬜ Pending | Sensitive 90% | — | — | — |
 
+### Phase 1.2-bis — Axes morphiques étendus (B-101 à B-111)
+
+> Issu de matrice fonctionnelle 2026-05-22 (CDC §3 Phase 1.2). Numérotation B-101+ pour préserver l'historique commits B-001→B-029 intact (décision Jay 2026-05-22 option C). Ces bricks s'exécutent dans l'ordre logique avant Phase 1.3 Persistence (les nouveaux axes doivent bénéficier de la persistence IndexedDB B-015 et de l'export GDPR B-024).
+
+#### Phase 1.2-Visuel-Plus
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-101 | Axe daltonization corrective — matrices Brettel 1997 + Viénot 1999 pour protanopia/deuteranopia/tritanopia. Runtime API `setColorVisionCorrection(type, severity)` + CSS filter feColorMatrix injection + persistence localStorage + PBT fast-check sur invariants matrices (idempotence, identité quand severity=0). | F-025 | ⬜ Pending | **Critical 95%** + mutation 75% | Brettel et al. 1997 (J. Opt. Soc. Am. A), Viénot et al. 1999, SVG feColorMatrix spec WHATWG | — | — |
+
+#### Phase 1.2-Dyslexie
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-102 | Axe Bionic Reading — runtime API `setBionicReading(enabled, intensity)` + DOM walker (TreeWalker.NodeFilter.SHOW_TEXT) qui découpe les mots et applique `<b>` sur les premières lettres selon intensité (30/50/70%). Toggle OFF par défaut (evidence-based contesté, opt-in user). | F-026 | ⬜ Pending | Standard 80% | TreeWalker WHATWG, bionic-reading.com méthode (référence — pas dépendance) | — | — |
+| B-103 | Axe Reading Guide — 3 modes : (a) line focus (highlight ligne courante via IntersectionObserver), (b) mask (overlay opaque sauf zone lecture), (c) vertical ruler (barre verticale suivant pointer/clavier). Runtime API `setReadingGuide(mode)`. | F-027 | ⬜ Pending | Sensitive 90% | IntersectionObserver spec, pointerlock spec | — | — |
+
+#### Phase 1.2-Cognitif-Plus
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-104 | Axe WAI-Adapt Symbols overlay (**experimental**) — reader `data-symbol` attribute selon W3C WAI-Adapt Symbols CR + rendu pictogrammes AAC (Bliss, ARASAAC, Mulberry). API marquée `experimental`, contrat documenté instable. | F-028 | ⬜ Pending | Sensitive 90% | W3C WAI-Adapt Symbols CR (latest), ARASAAC license (CC BY-NC-SA), Mulberry symbols (CC BY-SA) | — | — |
+
+#### Phase 1.2-Moteur
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-105 | Axe Command Palette (Cmd/Ctrl+K) — runtime API `registerShortcut(key, action)` + UI Web Component `<morphic-command-palette>` + fuzzy search Fuse.js (lazy-loaded). Raccourcis OS-aware (⌘ macOS, Ctrl Win/Linux). | F-029 | ⬜ Pending | Standard 80% | KeyboardEvent.key spec, Fuse.js 7.x | — | — |
+| B-106 | Axe Click Delay — runtime API `setClickDelay(ms)` (0-500ms) + intercepteur global `pointerdown`/`click` qui debounce/throttle les clics rapprochés. Persistence localStorage. | F-030 | ⬜ Pending | **Critical 95%** + mutation 75% | PointerEvents spec WHATWG | — | — |
+| B-107 | Axe Hover-to-click Dwell — runtime API `setDwellClick(enabled, delayMs)` (500-3000ms) + détection hover stable (mouvement < N pixels pendant delayMs) → synthèse `click` event. Indicateur visuel progress circle. | F-031 | ⬜ Pending | **Critical 95%** + mutation 75% | PointerEvents spec, requestAnimationFrame | — | — |
+| B-108 | Axe Tremor Filter — runtime API `setTremorFilter(enabled, windowSize)` (moving average sur N frames, défaut 5) + override `pointermove` global avec position lissée. PBT sur invariants (latence ≤16ms, position stable si input stable). | F-032 | ⬜ Pending | **Critical 95%** + mutation 75% | PointerEvents spec, fast-check@4.8.0 (déjà vérifié) | — | — |
+
+#### Phase 1.2-Énergétique (couplé Ki Shinkofa via API/events)
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-109 | Axe Recovery Mode — runtime API `enterRecoveryMode()`/`exitRecoveryMode()`/`isRecoveryActive()` + bascule profil low-stim (motion=reduced, density=spacious, decision points cap=3, theme=calm). Events `morphic:energy:recovery-enter`/`recovery-exit`. **Couplage Ki = unidirectionnel** : apps Shinkofa écoutent events, déclenchent via API (zéro dépendance engine → Shinkofa-Shared). | F-033 | ⬜ Pending | **Critical 95%** + mutation 75% | CustomEvent spec, getter/setter idempotence | — | — |
+| B-110 | Axe Auto-pause Idle — runtime API `setIdleDetection(enabled, idleMs)` + détection via `Document.visibilityState` + `requestIdleCallback` + timestamp last user activity. Émet `morphic:energy:pause-suggested` à idle ≥ idleMs (défaut 60s). | F-034 | ⬜ Pending | Sensitive 90% | Document.visibilityState WHATWG, requestIdleCallback spec | — | — |
+| B-111 | Axe Pomodoro Engine — state machine (`idle` → `work` → `short-break` → `work` → ... → `long-break`) + timer configurable (défaut work 25min / short 5min / long 15min, cycles 4) + events `pomodoro-tick`/`work-end`/`break-start`/`break-end`/`session-complete` + persistence session en cours. **Moteur pur** — l'engine ne dessine pas l'UI ; le FAB Shinkofa.com (Shinkofa-Shared) consomme l'API. | F-035 | ⬜ Pending | **Critical 95%** + mutation 75% | Setting Interval Timers spec, performance.now() pour drift correction | — | — |
+
+**Note ordre d'exécution Phase 1.2-bis** : ces bricks peuvent s'exécuter dans l'ordre proposé (B-101 → B-111) ou par famille selon disponibilité. Critique : finir AVANT B-013 Onboarding pour que le flow sensoriel-first présente la totalité des axes disponibles (sinon il faudra re-toucher l'onboarding plus tard = dette).
+
 ### Phase 1.3 — Persistence + Sync (B-015 à B-017)
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
