@@ -108,6 +108,21 @@ export {
   setIdleDetection,
 } from './idle-detection.js';
 export {
+  __resetIdbStateForTests,
+  clearPreferences,
+  closeMorphicDB,
+  getStorageStatus,
+  loadPreferences,
+  migrateFromLocalStorage,
+  MORPHIC_DB_NAME,
+  MORPHIC_DB_VERSION,
+  MORPHIC_IDB_PREFS_KEY,
+  MORPHIC_IDB_STORE_NAME,
+  openMorphicDB,
+  persistPreferences,
+  type StorageStatus,
+} from './idb-storage.js';
+export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
   morphicInit,
