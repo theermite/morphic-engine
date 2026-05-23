@@ -44,6 +44,10 @@ type Contrast = (typeof VALID_CONTRASTS)[number];
 export const VALID_FONT_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
 type FontSize = (typeof VALID_FONT_SIZES)[number];
 
+/** Valid font-family values (closed enum). Exported for cross-module sync check (B-112). */
+export const VALID_FONT_FAMILIES = ['system', 'serif', 'atkinson', 'dyslexic'] as const;
+type FontFamily = (typeof VALID_FONT_FAMILIES)[number];
+
 // ---------------------------------------------------------------------------
 // Type
 // ---------------------------------------------------------------------------
@@ -54,6 +58,7 @@ export interface MorphicPrefs {
   motion?: string;
   contrast?: string;
   fontSize?: string;
+  fontFamily?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +79,10 @@ function isValidContrast(value: unknown): value is Contrast {
 
 function isValidFontSize(value: unknown): value is FontSize {
   return typeof value === 'string' && (VALID_FONT_SIZES as readonly string[]).includes(value);
+}
+
+function isValidFontFamily(value: unknown): value is FontFamily {
+  return typeof value === 'string' && (VALID_FONT_FAMILIES as readonly string[]).includes(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -182,4 +191,11 @@ export function morphicInit(): void {
   const fontSize: FontSize =
     prefs !== null && isValidFontSize(prefs.fontSize) ? prefs.fontSize : 'md';
   root.style.setProperty('--morphic-font-size', fontSize);
+
+  // --- Font Family ---
+  // No `prefers-font-family` media query exists. Default to 'system'.
+  const fontFamily: FontFamily =
+    prefs !== null && isValidFontFamily(prefs.fontFamily) ? prefs.fontFamily : 'system';
+  root.style.setProperty('--morphic-font-family', fontFamily);
+  root.setAttribute('data-morphic-font-family', fontFamily);
 }

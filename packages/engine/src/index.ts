@@ -58,19 +58,6 @@ export {
   setContrast,
 } from './contrast.js';
 export {
-  __resetCryptoStateForTests,
-  decryptPayload,
-  type EncryptedPayload,
-  encryptPayload,
-  exportPublicKey,
-  generateKeyPair,
-  importPublicKey,
-  type MorphicKeyPair,
-  MORPHIC_CRYPTO_MARKER,
-  MORPHIC_CRYPTO_VERSION,
-  MORPHIC_NONCE_LENGTH,
-} from './e2e-crypto.js';
-export {
   COLOR_VISION_TYPES,
   type ColorVisionCorrection,
   type ColorVisionType,
@@ -105,6 +92,26 @@ export {
   setDwellClick,
   validateDwellDelay,
 } from './dwell-click.js';
+export {
+  __resetCryptoStateForTests,
+  decryptPayload,
+  type EncryptedPayload,
+  encryptPayload,
+  exportPublicKey,
+  generateKeyPair,
+  importPublicKey,
+  MORPHIC_CRYPTO_MARKER,
+  MORPHIC_CRYPTO_VERSION,
+  MORPHIC_NONCE_LENGTH,
+  type MorphicKeyPair,
+} from './e2e-crypto.js';
+export {
+  type FontFamilyChoice,
+  getFontFamily,
+  type ResolvedFontFamily,
+  resolveAutoFontFamily,
+  setFontFamily,
+} from './font-family.js';
 export {
   __resetIdbStateForTests,
   clearPreferences,
@@ -263,7 +270,10 @@ export {
   type Density,
   DensitySchema,
   type DtcgToken,
+  FONT_FAMILIES,
   FONT_SIZES,
+  type FontFamily,
+  FontFamilySchema,
   type FontSize,
   FontSizeSchema,
   MOTIONS,

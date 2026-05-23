@@ -38,6 +38,19 @@ export const DENSITIES = ['compact', 'comfortable', 'spacious'] as const;
 /** Valid font size values (CDC F-009 — reading comfort). */
 export const FONT_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
 
+/**
+ * Valid font family values (CDC F-112 — typography axis).
+ *
+ * - `system` : default host stack (system-ui / -apple-system / Segoe UI / ...)
+ * - `serif`  : classic serif stack for prose-heavy reading
+ * - `atkinson` : Atkinson Hyperlegible (Braille Institute — universal legibility)
+ * - `dyslexic` : OpenDyslexic (dyslexia-friendly with weighted bottoms)
+ *
+ * The engine ships zero font binaries; the host site declares the @font-face
+ * rules and CSS mapping `data-morphic-font-family` to the actual stack.
+ */
+export const FONT_FAMILIES = ['system', 'serif', 'atkinson', 'dyslexic'] as const;
+
 // ---------------------------------------------------------------------------
 // Type aliases — inferred from constants
 // ---------------------------------------------------------------------------
@@ -47,6 +60,7 @@ export type Motion = (typeof MOTIONS)[number];
 export type Contrast = (typeof CONTRASTS)[number];
 export type Density = (typeof DENSITIES)[number];
 export type FontSize = (typeof FONT_SIZES)[number];
+export type FontFamily = (typeof FONT_FAMILIES)[number];
 
 // ---------------------------------------------------------------------------
 // Zod schemas — per axis + combined
@@ -57,6 +71,7 @@ export const MotionSchema = z.enum(MOTIONS);
 export const ContrastSchema = z.enum(CONTRASTS);
 export const DensitySchema = z.enum(DENSITIES);
 export const FontSizeSchema = z.enum(FONT_SIZES);
+export const FontFamilySchema = z.enum(FONT_FAMILIES);
 
 /**
  * Combined morphic preferences schema.
@@ -71,6 +86,7 @@ export const MorphicPrefsSchema = z.object({
   contrast: ContrastSchema.optional(),
   density: DensitySchema.optional(),
   fontSize: FontSizeSchema.optional(),
+  fontFamily: FontFamilySchema.optional(),
 });
 
 export type MorphicPrefs = z.infer<typeof MorphicPrefsSchema>;
@@ -149,5 +165,6 @@ export const morphicTokens = {
     contrast: buildAxisGroup(CONTRASTS, 'string', 'Contrast preference'),
     density: buildAxisGroup(DENSITIES, 'string', 'Information density'),
     fontSize: buildAxisGroup(FONT_SIZES, 'string', 'Base font size'),
+    fontFamily: buildAxisGroup(FONT_FAMILIES, 'string', 'Font family'),
   },
 } as const;
