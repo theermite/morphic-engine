@@ -12,8 +12,6 @@ import {
   DWELL_CLICK_DELAY_MAX,
   DWELL_CLICK_DELAY_MIN,
   DWELL_CLICK_RADIUS_DEFAULT,
-  type DwellClickOptions,
-  type DwellClickState,
   getDwellClick,
   getDwellClickState,
   MORPHIC_DWELL_CLICK_MARKER,
@@ -611,7 +609,7 @@ describe('dwell-click / persistence', () => {
 
   it('should persist under MORPHIC_STORAGE_KEY sub-key dwellClick', () => {
     setDwellClick({ delay: 1000 });
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.dwellClick).toBeDefined();
     expect(parsed.dwellClick.delay).toBe(1000);
   });
@@ -619,7 +617,7 @@ describe('dwell-click / persistence', () => {
   it('should not clobber other sub-keys', () => {
     localStorage.setItem('morphic-prefs', JSON.stringify({ clickDelay: { delay: 200 } }));
     setDwellClick({ delay: 1000 });
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.clickDelay.delay).toBe(200);
     expect(parsed.dwellClick.delay).toBe(1000);
   });
@@ -632,7 +630,7 @@ describe('dwell-click / persistence', () => {
   it('should handle array JSON gracefully', () => {
     localStorage.setItem('morphic-prefs', '[1,2]');
     expect(() => setDwellClick({ delay: 1000 })).not.toThrow();
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.dwellClick.delay).toBe(1000);
   });
 });

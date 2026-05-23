@@ -19,8 +19,6 @@ import {
   TREMOR_FILTER_WINDOW_DEFAULT,
   TREMOR_FILTER_WINDOW_MAX,
   TREMOR_FILTER_WINDOW_MIN,
-  type TremorFilterOptions,
-  type TremorFilterState,
   validateWindowSize,
 } from '../src/index.js';
 
@@ -170,9 +168,7 @@ describe('tremor-filter / setTremorFilter', () => {
 
   it('should set marker attribute on documentElement', () => {
     setTremorFilter({ windowSize: 5 });
-    expect(
-      document.documentElement.hasAttribute(MORPHIC_TREMOR_FILTER_MARKER),
-    ).toBe(true);
+    expect(document.documentElement.hasAttribute(MORPHIC_TREMOR_FILTER_MARKER)).toBe(true);
   });
 
   it('should tear down prior session (idempotent)', () => {
@@ -365,9 +361,7 @@ describe('tremor-filter / clearTremorFilter', () => {
   it('should remove marker attribute', () => {
     setTremorFilter({ windowSize: 5 });
     clearTremorFilter();
-    expect(
-      document.documentElement.hasAttribute(MORPHIC_TREMOR_FILTER_MARKER),
-    ).toBe(false);
+    expect(document.documentElement.hasAttribute(MORPHIC_TREMOR_FILTER_MARKER)).toBe(false);
   });
 
   it('should be idempotent', () => {
@@ -432,17 +426,14 @@ describe('tremor-filter / persistence', () => {
 
   it('should persist under sub-key tremorFilter', () => {
     setTremorFilter({ windowSize: 8 });
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.tremorFilter.windowSize).toBe(8);
   });
 
   it('should not clobber other sub-keys', () => {
-    localStorage.setItem(
-      'morphic-prefs',
-      JSON.stringify({ clickDelay: { delay: 100 } }),
-    );
+    localStorage.setItem('morphic-prefs', JSON.stringify({ clickDelay: { delay: 100 } }));
     setTremorFilter({ windowSize: 5 });
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.clickDelay.delay).toBe(100);
     expect(parsed.tremorFilter.windowSize).toBe(5);
   });

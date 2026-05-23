@@ -5,13 +5,11 @@
  */
 
 import fc from 'fast-check';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CLICK_DELAY_MAX,
   CLICK_DELAY_MIN,
-  type ClickDelayOptions,
-  type ClickDelayState,
   clearClickDelay,
   getClickDelay,
   getClickDelayState,
@@ -37,7 +35,7 @@ function dispatchClick(
   return ev;
 }
 
-function sleep(ms: number): Promise<void> {
+function _sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
@@ -442,7 +440,7 @@ describe('click-delay / persistence', () => {
     setClickDelay({ delay: 250 });
     const raw = localStorage.getItem('morphic-prefs');
     expect(raw).not.toBeNull();
-    const parsed = JSON.parse(raw!);
+    const parsed = JSON.parse(raw as string);
     expect(parsed.clickDelay).toBeDefined();
     expect(parsed.clickDelay.delay).toBe(250);
   });
@@ -450,7 +448,7 @@ describe('click-delay / persistence', () => {
   it('should not clobber other sub-keys', () => {
     localStorage.setItem('morphic-prefs', JSON.stringify({ readingGuide: { mode: 'line' } }));
     setClickDelay({ delay: 100 });
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.readingGuide.mode).toBe('line');
     expect(parsed.clickDelay.delay).toBe(100);
   });
@@ -458,14 +456,14 @@ describe('click-delay / persistence', () => {
   it('should handle corrupt JSON gracefully (reset)', () => {
     localStorage.setItem('morphic-prefs', '{{{invalid');
     expect(() => setClickDelay({ delay: 100 })).not.toThrow();
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.clickDelay.delay).toBe(100);
   });
 
   it('should handle array JSON gracefully (reset)', () => {
     localStorage.setItem('morphic-prefs', '[1,2,3]');
     expect(() => setClickDelay({ delay: 100 })).not.toThrow();
-    const parsed = JSON.parse(localStorage.getItem('morphic-prefs')!);
+    const parsed = JSON.parse(localStorage.getItem('morphic-prefs') as string);
     expect(parsed.clickDelay.delay).toBe(100);
   });
 
