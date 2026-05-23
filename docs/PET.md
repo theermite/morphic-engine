@@ -198,7 +198,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-018 | Rust→WASM `morphic-wasm-core` : NaCl box (crypto_box 0.9.1) + wasm-bridge async loader + tweetnacl fallback + proptest 4096 cases | F-017 | 🟢 Done | **Critical 95%** ✅ (100% stmts/funcs/lines, 91.66% branches) | wasm-pack 0.13.1, wasm-bindgen 0.2.122, crypto_box 0.9.1 | TBD | 2026-05-23 |
+| B-018 | Rust→WASM `morphic-wasm-core` : NaCl box (crypto_box 0.9.1) + wasm-bridge async loader + tweetnacl fallback + proptest 4096 cases | F-017 | 🟢 Done | **Critical 95%** ✅ (100% stmts/funcs/lines, 91.66% branches) | wasm-pack 0.13.1, wasm-bindgen 0.2.122, crypto_box 0.9.1 |  c04e352 | 2026-05-23 |
 | B-019 | Effect-TS 3.10+ wrappers sur tous async (init, storage, sync, telemetry) — pas de throw sauvage | F-018 | ⬜ Pending | Sensitive 90% | effect@3.10+ | — | — |
 | B-020 | Web Workers (sync + crypto + token rebuild) + transferable objects + supervisor restart pattern | F-019 | ⬜ Pending | Sensitive 90% | Worker spec WHATWG | — | — |
 
@@ -1204,7 +1204,7 @@ Layer 2 (Different Context) et Layer 3 (Different Model) reportés post-B-018.
 
 #### Commit
 
-- SHA : TBD (cette session)
+- SHA : c04e352
 - Branch : `main` (direct)
 
 ---
