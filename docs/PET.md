@@ -210,6 +210,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-021a | Adapter React `@morphic/adapter` — `<MorphicProvider>` (run `morphicInit()` on mount, idempotent, SSR-safe) + 6 hooks per-axis `[choice, setter]` (theme/motion/contrast/density/fontSize/fontFamily) + aggregate `useMorphic()` + throws hors provider. Tick-counter context pour reactivité. Tests jsdom + RTL. | F-020 | 🟢 Done | **Standard 80%** ✅ (100% stmts/branches/funcs/lines sur `src/`, 14 tests) | react@19.2.6, @testing-library/react@16.3.2, vitest@4.0.4 (verifie 2026-05-23 via npm) | b6ca04d | 2026-05-23 |
 | B-021b | Démo theermite.com — page `/lab/morphic` intégration drop-in (5 sections, ~16 axes) avec `@morphic/adapter` + `@morphic/engine` via cross-repo `file:` linkage (transitional pre-npm B-026), panneau de réglages live FR/EN/ES, persistance localStorage démontrée (block `morphic-prefs` + refresh button) | F-020 | 🟢 Done | **Standard 80%** ✅ (5/5 tests jsdom + RTL, type-check 0 errors, lint exit 0) | next@16.1.6, next-intl@4.7.0, @testing-library/react@16.3.2, jsdom@29.0.1, vitest@4.0.18 (verifie 2026-05-23 via npm) | 486009c (The-Ermite) | 2026-05-23 |
 | B-021c | Lighthouse CI ≥95 sur démo `/lab/morphic` + Feedback Widget (D25, 2 clics, zero PII) + polish onboarding adaptatif (choix sensoriel AVANT identité) | F-020 | ⬜ Pending | Standard 80% | Lighthouse CI 12.x | — | — |
+| B-021d | SSR-safe Custom Elements `@morphic/engine` 2.0.0-beta.1 — guard `extends HTMLElement` dans `morphic-provider.ts` + `command-palette.ts` (pattern `typeof HTMLElement === 'undefined' ? class {} : HTMLElement`), republish patch Verdaccio, holdout SSR import test (Node sans jsdom). Surfacé par B-026 deploy prod The-Ermite (ReferenceError x2/SSR request). | F-020 | ⬜ Pending | Standard 80% (+ holdout SSR import) | next@16.1.6 SSR sandbox | — | — |
 | B-022 | Telemetry opt-in OpenTelemetry (client JS + Elixir backend) — audit PII regex BLOCKING zero | F-021 | ⬜ Pending | Sensitive 90% | @opentelemetry/api 1.27 | — | — |
 | B-023 | API import GPII Morphic.org + WAI-Adapt — fuzzing Schemathesis sur schemas import | F-022 | ⬜ Pending | Sensitive 90% | GPII Preferences registry 2026 | — | — |
 | B-024a | Export préférences JSON GDPR Art. 20 — 1 clic, schema documenté | F-023 | 🟢 Done | **Critical 95%** (GDPR) ✅ 100% lines/branches/funcs/stmts sur `export-gdpr.ts`, 33 tests dont 2 PBT (fast-check 256+128 runs) + 1 mock défensif | fast-check@4.8.0, vitest@4.1.7 (verifie 2026-05-23 via npm) | 5f87b08 | 2026-05-23 |
@@ -220,7 +221,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-025 | NLNet dossier soumis (deadline 2026-06-01) — dossier `docs/Refonte/NLNet-Dossier-*` finalisé | §11 NLNet | ⬜ Pending | — | NLNet round 2026-06-01 | — | — |
-| B-026 | README NPM `@shinkofa/morphic-engine` + LICENSE AGPL-3.0 + CHANGELOG + CONTRIBUTING | §12 Distribution | ⬜ Pending | — | npm publish workflow | — | — |
+| B-026 | Publish Verdaccio (`@morphic/engine` + `@morphic/adapter` 2.0.0-beta.0) + LICENSE AGPL-3.0 par package + README `@morphic/engine` + bascule The-Ermite `file:` → `^2.0.0-beta.0` + Docker BuildKit secret npmrc (Dockerfile + compose) + déploiement prod theermite.com `/lab/morphic` | §12 Distribution | 🟢 Done | — | npm view + Verdaccio (npm.shinkofa.com) + Kobo BuildKit pattern (verifie 2026-05-24) | morphic-engine pending + da71429 (The-Ermite) + 1cb63ba (Shinkofa-Infra) | 2026-05-24 |
 | B-027 | Pillar article The Ermite « Adaptation morphique vs accessibility overlays (FTC AccessiBe 2024) » + JSON-LD SoftwareApplication | §12 SEO + GEO | ⬜ Pending | — | schema.org SoftwareApplication | — | — |
 | B-028 | Audit final GO/NO-GO Quality-Gates Refonte (4D ≥ 80/100) + Lighthouse ≥95 + axe 0 + Pa11y 0 + cross-browser pass | §11 Compliance | ⬜ Pending | — | — | — | — |
 | B-029 | Release v2.0.0 publique : tag `morphic-v2.0.0`, npm publish, GitHub release, annonce LinkedIn/Discord/Telegram (pipeline The Ermite) | §12 Distribution | ⬜ Pending | — | — | — | — |
@@ -1639,6 +1640,119 @@ Alignement Dignity §g « Le DÉPART » : l'export portable est la condition tec
 - SHA : `5f87b08`
 - Branch : `main` (direct)
 - Fichiers : voir liste ci-dessus + `docs/PET.md` (cette section)
+
+---
+
+### B-026 — Publish Verdaccio + Docker BuildKit + déploiement prod
+
+#### Contexte
+
+Bascule du cross-repo `file:` linkage (B-021b transitionnel) vers consommation `@morphic/*` depuis le registre Verdaccio privé Shinkofa (`https://npm.shinkofa.com/`). Objectif : The-Ermite buildable en Docker isolé (impossible avec `file:` qui sort du contexte de build). Décision Jay 2026-05-24 — Option C (publish + Docker wiring) sur le menu A (mocks) / B (rewrite) / C (publish).
+
+#### Architecture
+
+**1. Publish Verdaccio** (registre existant, JWT 365d créé 2026-04-21 — `VERDACCIO_TOKEN` dans Shinkofa-Vault)
+- 2 packages publiés en `--tag beta` (évite `npm install <pkg>` sans tag d'attraper la beta) :
+  - `@morphic/engine@2.0.0-beta.0` (deps : fuse.js, idb, tweetnacl, y-indexeddb, yjs, zod)
+  - `@morphic/adapter@2.0.0-beta.0` (peerDeps : `@morphic/engine ^2.0.0-beta.0`, react ^19, react-dom ^19)
+- `publishConfig: { access: "restricted", registry: "https://npm.shinkofa.com/" }` dans chaque package.json
+- `workspace:*` deps remplacées par semver avant publish (engine en peerDep adapter, devDep local conservé)
+- `optionalDependencies @morphic/wasm-core` supprimée d'engine (bloquait publish — wasm-core pas encore publié)
+- LICENSE AGPL-3.0 copiée à la racine de chaque package (requirement npm publish)
+- README dédié engine (install, quick start, axes table, persistance, sync, E2E, bundle sizes, NLNet ref)
+
+**2. Routing scope `.npmrc`** (pattern split : routing public, auth privée)
+- `morphic-engine/.npmrc` (committable) : `@morphic:registry=https://npm.shinkofa.com/`
+- `The-Ermite/apps/the-ermite/.npmrc` (committable) : idem
+- `/home/ubuntu/.npmrc` (host, mode 777 — note dette §13) : `//npm.shinkofa.com/:_auth=<token>`
+
+**3. Bascule consommateur The-Ermite**
+- `"@morphic/engine": "file:..."` → `"^2.0.0-beta.0"`
+- `"@morphic/adapter": "file:..."` → `"^2.0.0-beta.0"`
+- `pnpm-lock.yaml` régénéré
+- 5/5 tests `MorphicLab.test.tsx` toujours verts post-bascule (preuve d'équivalence sémantique file:→npm)
+
+**4. Docker BuildKit secret** (pattern copié de `Kobo/docker-compose.prod.yml`)
+- `Dockerfile` stage 1 (`dependencies`) :
+  ```dockerfile
+  COPY package.json pnpm-lock.yaml* .npmrc ./
+  RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+      pnpm install --frozen-lockfile || pnpm install
+  ```
+- `compose/theermite.yml` :
+  ```yaml
+  build:
+    secrets:
+      - npmrc
+  # ...
+  secrets:
+    npmrc:
+      file: /home/ubuntu/.npmrc
+  ```
+- Token jamais bake dans une layer (mount éphémère).
+
+#### Fichiers livrés
+
+| Repo / Fichier | Δ | Description |
+|----------------|---|-------------|
+| `morphic-engine/.npmrc` | +2 | Routing scope @morphic vers Verdaccio (committable) |
+| `morphic-engine/packages/engine/LICENSE` | +674 | AGPL-3.0 copié de root |
+| `morphic-engine/packages/adapter/LICENSE` | +674 | AGPL-3.0 copié de root |
+| `morphic-engine/packages/engine/README.md` | +~150 | README NPM (install/quick start/axes/bundles/NLNet) |
+| `morphic-engine/packages/engine/package.json` | ~ | publishConfig restricted + auteur/repo/keywords/homepage, suppress optionalDeps wasm-core |
+| `morphic-engine/packages/adapter/package.json` | ~ | publishConfig + peerDep engine `^2.0.0-beta.0`, remove `private: true`, devDep workspace conservée |
+| `The-Ermite/apps/the-ermite/.npmrc` | +2 | Routing scope |
+| `The-Ermite/apps/the-ermite/package.json` | ~ | file: → ^2.0.0-beta.0 (engine + adapter) |
+| `The-Ermite/apps/the-ermite/pnpm-lock.yaml` | ~ | Régénéré avec deps Verdaccio |
+| `The-Ermite/apps/the-ermite/Dockerfile` | +6/-2 | COPY .npmrc + `--mount=type=secret` stage 1 |
+| `Shinkofa-Infra/compose/theermite.yml` | +6 | `secrets: [npmrc]` build + top-level `secrets:` block |
+
+#### Tests / Preuves d'exécution
+
+| Test | Résultat |
+|------|----------|
+| `npm view @morphic/engine@2.0.0-beta.0 --registry https://npm.shinkofa.com/` | OK (visible) |
+| `npm view @morphic/adapter@2.0.0-beta.0 --registry https://npm.shinkofa.com/` | OK (visible) |
+| The-Ermite `pnpm install` post-bascule (registre Verdaccio) | OK, lockfile cohérent |
+| The-Ermite `pnpm test src/app/[locale]/(public)/lab/morphic/` | 5 passed / 5 |
+| `DOCKER_BUILDKIT=1 docker compose -f compose/theermite.yml build the-ermite` | OK (30.9s, image `shinkofa-prod-the-ermite:latest`) |
+| `docker compose up -d the-ermite` | OK, container healthy en 21s |
+| `curl https://theermite.com/api/health` | 200 |
+| `curl -L https://theermite.com/fr/lab/morphic` | 200 (307 redirect locale → 200 sur `/lab/morphic`) avec contenu "Morphic" rendu |
+| `curl https://theermite.com/api/admin/articles` | 405 (Method Not Allowed — endpoint POST-only, **pas une régression auth**) |
+
+#### Erreurs rencontrées
+
+1. **Misconception initiale (Takumi)** : j'ai proposé "créer une npm org publique" avant de vérifier l'état Vault. Jay corrigé : « Je pensais que nous avions déjà publié des packages ». Investigation → Verdaccio existait + `@shinkofa/ui@0.2.3` déjà publié. Pivot du plan : pas de création d'org, réutilisation Verdaccio.
+2. **`pnpm -r build` failed wasm-core** (`wasm-pack: not found`). Contourné : build séparé `pnpm --filter @morphic/engine build` puis `pnpm --filter @morphic/adapter build`. Pas bloquant — wasm-core hors scope publish.
+3. **`optionalDependencies workspace:*`** bloquait `npm publish`. Suppression de la ligne dans engine package.json (wasm-core sera ajouté en optional après B-018 + publish wasm).
+4. **`workspace:*` peerDep adapter** : remplacé par `^2.0.0-beta.0` pour publish. `devDependencies workspace:*` conservée pour dev local (build adapter contre engine source).
+5. **Reformulate-gate hook BLOCKED** multiples fois (Edits multi-fichiers même tour) → REFORMULATION émise avant chaque retry. Comportement attendu.
+6. **Veille-check hook BLOCKED** sur Edit `The-Ermite/package.json` (Layer B : deps manifest = sensitive trigger, seul `[VEILLE]` accepté) → marker explicite `[VEILLE] @morphic/engine + @morphic/adapter@2.0.0-beta.0 verifie 2026-05-24 via npm view`.
+7. **Bug SSR découvert post-deploy** : `ReferenceError: HTMLElement is not defined` x2 par requête SSR Next.js. Root cause : `morphic-provider.ts:38` + `command-palette.ts:325` font `extends HTMLElement` à top-level → throw sous Node (pas de DOM). Page rend quand même 200 (Next gère gracefully). **Tracé en B-021d** (séparation validée par Jay), pas bloquant pour B-026.
+
+#### Décisions
+
+- **Verdaccio plutôt que npm public** : packages restent privés (Shinkofa scope + access:restricted) jusqu'à release publique formelle (B-029). Aligne avec stratégie L2 "magnétique pas push" — sortie publique sera un événement (NLNet + LinkedIn + release notes).
+- **`--tag beta`** : prévient `npm install @morphic/engine` (sans tag) de récupérer la beta. Commit explicite `@2.0.0-beta.0` requis côté consommateur.
+- **Pattern BuildKit secret aligné Kobo** : un seul pattern multi-projet pour npm auth en build Docker. Évite divergence d'implémentation.
+- **`.npmrc` split** : routing committable (public, scope routing) + auth host (private, jamais commit). Conformité Confidentiality §X1.
+- **B-021d créé** : séparer SSR fix du deploy B-026. Le deploy est validé fonctionnellement ; le fix SSR mérite sa propre brick avec republish patch (`2.0.0-beta.1`) + holdout test Node SSR import.
+
+#### Dette identifiée (PET §13)
+
+- `/home/ubuntu/.npmrc` mode `777` (devrait être `600`). Lecture par n'importe quel user du VPS = exposition token Verdaccio. À corriger hors brick (5S Seiketsu).
+
+#### Commit
+
+- SHA morphic-engine : pending (sera ajouté avec ce backfill PET)
+- SHA The-Ermite : `da71429` (Dockerfile BuildKit) + `7e909a1` (package.json + .npmrc) + `486009c` (B-021b démo, pré-existant)
+- SHA Shinkofa-Infra : `1cb63ba` (compose secrets)
+- Branch : `main` (3 repos)
+
+#### Statut
+
+🟢 Done — `@morphic/engine` + `@morphic/adapter` 2.0.0-beta.0 LIVE sur Verdaccio, consommés par The-Ermite en prod via Docker BuildKit secret. Démo `/lab/morphic` rendue sur https://theermite.com/lab/morphic (HTTP 200, container healthy). Follow-up B-021d ouvert pour bug SSR HTMLElement.
 
 ---
 
