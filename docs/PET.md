@@ -207,7 +207,9 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-021 | Démo theermite.com — intégration drop-in (5 lignes) + Lighthouse CI ≥95 sur démo | F-020 | ⬜ Pending | Standard 80% | Next.js 16 The Ermite stack | — | — |
+| B-021a | Adapter React `@morphic/adapter` — `<MorphicProvider>` (run `morphicInit()` on mount, idempotent, SSR-safe) + 6 hooks per-axis `[choice, setter]` (theme/motion/contrast/density/fontSize/fontFamily) + aggregate `useMorphic()` + throws hors provider. Tick-counter context pour reactivité. Tests jsdom + RTL. | F-020 | 🟢 Done | **Standard 80%** ✅ (100% stmts/branches/funcs/lines sur `src/`, 14 tests) | react@19.2.6, @testing-library/react@16.3.2, vitest@4.0.4 (verifie 2026-05-23 via npm) | b6ca04d | 2026-05-23 |
+| B-021b | Démo theermite.com — page `/lab/morphic` intégration drop-in (5 lignes) avec `@morphic/adapter` + `@morphic/engine`, panneau de réglages live, persistance localStorage démontrée | F-020 | ⬜ Pending | Standard 80% | Next.js 16 The Ermite stack | — | — |
+| B-021c | Lighthouse CI ≥95 sur démo `/lab/morphic` + Feedback Widget (D25, 2 clics, zero PII) + polish onboarding adaptatif (choix sensoriel AVANT identité) | F-020 | ⬜ Pending | Standard 80% | Lighthouse CI 12.x | — | — |
 | B-022 | Telemetry opt-in OpenTelemetry (client JS + Elixir backend) — audit PII regex BLOCKING zero | F-021 | ⬜ Pending | Sensitive 90% | @opentelemetry/api 1.27 | — | — |
 | B-023 | API import GPII Morphic.org + WAI-Adapt — fuzzing Schemathesis sur schemas import | F-022 | ⬜ Pending | Sensitive 90% | GPII Preferences registry 2026 | — | — |
 | B-024a | Export préférences JSON GDPR Art. 20 — 1 clic, schema documenté | F-023 | ⬜ Pending | **Critical 95%** (GDPR) | — | — | — |
@@ -1400,6 +1402,84 @@ Standard 80% target **largement dépassé** (cible Standard = 80%, atteint 100% 
 - SHA : `a83138c`
 - Branch : `main` (direct)
 - Fichiers modifiés : `packages/engine/src/font-family.ts` (nouveau), `packages/engine/tests/font-family.test.ts` (nouveau), `packages/engine/src/tokens.ts`, `packages/engine/src/init.ts`, `packages/engine/src/index.ts`
+
+---
+
+### B-021a — React adapter `@morphic/adapter` (MorphicProvider + hooks)
+
+#### Contexte
+
+CDC F-020 prévoit une démo `theermite.com` qui prouve l'intégration drop-in (5 lignes). Avant la démo (B-021b) et la mesure Lighthouse + Feedback Widget (B-021c), il faut un adapter React isolément testable que la démo puisse importer. Décision Jay 2026-05-23 : splitter B-021 en trois sous-bricks (B-021a code adapter ici dans le repo morphic-engine, B-021b page démo dans le repo The-Ermite, B-021c polish + Lighthouse).
+
+Le repo morphic-engine n'a qu'un seul adapter pour le moment (React). Les adapters Vanilla / Astro / Web Components restent différés (CDC §4 stack-overload — pas dans le scope Refonte).
+
+#### Architecture
+
+| Concept | Choix | Pourquoi |
+|---------|-------|----------|
+| Réactivité | React Context + tick counter | Zero dépendance externe. Chaque setter bump le tick, les hooks re-lisent les getters engine. Idiomatique React, suffisant pour le scope (préférences manuelles, pas de stream temps réel). |
+| Hooks per-axis | `[choice, setter]` tuple | Convention `useState`-like, immédiatement familier. Setter = wrapper qui appelle engine + bump. |
+| Hook aggregate | `useMorphic()` snapshot | Cas debug / pages internes (`MorphicDebug`). Read-only. |
+| SSR | `'use client'` + `useEffect` pour init | Compatible Next.js 16 App Router. Le head-read engine reste recommandé pour zero-flash ; le provider est le filet pour mounts client-only. |
+| Hors provider | Throw `Error` explicite | Échec bruyant > silencieux. Message dit quoi faire (« wrap your app with <MorphicProvider> »). |
+| Idempotence init | Engine init est déjà idempotent (re-lit localStorage / media queries) | Le provider peut être monté plusieurs fois sans effet de bord. |
+
+#### Tests post (RED → GREEN)
+
+| Fichier | Tests | Couverture |
+|---------|-------|------------|
+| `tests/MorphicProvider.test.tsx` | 4 — renders children unchanged, runs morphicInit on mount (DOM `data-morphic-theme` set), reads existing localStorage preferences, idempotent on multiple mounts | — |
+| `tests/useMorphic.test.tsx` | 10 — throws hors provider, get/set ×6 axes (theme/motion/contrast/density/fontSize/fontFamily) avec re-render après setter, aggregate `useMorphic()` retourne snapshot complet | — |
+| **Total** | **14 tests** | **100% stmts / 100% branches / 100% funcs / 100% lines** sur `packages/adapter/src/` |
+
+Vitest exit code 0 ; coverage v8 thresholds (lines/funcs/branches/stmts 80%) tous dépassés.
+
+#### Preuves
+
+- `pnpm exec vitest run` depuis `packages/adapter/` → 14/14 passants en ~2s
+- `pnpm exec vitest run --coverage` → V8 reporter confirme 100% sur les 3 fichiers source (`MorphicProvider.tsx`, `useMorphic.ts`, `index.ts`)
+- `pnpm exec tsc -p tsconfig.json` → build clean, `dist/` produit (`.js` + `.d.ts` + `.map` pour les 3 modules)
+- `pnpm exec biome check packages/adapter/` → 0 erreur, 0 warning
+
+#### Erreurs rencontrées + résolutions
+
+| # | Erreur | Cause | Fix |
+|---|--------|-------|-----|
+| 1 | `React.act is not a function` sur 14/14 tests dès le premier `render()` | React 19.2.6 `cjs/react.production.js` n'exporte **pas** `act` ; seul `cjs/react.development.js` le fait. Vitest forks n'héritaient pas de `NODE_ENV=test` du parent → React résolvait `production`. Vérifié par `grep -c "exports.act\b"` (0 prod / 1 dev) et `NODE_ENV=test node -e ...`. | Ajout `env: { NODE_ENV: 'test' }` dans `test` config de `vite.config.ts`. |
+| 2 | Biome lint 4 erreurs (import ordering + format `package.json`) | Imports manuels non triés ; package.json indentation tab vs 2-spaces | `pnpm exec biome check --write packages/adapter/` (autofix). Aucune sémantique modifiée. |
+| 3 | `pnpm run test` depuis racine recursait dans `packages/wasm-core` (cargo absent local) | Workspace script récursif | Run depuis `packages/adapter/` uniquement pour B-021a. CI configurera le filtre `--filter @morphic/adapter`. |
+| 4 | Hook `reformulate-gate` bloquait Write multi-fichiers | Sécurité méthodo (≥2 fichiers/turn) | Emission marker REFORMULATION numéroté avant chaque Write. Aucune perte de scope. |
+| 5 | Hook `pre-code-veille-check` bloquait `useMorphic.ts` (nouvel import `react`) | Layer B (nouveau dependency external) | Marker `[VEILLE] react@19.2.6 verifie 2026-05-23 via npm` émis. |
+
+#### Décisions vs. demande initiale (B-021 monolithique)
+
+| Demande CDC B-021 (avant split) | Décision B-021a |
+|---|---|
+| Démo theermite.com 5 lignes | Déféré à B-021b (repo The-Ermite) — adapter requis comme prérequis |
+| Lighthouse CI ≥95 | Déféré à B-021c (mesure ne s'applique qu'à la page déployée) |
+| Feedback Widget D25 | Déféré à B-021c |
+| Adapter React utilisable par démo | ✅ Livré ici |
+
+Le splitting permet à B-021a d'être testable isolément (jsdom + RTL) sans dépendre du repo externe The-Ermite, et donne 3 unités de commit propres avec coverage chiffrée par couche.
+
+#### Fichiers livrés
+
+- `packages/adapter/package.json` — `@morphic/adapter@2.0.0-alpha.0`, peerDeps `react ^19 / react-dom ^19 / @morphic/engine workspace:*`
+- `packages/adapter/tsconfig.json` — extends `tsconfig.base.json`, `jsx: react-jsx`
+- `packages/adapter/vite.config.ts` — pool `forks` (maxForks 2), `NODE_ENV=test`, coverage v8 thresholds 80%
+- `packages/adapter/tests/setup.ts` — jest-dom matchers + cleanup + DOM reset entre tests
+- `packages/adapter/tests/MorphicProvider.test.tsx` — 4 tests
+- `packages/adapter/tests/useMorphic.test.tsx` — 10 tests
+- `packages/adapter/src/MorphicProvider.tsx` — provider + context + tick
+- `packages/adapter/src/useMorphic.ts` — 6 hooks per-axis + aggregate + guard
+- `packages/adapter/src/index.ts` — barrel export + `VERSION = '2.0.0-alpha.0'`
+- `packages/adapter/README.md` — API documentation (Next.js 16 quick start, hooks signatures, contract, coverage)
+
+#### Commit
+
+- SHA : `b6ca04d`
+- Branch : `main` (direct)
+- Fichiers : voir liste ci-dessus + `docs/PET.md` (cette section)
 
 ---
 
