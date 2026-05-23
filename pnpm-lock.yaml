@@ -65,6 +65,10 @@ importers:
       vitest:
         specifier: ^4.0.0
         version: 4.1.7(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1)(vite@8.0.14)
+    optionalDependencies:
+      '@morphic/wasm-core':
+        specifier: workspace:*
+        version: link:../wasm-core
 
   packages/wasm-core: {}
 
