@@ -199,7 +199,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-018 | Rust→WASM `morphic-wasm-core` : NaCl box (crypto_box 0.9.1) + wasm-bridge async loader + tweetnacl fallback + proptest 4096 cases | F-017 | 🟢 Done | **Critical 95%** ✅ (100% stmts/funcs/lines, 91.66% branches) | wasm-pack 0.13.1, wasm-bindgen 0.2.122, crypto_box 0.9.1 |  c04e352 | 2026-05-23 |
-| B-019 | Effect-TS 3.21.2 wrappers Storage + Crypto bridge via subpath `@morphic/engine/effects` (opt-in, peerDep optional) — TaggedError typés (StorageError + CryptoError). Init/sync/telemetry **scope-réduits** (voir §7). | F-018 | 🟢 Done | **Sensitive 90%** ✅ (96.29% stmts, 100% branches, 95% funcs, 96.15% lines sur `src/effects/`) | effect@3.21.2 (verifie 2026-05-23) | _pending_ | 2026-05-23 |
+| B-019 | Effect-TS 3.21.2 wrappers Storage + Crypto bridge via subpath `@morphic/engine/effects` (opt-in, peerDep optional) — TaggedError typés (StorageError + CryptoError). Init/sync/telemetry **scope-réduits** (voir §7). | F-018 | 🟢 Done | **Sensitive 90%** ✅ (96.29% stmts, 100% branches, 95% funcs, 96.15% lines sur `src/effects/`) | effect@3.21.2 (verifie 2026-05-23) | 19c4a87 | 2026-05-23 |
 | B-020 | Web Workers (sync + crypto + token rebuild) + transferable objects + supervisor restart pattern | F-019 | ⬜ Pending | Sensitive 90% | Worker spec WHATWG | — | — |
 
 ### Phase 1.5 — Démo + Telemetry + Interop + GDPR (B-021 à B-024)
@@ -1300,9 +1300,9 @@ Ligne non-couverte (storage.ts:73) = catch arrow défensive du wrapper `getStora
 
 #### Commit
 
-- SHA : _pending_ (à backfill post-commit)
+- SHA : 19c4a87
 - Branch : `main` (direct)
-- Incidental hotfix B-017 : commit séparé `fix(engine): e2e-crypto noUncheckedIndexedAccess build error` AVANT B-019.
+- Incidental hotfix B-017 : commit séparé `9762bb6 fix(engine): e2e-crypto uint8ToBase64 noUncheckedIndexedAccess` AVANT B-019.
 
 ---
 
