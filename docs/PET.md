@@ -191,7 +191,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-015 | IndexedDB local-first via `idb` 8.x + schema versioning + quota handling | F-014 | 🟢 Done | **Critical 95%** | idb@8.0.3, fake-indexeddb@6.2.5 | 95d82c8 | 2026-05-23 |
-| B-016 | Yjs CRDT lazy-loaded (~50KB) via dynamic import + Y.Doc + WebSocket provider opt-in | F-015 | ⬜ Pending | **Critical 95%** | yjs@13.6.27+ | — | — |
+| B-016 | Yjs CRDT lazy-loaded (~50KB) via dynamic import + Y.Doc + WebSocket provider opt-in | F-015 | 🟢 Done | **Critical 95%** | yjs@13.6.30, y-indexeddb@9.0.12 | 05036c9 | 2026-05-23 |
 | B-017 | Sync E2E NaCl `box` opt-in : crypto Rust (B-017a) + Phoenix Channel relay (B-017b) | F-016 | ⬜ Pending | **Critical 95%** + mutation 75% | tweetnacl@1.0.3, Phoenix 1.8 | — | — |
 
 ### Phase 1.4 — Tri-layer + Workers + Effects (B-018 à B-020)
@@ -1039,6 +1039,53 @@ Lines        : 100% ( 78/78 )
 #### Commit
 
 - SHA : 95d82c8
+- Branch : `main` (direct)
+
+---
+
+### B-016 — CRDT Sync Engine (Yjs lazy-loaded)
+
+**Statut** : ✅ Done (2026-05-23)
+**CDC ref** : F-015 (CRDT Yjs lazy-loaded ~50KB séparé)
+**Risk level** : **Critical 95%** — atteint 96.72% statements / 92.85% branches / 81.81% functions / 96.72% lines.
+
+#### Architecture
+
+| Composant | Rôle |
+|-----------|------|
+| `yjs@13.6.30` | CRDT library (Y.Doc + Y.Map) |
+| `y-indexeddb@9.0.12` | Persistance IDB du Y.Doc |
+| Lazy-loading | `import('yjs')` dynamique — 0 KB si opt-out |
+| Y.Map('prefs') | Preferences comme CRDT map (last-writer-wins par clé) |
+| `encodeStateAsUpdate` / `applySyncUpdate` | Sérialisation/merge pour sync cross-device (B-017) |
+
+#### Tests (35 tests)
+
+| Catégorie | Tests | Notes |
+|-----------|-------|-------|
+| Constants | 3 | DB name, marker, events, states |
+| createSyncEngine | 4 | Création, custom docName, double-init throws, recreation |
+| destroySyncEngine | 3 | Destroy, safe si rien, idempotent |
+| getSyncEngineState | 2 | Idle default, active avec key count |
+| setSyncedPreference | 5 | Set, overwrite, multiple, throws si inactif/destroyed |
+| getSyncedPreferences | 2 | Empty, throws si inactif |
+| applySyncUpdate | 3 | Remote merge, throws si inactif, invalid update safe |
+| Lazy loading | 1 | Module importable sans charger Yjs |
+| MC/DC | 5 | Key vide, value null/undefined, update non-Uint8Array |
+| Edge cases | 3 | Unicode, long values, persist across destroy/recreate via IDB |
+| PBT (fast-check) | 4 | Roundtrip, CRDT merge, type rejection |
+
+#### Erreurs rencontrées
+
+| Erreur | Cause | Solution |
+|--------|-------|---------|
+| Yjs `applyUpdate` indisponible sync | Dynamic import = pas d'accès synchrone au module | Capture `Y.applyUpdate` et `Y.encodeStateAsUpdate` comme refs pendant `createSyncEngine()` |
+| `applySyncUpdate(new Uint8Array([0,0,0]))` ne throw pas | Yjs ignore silencieusement les updates malformés | Test adapté : vérifier que le doc reste intact (pas de corruption) |
+| Full suite 600 tests failed | `npx vitest run` lancé depuis root (pas de jsdom env) | Toujours lancer depuis `packages/engine/` |
+
+#### Commit
+
+- SHA : 05036c9
 - Branch : `main` (direct)
 
 ---
