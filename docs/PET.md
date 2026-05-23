@@ -99,7 +99,10 @@ Toute fonction listée Critical (§7 CDC) doit contenir ≥ 2 assertions défens
 | `morphic_encrypt_box()` | `crates/wasm-core/src/crypto.rs` | nonce length 24 + key length 32 + nonce CSPRNG-derived | À implémenter B-017 |
 | `morphicInit()` | `packages/engine/src/init.ts` | try/catch localStorage + try/catch JSON.parse + typeof/null/Array check + enum validation | ✅ Done B-004 (69941b4) |
 | `safeValidatePrefs()` | `packages/engine/src/tokens.ts` | safeParse never throws + non-object rejected + unknown enum rejected + unknown props stripped | ✅ Done B-005 (e052f76) |
-| `morphic_idb_persist()` | `packages/engine/src/storage/idb.ts` | quota check + schema version match + value sanitized | À implémenter B-015 |
+| `persistPreferences()` | `packages/engine/src/idb-storage.ts` | prefs must be non-null non-array plain object (TypeError) + IDB transaction auto-abort on error | 🟢 B-015 |
+| `loadPreferences()` | `packages/engine/src/idb-storage.ts` | missing key returns null (not undefined, not throw) | 🟢 B-015 |
+| `migrateFromLocalStorage()` | `packages/engine/src/idb-storage.ts` | does NOT overwrite existing IDB data + validates JSON plain object | 🟢 B-015 |
+| `openMorphicDB()` | `packages/engine/src/idb-storage.ts` | schema versioned via onupgradeneeded + singleton pattern | 🟢 B-015 |
 | `morphic_yjs_apply_update()` | `packages/engine/src/storage/crdt.ts` | update validated WASM AVANT apply + Y.Doc not null | À implémenter B-016 |
 | `morphic_onboarding_step_render()` | `packages/engine/src/onboarding/step.ts` | step.identity_collected === false BEFORE sensoriel done | À implémenter B-013 |
 | `MorphicChannel.handle_in(:sync, ...)` | `sk_morphic/lib/channels/sync.ex` | binary ciphertext only + no plaintext logged + topic authorized | À implémenter B-017b |
@@ -187,7 +190,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
-| B-015 | IndexedDB local-first via `idb` 8.x + schema versioning + quota handling | F-014 | ⬜ Pending | **Critical 95%** | idb@8.x, IDB browser quotas 2026 | — | — |
+| B-015 | IndexedDB local-first via `idb` 8.x + schema versioning + quota handling | F-014 | 🟢 Done | **Critical 95%** | idb@8.0.3, fake-indexeddb@6.2.5 | 95d82c8 | 2026-05-23 |
 | B-016 | Yjs CRDT lazy-loaded (~50KB) via dynamic import + Y.Doc + WebSocket provider opt-in | F-015 | ⬜ Pending | **Critical 95%** | yjs@13.6.27+ | — | — |
 | B-017 | Sync E2E NaCl `box` opt-in : crypto Rust (B-017a) + Phoenix Channel relay (B-017b) | F-016 | ⬜ Pending | **Critical 95%** + mutation 75% | tweetnacl@1.0.3, Phoenix 1.8 | — | — |
 
@@ -989,6 +992,54 @@ Lines        : 100% ( 78/78 )
 - SHA : b0bfd3e
 - Branch : `main` (direct)
 - CI : à vérifier
+
+---
+
+### B-015 — IndexedDB Persistence local-first
+
+**Statut** : ✅ Done (2026-05-23)
+**CDC ref** : F-014 (Persistence IndexedDB local-first)
+**Risk level** : **Critical 95%** — atteint 94.82% statements / 93.1% branches / 100% functions / 94.73% lines.
+
+#### Architecture
+
+| Composant | Rôle |
+|-----------|------|
+| `idb@8.0.3` | Wrapper IndexedDB (Jake Archibald, ~1.2KB brotli, 0 CVE) |
+| `fake-indexeddb@6.2.5` | Polyfill IDB pour jsdom/vitest (dev only) |
+| Write-through | Chaque écriture IDB met aussi à jour localStorage (zero-flash B-004) |
+| Migration | localStorage → IDB one-time (seulement si IDB vide) |
+| Singleton | `openMorphicDB()` réutilise la même connexion |
+
+#### Tests (45 tests)
+
+| Catégorie | Tests | Notes |
+|-----------|-------|-------|
+| Constants | 4 | Valeurs exportées |
+| openMorphicDB | 3 | Ouverture, singleton, object store |
+| persistPreferences | 5 | Write IDB + localStorage, input validation |
+| loadPreferences | 3 | Load, null si vide, ignore non-objet |
+| clearPreferences | 2 | IDB + localStorage nettoyés |
+| migrateFromLocalStorage | 6 | Migration one-time, pas d'overwrite |
+| getStorageStatus | 2 | IDB disponible, persisted |
+| closeMorphicDB | 2 | Ferme connexion, safe si jamais ouvert |
+| MC/DC | 7 | isPlainObject branches (null, array, string, number, undefined, object, boolean) |
+| Edge cases | 5 | Persist null/array/string throws, load corrupt, multi persist |
+| PBT (fast-check) | 6 | Round-trip, idempotency, migration only-if-empty, type rejection, multi-key, clear-load-null |
+
+#### Erreurs rencontrées
+
+| Erreur | Cause | Solution |
+|--------|-------|---------|
+| `HTMLElement is not defined` | Test lancé depuis root sans jsdom env | Lancer depuis `packages/engine/` où vite.config.ts active jsdom |
+| 3 tests failing après afterEach | `closeMorphicDB()` ne purge pas les données fake-indexeddb | Ajout `deleteIdb()` helper : `indexedDB.deleteDatabase(MORPHIC_DB_NAME)` |
+| `vi.spyOn(idbStorage, 'openMorphicDB')` inefficace | Spy sur export ne capture pas les appels internes au module | Approche abandonnée, mock `globalThis.indexedDB` à la place |
+| Test "none" storage status impossible | `idb` library + fake-indexeddb = IDB toujours disponible | Dead code structurel (lignes 202, 239, 255) — SSR guards, même pattern B-108/B-111 |
+
+#### Commit
+
+- SHA : 95d82c8
+- Branch : `main` (direct)
 
 ---
 
