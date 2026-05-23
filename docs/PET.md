@@ -221,7 +221,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-025 | NLNet dossier soumis (deadline 2026-06-01) — dossier `docs/Refonte/NLNet-Dossier-*` finalisé | §11 NLNet | ⬜ Pending | — | NLNet round 2026-06-01 | — | — |
-| B-026 | Publish Verdaccio (`@morphic/engine` + `@morphic/adapter` 2.0.0-beta.0) + LICENSE AGPL-3.0 par package + README `@morphic/engine` + bascule The-Ermite `file:` → `^2.0.0-beta.0` + Docker BuildKit secret npmrc (Dockerfile + compose) + déploiement prod theermite.com `/lab/morphic` | §12 Distribution | 🟢 Done | — | npm view + Verdaccio (npm.shinkofa.com) + Kobo BuildKit pattern (verifie 2026-05-24) | morphic-engine pending + da71429 (The-Ermite) + 1cb63ba (Shinkofa-Infra) | 2026-05-24 |
+| B-026 | Publish Verdaccio (`@morphic/engine` + `@morphic/adapter` 2.0.0-beta.0) + LICENSE AGPL-3.0 par package + README `@morphic/engine` + bascule The-Ermite `file:` → `^2.0.0-beta.0` + Docker BuildKit secret npmrc (Dockerfile + compose) + déploiement prod theermite.com `/lab/morphic` | §12 Distribution | 🟢 Done | — | npm view + Verdaccio (npm.shinkofa.com) + Kobo BuildKit pattern (verifie 2026-05-24) | ef9f3bb + da71429 (The-Ermite) + 1cb63ba (Shinkofa-Infra) | 2026-05-24 |
 | B-027 | Pillar article The Ermite « Adaptation morphique vs accessibility overlays (FTC AccessiBe 2024) » + JSON-LD SoftwareApplication | §12 SEO + GEO | ⬜ Pending | — | schema.org SoftwareApplication | — | — |
 | B-028 | Audit final GO/NO-GO Quality-Gates Refonte (4D ≥ 80/100) + Lighthouse ≥95 + axe 0 + Pa11y 0 + cross-browser pass | §11 Compliance | ⬜ Pending | — | — | — | — |
 | B-029 | Release v2.0.0 publique : tag `morphic-v2.0.0`, npm publish, GitHub release, annonce LinkedIn/Discord/Telegram (pipeline The Ermite) | §12 Distribution | ⬜ Pending | — | — | — | — |
@@ -1745,7 +1745,7 @@ Bascule du cross-repo `file:` linkage (B-021b transitionnel) vers consommation `
 
 #### Commit
 
-- SHA morphic-engine : pending (sera ajouté avec ce backfill PET)
+- SHA morphic-engine : `ef9f3bb` (ce backfill PET)
 - SHA The-Ermite : `da71429` (Dockerfile BuildKit) + `7e909a1` (package.json + .npmrc) + `486009c` (B-021b démo, pré-existant)
 - SHA Shinkofa-Infra : `1cb63ba` (compose secrets)
 - Branch : `main` (3 repos)
