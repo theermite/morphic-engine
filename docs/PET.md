@@ -1556,9 +1556,87 @@ Mock strategy : mock-heavy (engine + adapter mockés) car les 2 paquets portent 
 - 8 files changed, 1350 insertions(+), 3 deletions(-)
 - Push : OK après `git pull --rebase` (remote ahead)
 
+#### Fix 2026-05-24 — Bug visible-adaptation gap
+
+##### Symptôme rapporté (Jay)
+
+Screenshot https://theermite.com/lab/morphic + verbatim : « Je vois la page, je vois les panneaux, mais rien ne fonctionne. J'ai beau appuyer sur les options et sur les boutons, ça ne change absolument rien au site internet. » Confirmé : « il n'y a aucune adaptation morphique qui s'applique à la page internet ».
+
+##### Diagnostic (root cause)
+
+- Engine `@morphic/engine` ship ZÉRO CSS by design (framework-agnostic, host-responsibility — décision B-001 + B-021a).
+- Engine écrit attributs sur `<html>` : `data-morphic-theme|motion|density|font-size|font-family|contrast` + CSS vars (preuve : `packages/engine/src/theme.ts:73-84` confirme `document.documentElement.setAttribute(...)`).
+- La page démo B-021b importait correctement adapter + hooks mais N'AVAIT AUCUN CONSUMER CSS scopé. Clic boutons → localStorage MAJ + attribut posé sur `<html>` correctement → zéro règle CSS pour mapper attribut → adaptation invisible.
+- L'exemple canonique `packages/engine/demo/index.html` contient ~50 lignes de CSS host-side qui démontrent le pattern (`[data-morphic-theme="dark"] { --morphic-bg: #0f0f10; }` etc.) — non répliqué dans The-Ermite.
+
+##### Décision scope
+
+Option A retenue (Jay, validation explicite « Bug B-021b ») : CSS module SCOPÉ sur la page lab uniquement, pas un override global du theme site. Justification : Dignity §b (`rules/Dignity.md`) — la lab est un sandbox démo ; les autres pages The Ermite (Blog, Parcours, Services) doivent garder leur ThemeProvider site intact. Le pattern « morphic prend tout le site » sera la décision d'un futur projet adapter Next.js complet (hors scope B-021).
+
+##### Architecture du fix
+
+| Couche | Fichier | Rôle |
+|--------|---------|------|
+| CSS scopé | `MorphicLab.module.css` (NEW) | Sélecteurs `html[data-morphic-*] .morphicLab { ... }` — limite l'effet au div racine de la lab |
+| Wrap component | `MorphicLab.tsx:104` | `<div className={\`${styles.morphicLab} space-y-10\`}>` au lieu de `<div className="space-y-10">` |
+| Test régression | `__tests__/MorphicLab.test.tsx:181-194` | 6ᵉ test : asserte `className` contient `space-y-10` ET un token CSS Module (longueur > 'space-y-10') |
+
+Axes couverts par les rules CSS scopées :
+
+| Axe | Valeurs | Notes |
+|-----|---------|-------|
+| theme | light, dark, auto, high-contrast, sepia | Tokens `--lab-bg/fg/surface/border` |
+| motion | full (200ms), reduced (50ms), none (0ms + `transition:none!important`) | — |
+| density | compact (0.5rem), comfortable (1.25rem), spacious (2rem) | + override padding sections |
+| fontSize | sm (.875rem), md (1rem), lg (1.125rem), xl (1.25rem) | — |
+| fontFamily | system, serif, atkinson, dyslexic | Atkinson/OpenDyslexic web fonts NON chargés par The Ermite → fallback générique Verdana/Comic Sans (visible mais pas idéal v1) — debt B-021c |
+| contrast | no-preference (filter:none), more (1.25), less (0.85) | — |
+
+##### Tests
+
+| # | Test | Résultat |
+|---|------|----------|
+| 1-5 | Tests B-021b originaux (render, 6 sections, titres, persistance, refresh) | 🟢 5/5 |
+| 6 | `should apply morphic CSS scope className on root div (B-021b bug fix)` | 🟢 1/1 |
+| TS check | `tsc --noEmit` sur fichiers morphic | 🟢 0 erreurs |
+| Lint | `eslint src/app/[locale]/(public)/lab/morphic --max-warnings 0` | 🟢 exit 0 |
+
+##### Preuves prod
+
+- Container `shinkofa_the_ermite_prod` : `Up healthy` après rebuild Docker BuildKit + restart (image rebuild OK, push OK, deploy OK).
+- CSS bundle prod : `https://theermite.com/_next/static/chunks/e8c8d3d134e1c612.css` contient `.MorphicLab-module__QFC6TG__morphicLab` avec TOUTES les règles : 5 themes + 3 motions + 3 densities + 4 fontSizes + 4 fontFamilies + 3 contrasts.
+- Page `https://theermite.com/fr/lab/morphic` retourne HTTP 200 (207 126 bytes).
+- Note : SSR HTML montre un placeholder `animate-pulse` (B-021d ReferenceError `HTMLElement` documenté — `extends HTMLElement` non-guard dans `morphic-provider.ts:38` + `command-palette.ts:325`). Côté client après hydratation, le wrap + className s'appliquent et les attributs `data-morphic-*` triggerent les règles CSS. Validation visuelle finale en navigateur côté Jay.
+
+##### Erreurs rencontrées
+
+| # | Erreur | Cause | Solution |
+|---|--------|-------|----------|
+| 1 | Reformulate-gate hook BLOCKED ~5× | 2+ fichiers édités sans REFORMULATION numérotée par turn | Émettre REFORMULATION + numérotée 4-point avant chaque retry |
+| 2 | Veille-check hook BLOCKED 1× | Marker absent | `[VEILLE-SKIP] motif: hotfix-known-root-cause` (B-021b est une fix de bug Jay-classifié, root cause documentée ci-dessus) |
+| 3 | `tsc` errors hors morphic (Prisma drift sur socialCaptions, generateVideo, article relation) | Pré-existant The-Ermite, hors scope B-021b | Non bloqué (zéro erreur sur fichiers morphic) — debt à traiter brick séparée |
+
+##### Décisions vs. demande initiale
+
+| Demande Jay | Décision |
+|-------------|----------|
+| Faire que les boutons aient un effet visible | ✅ CSS module scopé |
+| Ne pas casser les autres pages | ✅ Scope `.morphicLab` uniquement (Dignity §b) |
+| Fix sous même ID B-021b (pas nouvelle brick) | ✅ Statut 🟢 Done conservé en §6, fix documentée ici en §7 |
+| Font web Atkinson/OpenDyslexic visibles | ⏸ Différé (fallback générique acceptable v1) — debt B-021c |
+
+##### Commit
+
+- SHA : `3dcb075` (The-Ermite repo)
+- Branch : `main`
+- Message : `fix(lab/morphic): B-021b scope CSS module to bind engine attributes`
+- 3 files changed, 201 insertions(+), 1 deletion(-)
+- Push : OK (theermite-gms/The-Ermite `da71429..3dcb075`)
+- Deploy : `shinkofa-prod-the-ermite` image rebuilt + container recreated `Up (healthy)`
+
 #### Statut
 
-🟢 Done — démo accessible à `/lab/morphic` (FR/EN/ES via routing locale). Reste avant release publique : Lighthouse ≥95, Feedback Widget, polish onboarding (B-021c).
+🟢 Done — démo accessible à `/lab/morphic` (FR/EN/ES via routing locale) + fix visible-adaptation 2026-05-24 déployé. Reste avant release publique : Lighthouse ≥95, Feedback Widget, polish onboarding (B-021c).
 
 ---
 
