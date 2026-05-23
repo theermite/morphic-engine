@@ -93,6 +93,21 @@ export {
   validateDwellDelay,
 } from './dwell-click.js';
 export {
+  __resetIdbStateForTests,
+  clearPreferences,
+  closeMorphicDB,
+  getStorageStatus,
+  loadPreferences,
+  MORPHIC_DB_NAME,
+  MORPHIC_DB_VERSION,
+  MORPHIC_IDB_PREFS_KEY,
+  MORPHIC_IDB_STORE_NAME,
+  migrateFromLocalStorage,
+  openMorphicDB,
+  persistPreferences,
+  type StorageStatus,
+} from './idb-storage.js';
+export {
   __resetIdleDetectionStateForTests,
   clearIdleDetection,
   getIdleDetectionState,
@@ -107,21 +122,6 @@ export {
   MORPHIC_IDLE_MARKER,
   setIdleDetection,
 } from './idle-detection.js';
-export {
-  __resetIdbStateForTests,
-  clearPreferences,
-  closeMorphicDB,
-  getStorageStatus,
-  loadPreferences,
-  migrateFromLocalStorage,
-  MORPHIC_DB_NAME,
-  MORPHIC_DB_VERSION,
-  MORPHIC_IDB_PREFS_KEY,
-  MORPHIC_IDB_STORE_NAME,
-  openMorphicDB,
-  persistPreferences,
-  type StorageStatus,
-} from './idb-storage.js';
 export {
   MORPHIC_STORAGE_KEY,
   type MorphicPrefs,
@@ -217,6 +217,24 @@ export {
   type RecoveryPrefsSnapshot,
   type RecoveryProfile,
 } from './recovery-mode.js';
+export {
+  __resetSyncStateForTests,
+  applySyncUpdate,
+  createSyncEngine,
+  destroySyncEngine,
+  getSyncEngineState,
+  getSyncedPreferences,
+  MORPHIC_SYNC_DB_NAME,
+  MORPHIC_SYNC_EVENT_CHANGE,
+  MORPHIC_SYNC_EVENT_ERROR,
+  MORPHIC_SYNC_MARKER,
+  SYNC_ENGINE_STATES,
+  type SyncEngine,
+  type SyncEngineOptions,
+  type SyncEngineState,
+  type SyncEngineStatus,
+  setSyncedPreference,
+} from './sync-engine.js';
 export {
   getTheme,
   type ResolvedTheme,
