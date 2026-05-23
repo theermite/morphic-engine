@@ -58,6 +58,19 @@ export {
   setContrast,
 } from './contrast.js';
 export {
+  __resetCryptoStateForTests,
+  decryptPayload,
+  type EncryptedPayload,
+  encryptPayload,
+  exportPublicKey,
+  generateKeyPair,
+  importPublicKey,
+  type MorphicKeyPair,
+  MORPHIC_CRYPTO_MARKER,
+  MORPHIC_CRYPTO_VERSION,
+  MORPHIC_NONCE_LENGTH,
+} from './e2e-crypto.js';
+export {
   COLOR_VISION_TYPES,
   type ColorVisionCorrection,
   type ColorVisionType,

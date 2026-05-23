@@ -36,6 +36,7 @@
   "dependencies": {
     "fuse.js": "^7.3.0",
     "idb": "8.0.3",
+    "tweetnacl": "1.0.3",
     "y-indexeddb": "9.0.12",
     "yjs": "13.6.30",
     "zod": "4.4.3"
