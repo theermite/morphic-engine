@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./effects": {
+      "types": "./dist/effects/index.d.ts",
+      "import": "./dist/effects/index.js"
     }
   },
   "files": [
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.7",
+    "effect": "3.21.2",
     "fake-indexeddb": "6.2.5",
     "fast-check": "4.8.0",
     "jsdom": "29.1.1",
@@ -43,5 +48,13 @@
   },
   "optionalDependencies": {
     "@morphic/wasm-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.21.2"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
+    }
   }
 }

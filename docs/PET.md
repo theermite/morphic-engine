@@ -199,7 +199,7 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-018 | Rust→WASM `morphic-wasm-core` : NaCl box (crypto_box 0.9.1) + wasm-bridge async loader + tweetnacl fallback + proptest 4096 cases | F-017 | 🟢 Done | **Critical 95%** ✅ (100% stmts/funcs/lines, 91.66% branches) | wasm-pack 0.13.1, wasm-bindgen 0.2.122, crypto_box 0.9.1 |  c04e352 | 2026-05-23 |
-| B-019 | Effect-TS 3.10+ wrappers sur tous async (init, storage, sync, telemetry) — pas de throw sauvage | F-018 | ⬜ Pending | Sensitive 90% | effect@3.10+ | — | — |
+| B-019 | Effect-TS 3.21.2 wrappers Storage + Crypto bridge via subpath `@morphic/engine/effects` (opt-in, peerDep optional) — TaggedError typés (StorageError + CryptoError). Init/sync/telemetry **scope-réduits** (voir §7). | F-018 | 🟢 Done | **Sensitive 90%** ✅ (96.29% stmts, 100% branches, 95% funcs, 96.15% lines sur `src/effects/`) | effect@3.21.2 (verifie 2026-05-23) | _pending_ | 2026-05-23 |
 | B-020 | Web Workers (sync + crypto + token rebuild) + transferable objects + supervisor restart pattern | F-019 | ⬜ Pending | Sensitive 90% | Worker spec WHATWG | — | — |
 
 ### Phase 1.5 — Démo + Telemetry + Interop + GDPR (B-021 à B-024)
@@ -1206,6 +1206,103 @@ Layer 2 (Different Context) et Layer 3 (Different Model) reportés post-B-018.
 
 - SHA : c04e352
 - Branch : `main` (direct)
+
+---
+
+### B-019 — Effect-TS Résilience Layer (Storage + Crypto)
+
+**Risk** : Sensitive (90% coverage cible)
+**CDC ref** : F-018 — Effect-TS résilience, algebraic effects, structured errors
+**Architecture choisie** : opt-in subpath `@morphic/engine/effects` avec `effect` en **peerDependency optionnelle**. Le core (`@morphic/engine`) reste 100% Effect-free → 0 KB Effect dans le bundle des consumers core. Seuls les consumers qui importent `@morphic/engine/effects` payent le bundle Effect (~50 KB).
+
+#### Pourquoi opt-in subpath (pas refonte hard-dep)
+
+Trade-off identifié au Gate 1 (TECHNICAL CHALLENGE) :
+
+| Option | Bundle core | Refacto core | DX consumers | Choix |
+|--------|-------------|--------------|--------------|-------|
+| A. Hard-dep refacto (toutes API → Effect) | +50 KB (~6x engine) | Massif (B-001 à B-018 retouchées) | Breaking pour vanilla/React/Astro adapters | ❌ |
+| B. Opt-in subpath (peerDep optional) | +0 KB | Zéro (core intact) | Choix consumer : core direct OU `/effects` | ✅ |
+
+Décision Jay 2026-05-23 : Option B.
+
+#### Scope effectif vs scope initial CDC
+
+CDC F-018 mentionne « wrappers Effect-TS sur tous async (init, storage, sync, telemetry) ». Scope effectif B-019 = **Storage + Crypto uniquement**. Justifications par module :
+
+| Module CDC | Statut B-019 | Justification |
+|------------|--------------|---------------|
+| Storage (`idb-storage`) | ✅ Wrapped | 5 fonctions async typées → 5 `Effect.tryPromise` avec `StorageError({operation})`. Use-case principal Effect-TS (retry, timeout, structured errors). |
+| Crypto bridge (`wasm-bridge`) | ✅ Wrapped | 2 fonctions : `getCryptoBackend` (total → `never` error), `loadWasmBackend` (partial → `CryptoError`). Démontre les deux signatures Effect. |
+| Init (`init.ts`) | ⏸ Skipped | Init est majoritairement sync (mount, observers). Le seul async (`migrateFromLocalStorage` si applicable) passe par Storage déjà wrappé. Wrapper ajouterait cérémonie sans valeur. |
+| Sync engine (`sync-engine.ts`) | ⏸ Déféré (B-019b si besoin) | CRDT lifecycle (Y.Doc + IndexeddbPersistence + WebSocket) a un cycle de vie complexe (events, observers, cleanup) qui mérite un wrap dédié. Effect Streams + Scope seraient le bon outillage — séparable du présent brick. |
+| Telemetry (B-022) | ⏸ Couvert par B-022 | Le brick télémétrie aura ses propres wrappers — pas de pré-emption. |
+
+Decision recorded dans CDC §Historique de l'intention : « B-019 scope réduit à Storage + Crypto. Init/Sync/Telemetry suivent leurs propres bricks. »
+
+#### Tests post
+
+- `tests/effects/errors.test.ts` — 5 tests (StorageError + CryptoError : `_tag`, `operation`, `cause`, propagation Effect runtime, distinction discriminée)
+- `tests/effects/storage.test.ts` — 10 tests (5 success-path real fake-IDB + 4 failure injection `vi.spyOn(indexedDB,'open')` + 1 note défensive sur `getStorageStatus` total)
+- `tests/effects/crypto.test.ts` — 5 tests (`getCryptoBackend` total via `__setBackendForTesting`, `loadWasmBackend` failure via `vi.doMock('@morphic/wasm-core')` + smoke-check failure)
+
+**Total B-019 tests : 20**. Suite engine complète : 1116 → **1136 passants** (zero régression).
+
+#### Couverture (vitest --coverage)
+
+| Fichier | Statements | Branches | Functions | Lines |
+|---------|------------|----------|-----------|-------|
+| `src/effects/` (dir) | 96.29% | 100% | 95% | 96.15% |
+| `src/effects/errors.ts` | 100% | 100% | 100% | 100% |
+| `src/effects/storage.ts` | 95% | 100% | 93.33% | 95% |
+| `src/effects/crypto.ts` | 100% | 100% | 100% | 100% |
+| `src/effects/index.ts` | 100% | 100% | 100% | 100% |
+
+Ligne non-couverte (storage.ts:73) = catch arrow défensive du wrapper `getStorageStatus`. Le core `getStorageStatus()` est total (catch tous, retourne `{available:false}`) — la catch arrow Effect est défensive contre une évolution future du contrat. Acceptable per PET §5 (defensive assertions).
+
+#### Erreurs rencontrées
+
+1. **`beforeEach` storage test hang (10s timeout, 7 tests fail)** — cause : `indexedDB.deleteDatabase` bloque sur la connexion singleton ouverte par le test précédent. Fix : adopter le pattern `idb-storage.test.ts` (`closeMorphicDB()` AVANT `deleteIdb()` dans `afterEach`). Leçon : toujours mirrorer les patterns setup/teardown existants quand on partage l'infra (fake-IDB singleton).
+2. **Mauvais nom de clé localStorage dans test migration** — utilisé `morphic-engine-prefs` au lieu de `morphic-prefs` (constante `MORPHIC_STORAGE_KEY` dans `init.ts`). Fix : lecture directe de la source de vérité avant écriture du test.
+3. **B-017 build regression découverte** — `src/e2e-crypto.ts` lignes 233 + 242 : `bytes[i]` typé `number | undefined` sous `noUncheckedIndexedAccess`, tsc échoue. Vitest passait (esbuild = transpile-only). Fix incidental dans un commit séparé avant B-019 — voir commit `<hotfix-sha>`. Leçon : Gate 8 (Verify) de B-017 doit inclure `pnpm build`, pas seulement `pnpm test`.
+
+#### Defensive assertions (PET §5, ≥2 par fonction critique)
+
+| Wrapper | Assertion 1 | Assertion 2 |
+|---------|-------------|-------------|
+| `Storage.persistPreferences` | `Effect.tryPromise({try, catch})` — aucun throw ne fuit untyped | `operation: 'persist'` préserve la sémantique pour télémétrie B-022 |
+| `Storage.loadPreferences` | idem | `operation: 'load'` distinct |
+| `Storage.clearPreferences` | idem | `operation: 'clear'` distinct |
+| `Storage.migrateFromLocalStorage` | idem | `operation: 'migrate'` distinct |
+| `Storage.getStorageStatus` | idem | `operation: 'status'` (catch défensive, core total) |
+| `Crypto.getCryptoBackend` | `Effect.promise(...)` — signature `never` (core swallow garanti) | Contract documenté en header |
+| `Crypto.loadWasmBackend` | `Effect.tryPromise` — `CryptoError({operation:'load-wasm'})` | `cause` préservé verbatim (smoke check OU load) |
+
+#### Décisions de scope
+
+| Demande CDC | Décision B-019 |
+|-------------|----------------|
+| Wrappers init | Skipped — init mostly sync, Storage déjà wrappé pour la seule async |
+| Wrappers sync-engine | Déféré à B-019b si valeur démontrée (CRDT lifecycle complexe) |
+| Wrappers telemetry | Couvert par B-022 (séparation propre) |
+| Retry/timeout composable | Disponible via `Effect.retry` / `Effect.timeout` sur tous nos wrappers — pas de wrapper ad hoc à écrire |
+| Telemetry bridge B-022 | Out of scope B-019 |
+
+#### Bidirectional traceability
+
+| Requirement CDC F-018 | Test |
+|-----------------------|------|
+| Pas de throw sauvage | `tests/effects/*.test.ts` — chaque failure path teste `Exit.isFailure` |
+| Errors typés (discriminable) | `tests/effects/errors.test.ts` — `_tag` distinct |
+| `cause` préservé | `tests/effects/errors.test.ts` — `expect(err.cause).toBe(cause)` |
+| `operation` distinct par fonction | `tests/effects/storage.test.ts` — assertion `.operation === 'persist'` / `'load'` / `'clear'` / `'migrate'` |
+| 0 KB Effect dans core | `grep "from 'effect'" src/` → 3 fichiers, tous sous `src/effects/` |
+
+#### Commit
+
+- SHA : _pending_ (à backfill post-commit)
+- Branch : `main` (direct)
+- Incidental hotfix B-017 : commit séparé `fix(engine): e2e-crypto noUncheckedIndexedAccess build error` AVANT B-019.
 
 ---
 
