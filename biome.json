@@ -7,7 +7,15 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/coverage", "!**/target", "!docs"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/coverage",
+      "!**/target",
+      "!docs",
+      "!packages/engine/demo"
+    ]
   },
   "formatter": {
     "enabled": true,

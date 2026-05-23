@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr" data-morphic-theme="auto" data-morphic-motion="auto" data-morphic-density="comfortable" data-morphic-font-size="md" data-morphic-contrast="auto">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Morphic Engine — Démo interactive</title>
+  <style>
+    :root {
+      /* Default fallback variables (overridden by morphicInit). */
+      --morphic-bg: #fafafa;
+      --morphic-fg: #1a1a1a;
+      --morphic-accent: #3b82f6;
+      --morphic-surface: #ffffff;
+      --morphic-border: #e5e5e5;
+      --morphic-radius: 8px;
+      --morphic-gap: 16px;
+      --morphic-font-size-base: 16px;
+      --morphic-motion-duration: 200ms;
+    }
+
+    /* Theme mapping */
+    [data-morphic-theme="dark"] {
+      --morphic-bg: #0f0f10;
+      --morphic-fg: #f5f5f5;
+      --morphic-surface: #1a1a1c;
+      --morphic-border: #2a2a2e;
+    }
+    [data-morphic-theme="high-contrast"] {
+      --morphic-bg: #000000;
+      --morphic-fg: #ffffff;
+      --morphic-surface: #000000;
+      --morphic-border: #ffffff;
+      --morphic-accent: #ffff00;
+    }
+    [data-morphic-theme="sepia"] {
+      --morphic-bg: #f4ecd8;
+      --morphic-fg: #3b2f1e;
+      --morphic-surface: #f9f2dd;
+      --morphic-border: #d6c8a8;
+      --morphic-accent: #8b5a2b;
+    }
+
+    /* Motion mapping */
+    [data-morphic-motion="reduced"], [data-morphic-motion="none"] {
+      --morphic-motion-duration: 0ms;
+    }
+
+    /* Density mapping */
+    [data-morphic-density="compact"] { --morphic-gap: 8px; }
+    [data-morphic-density="comfortable"] { --morphic-gap: 16px; }
+    [data-morphic-density="spacious"] { --morphic-gap: 24px; }
+
+    /* Font-size mapping */
+    [data-morphic-font-size="sm"] { --morphic-font-size-base: 14px; }
+    [data-morphic-font-size="md"] { --morphic-font-size-base: 16px; }
+    [data-morphic-font-size="lg"] { --morphic-font-size-base: 18px; }
+    [data-morphic-font-size="xl"] { --morphic-font-size-base: 20px; }
+
+    /* Contrast mapping */
+    [data-morphic-contrast="more"] {
+      --morphic-fg: #000000;
+      --morphic-bg: #ffffff;
+      --morphic-border: #000000;
+      --morphic-accent: #0000ff;
+    }
+    [data-morphic-contrast="more"][data-morphic-theme="dark"] {
+      --morphic-fg: #ffffff;
+      --morphic-bg: #000000;
+      --morphic-border: #ffffff;
+      --morphic-accent: #ffff00;
+    }
+    [data-morphic-contrast="less"] {
+      --morphic-fg: #555;
+      --morphic-bg: #efefef;
+      --morphic-border: #ddd;
+    }
+    [data-morphic-contrast="less"][data-morphic-theme="dark"] {
+      --morphic-fg: #aaa;
+      --morphic-bg: #1a1a1c;
+      --morphic-border: #2a2a2e;
+    }
+
+    /* Motion-visible demo box */
+    .motion-box {
+      width: 60px;
+      height: 60px;
+      background: var(--morphic-accent);
+      border-radius: var(--morphic-radius);
+      animation: motion-pulse 1.2s ease-in-out infinite alternate;
+      animation-duration: calc(var(--morphic-motion-duration) * 6);
+      margin-top: 8px;
+    }
+    @keyframes motion-pulse {
+      from { transform: translateX(0) scale(1); opacity: 1; }
+      to   { transform: translateX(200px) scale(1.3); opacity: 0.5; }
+    }
+    [data-morphic-motion="none"] .motion-box,
+    [data-morphic-motion="reduced"] .motion-box {
+      animation: none;
+    }
+
+    /* Color-swatches for CVD */
+    .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 8px; }
+    .swatch { height: 36px; border-radius: 4px; font-size: 0.7em; color: #fff; display: flex; align-items: center; justify-content: center; text-shadow: 0 0 2px rgba(0,0,0,0.7); }
+
+    /* Click / dwell targets */
+    .test-target {
+      display: inline-block;
+      padding: 16px 24px;
+      background: var(--morphic-accent);
+      color: var(--morphic-bg);
+      border-radius: var(--morphic-radius);
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 100ms ease, opacity 100ms ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .test-target:hover { transform: scale(1.03); }
+    /* Dwell progress visual (class auto-added by engine on hover when dwell active) */
+    .test-target.morphic-dwell-progress::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.4);
+      animation: dwell-fill linear forwards;
+      animation-duration: var(--demo-dwell-ms, 1000ms);
+    }
+    @keyframes dwell-fill {
+      from { transform: translateX(-100%); }
+      to   { transform: translateX(0); }
+    }
+    .readout {
+      font-family: ui-monospace, monospace;
+      font-size: 0.85em;
+      opacity: 0.8;
+      margin-top: 6px;
+    }
+
+    /* Tremor canvas */
+    #tremor-canvas {
+      width: 100%;
+      max-width: 320px;
+      height: 180px;
+      border: 1px dashed var(--morphic-border);
+      border-radius: 4px;
+      display: block;
+      margin-top: 8px;
+      cursor: crosshair;
+      background: rgba(0,0,0,0.02);
+    }
+    .legend { display: flex; gap: 12px; font-size: 0.8em; margin-top: 4px; }
+    .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .legend .raw { background: rgba(239,68,68,0.7); }
+    .legend .filt { background: rgba(34,197,94,0.9); }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: var(--morphic-font-size-base);
+      background: var(--morphic-bg);
+      color: var(--morphic-fg);
+      transition: background var(--morphic-motion-duration) ease, color var(--morphic-motion-duration) ease;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: var(--morphic-gap) calc(var(--morphic-gap) * 2);
+      border-bottom: 1px solid var(--morphic-border);
+      background: var(--morphic-surface);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    h1 { margin: 0 0 4px; font-size: 1.5em; }
+    h2 { margin: 0 0 var(--morphic-gap); font-size: 1.2em; border-bottom: 1px solid var(--morphic-border); padding-bottom: 4px; }
+    h3 { margin: var(--morphic-gap) 0 8px; font-size: 1em; }
+    p.lede { margin: 0; opacity: 0.7; font-size: 0.9em; }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--morphic-gap) calc(var(--morphic-gap) * 2);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: calc(var(--morphic-gap) * 1.5);
+    }
+
+    section.axis {
+      background: var(--morphic-surface);
+      border: 1px solid var(--morphic-border);
+      border-radius: var(--morphic-radius);
+      padding: var(--morphic-gap);
+      transition: border-color var(--morphic-motion-duration) ease;
+    }
+
+    section.axis.critical { border-left: 4px solid var(--morphic-accent); }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    button, select, input[type="number"], input[type="text"] {
+      font: inherit;
+      padding: 6px 12px;
+      border: 1px solid var(--morphic-border);
+      border-radius: 4px;
+      background: var(--morphic-bg);
+      color: var(--morphic-fg);
+      cursor: pointer;
+      transition: background var(--morphic-motion-duration) ease;
+    }
+    button:hover { background: var(--morphic-accent); color: var(--morphic-bg); }
+    button.active { background: var(--morphic-accent); color: var(--morphic-bg); font-weight: 600; }
+    input[type="number"], input[type="text"] { width: 100px; cursor: text; }
+
+    .state {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85em;
+      background: var(--morphic-bg);
+      border: 1px solid var(--morphic-border);
+      border-radius: 4px;
+      padding: 8px;
+      margin-top: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .events-log {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8em;
+      background: var(--morphic-bg);
+      border: 1px solid var(--morphic-border);
+      border-radius: 4px;
+      padding: 8px;
+      margin-top: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .events-log .ev { padding: 2px 0; border-bottom: 1px dotted var(--morphic-border); }
+    .events-log .ev:last-child { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      background: var(--morphic-accent);
+      color: var(--morphic-bg);
+      margin-left: 6px;
+    }
+    .badge.warn { background: #f59e0b; }
+    .badge.danger { background: #ef4444; }
+
+    article.reading-sample {
+      padding: 12px;
+      border: 1px dashed var(--morphic-border);
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    #global-events {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 320px;
+      max-height: 240px;
+      background: var(--morphic-surface);
+      border: 1px solid var(--morphic-border);
+      border-radius: var(--morphic-radius);
+      padding: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 20;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75em;
+      overflow-y: auto;
+    }
+    #global-events h4 { margin: 0 0 4px; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <morphic-provider>
+    <header>
+      <h1>Morphic Engine v2.0.0-alpha.0 — Démo interactive</h1>
+      <p class="lede">Manipule chaque axe morphique. Les changements s'appliquent en direct via CSS vars + localStorage. Events affichés en bas-droite.</p>
+    </header>
+
+    <main>
+      <!-- THEME -->
+      <section class="axis">
+        <h2>Theme <span class="badge">B-007</span></h2>
+        <div class="controls" data-axis="theme">
+          <button data-value="light">light</button>
+          <button data-value="dark">dark</button>
+          <button data-value="high-contrast">high-contrast</button>
+          <button data-value="sepia">sepia</button>
+          <button data-value="auto">auto</button>
+        </div>
+        <div class="state" id="state-theme"></div>
+      </section>
+
+      <!-- MOTION -->
+      <section class="axis">
+        <h2>Motion <span class="badge">B-008</span></h2>
+        <div class="controls" data-axis="motion">
+          <button data-value="full">full</button>
+          <button data-value="reduced">reduced</button>
+          <button data-value="none">none</button>
+          <button data-value="auto">auto</button>
+        </div>
+        <div class="motion-box" title="boîte animée — observe vitesse selon motion choisi"></div>
+        <div class="state" id="state-motion"></div>
+      </section>
+
+      <!-- DENSITY -->
+      <section class="axis">
+        <h2>Density <span class="badge">B-009</span></h2>
+        <div class="controls" data-axis="density">
+          <button data-value="compact">compact</button>
+          <button data-value="comfortable">comfortable</button>
+          <button data-value="spacious">spacious</button>
+          <button data-value="auto">auto</button>
+        </div>
+        <div class="state" id="state-density"></div>
+      </section>
+
+      <!-- FONT-SIZE -->
+      <section class="axis">
+        <h2>Font Size <span class="badge">B-010</span></h2>
+        <div class="controls" data-axis="fontSize">
+          <button data-value="sm">sm</button>
+          <button data-value="md">md</button>
+          <button data-value="lg">lg</button>
+          <button data-value="xl">xl</button>
+          <button data-value="auto">auto</button>
+        </div>
+        <div class="state" id="state-font-size"></div>
+      </section>
+
+      <!-- CONTRAST -->
+      <section class="axis">
+        <h2>Contrast <span class="badge">B-011</span></h2>
+        <div class="controls" data-axis="contrast">
+          <button data-value="no-preference">no-preference</button>
+          <button data-value="more">more</button>
+          <button data-value="less">less</button>
+          <button data-value="custom">custom</button>
+          <button data-value="auto">auto</button>
+        </div>
+        <div class="state" id="state-contrast"></div>
+      </section>
+
+      <!-- DECISION POINTS CAP -->
+      <section class="axis critical">
+        <h2>Decision Points Cap <span class="badge">B-012</span></h2>
+        <div class="controls">
+          <input type="number" id="cap-input" min="1" max="20" value="3" />
+          <button id="cap-set">setCap</button>
+        </div>
+        <div class="state" id="state-cap"></div>
+      </section>
+
+      <!-- ONBOARDING -->
+      <section class="axis critical">
+        <h2>Onboarding (Dignity §a) <span class="badge">B-013</span></h2>
+        <div class="controls">
+          <button id="onb-start">startOnboarding</button>
+          <button id="onb-reset">resetOnboarding</button>
+        </div>
+        <h3>Steps</h3>
+        <div class="controls">
+          <button id="onb-theme-dark">completeStep(theme, dark)</button>
+          <button id="onb-motion-reduced">completeStep(motion, reduced)</button>
+          <button id="onb-density-spacious">completeStep(density, spacious)</button>
+        </div>
+        <div class="controls">
+          <button id="onb-skip-theme">skipStep(theme)</button>
+          <button id="onb-skip-motion">skipStep(motion)</button>
+          <button id="onb-skip-density">skipStep(density)</button>
+        </div>
+        <div class="state" id="state-onboarding"></div>
+        <div class="state" id="state-canCollect" style="margin-top:4px;font-weight:600;"></div>
+      </section>
+
+      <!-- DALTONIZATION -->
+      <section class="axis critical">
+        <h2>Color Vision Correction <span class="badge">B-101</span></h2>
+        <div class="controls">
+          <select id="cvd-type">
+            <option value="protan">protan (rouge faible)</option>
+            <option value="deutan">deutan (vert faible)</option>
+            <option value="tritan">tritan (bleu faible)</option>
+          </select>
+          <input type="number" id="cvd-severity" min="0" max="1" step="0.1" value="1" />
+          <button id="cvd-set">setColorVisionCorrection</button>
+          <button id="cvd-clear">clear</button>
+        </div>
+        <div class="swatches" aria-label="échantillons couleur — observe le shift selon le type">
+          <div class="swatch" style="background:#e11d48">rouge</div>
+          <div class="swatch" style="background:#f59e0b">orange</div>
+          <div class="swatch" style="background:#eab308">jaune</div>
+          <div class="swatch" style="background:#22c55e">vert</div>
+          <div class="swatch" style="background:#06b6d4">cyan</div>
+          <div class="swatch" style="background:#3b82f6">bleu</div>
+        </div>
+        <div class="state" id="state-cvd"></div>
+      </section>
+
+      <!-- READING FOCUS -->
+      <section class="axis">
+        <h2>Reading Focus <span class="badge">B-102</span></h2>
+        <div class="controls" data-axis="readingFocus">
+          <button data-value="low">low</button>
+          <button data-value="medium">medium</button>
+          <button data-value="high">high</button>
+          <button data-value="off">off</button>
+        </div>
+        <article class="reading-sample" data-morphic-reading-focus>
+          Voici un échantillon de texte pour observer l'effet bionic-style. Les premières lettres de chaque mot sont mises en gras selon l'intensité choisie. Cela peut aider certains lecteurs dyslexiques à fixer le regard et à parcourir plus vite.
+        </article>
+        <div class="state" id="state-reading-focus"></div>
+      </section>
+
+      <!-- READING GUIDE -->
+      <section class="axis">
+        <h2>Reading Guide <span class="badge">B-103</span></h2>
+        <div class="controls">
+          <button data-guide="line">line</button>
+          <button data-guide="mask">mask</button>
+          <button data-guide="ruler">ruler</button>
+          <button data-guide="clear">clear</button>
+        </div>
+        <div class="state" id="state-reading-guide"></div>
+      </section>
+
+      <!-- WAI SYMBOLS -->
+      <section class="axis">
+        <h2>WAI-Adapt Symbols <span class="badge">B-104</span></h2>
+        <div class="controls">
+          <button id="wai-enable">enableWaiSymbols (mode=before)</button>
+          <button id="wai-disable">disableWaiSymbols</button>
+        </div>
+        <p adapt-symbol="14885">Manger une pomme</p>
+        <p adapt-symbol="13166">Boire de l'eau</p>
+        <div class="state" id="state-wai"></div>
+      </section>
+
+      <!-- COMMAND PALETTE -->
+      <section class="axis">
+        <h2>Command Palette <span class="badge">B-105</span></h2>
+        <div class="controls">
+          <button id="cp-enable">enableCommandPalette (Mod+K)</button>
+          <button id="cp-disable">disableCommandPalette</button>
+          <button id="cp-open">openCommandPalette</button>
+        </div>
+        <p style="font-size:0.85em;opacity:0.7">Essaie <kbd>Ctrl/Cmd + K</kbd> après activation.</p>
+        <div class="state" id="state-cp"></div>
+      </section>
+
+      <!-- CLICK DELAY -->
+      <section class="axis critical">
+        <h2>Click Delay <span class="badge">B-106</span></h2>
+        <div class="controls">
+          <input type="number" id="click-delay-ms" min="0" max="500" value="200" />
+          <button id="click-delay-set">setClickDelay</button>
+          <button id="click-delay-clear">clear</button>
+        </div>
+        <p style="font-size:0.85em;opacity:0.7">Active le delay, puis clique la cible. Le clic est retardé de N ms (anti-clic accidentel parkinsonien).</p>
+        <div id="click-test-target" class="test-target">test click ici</div>
+        <div class="readout" id="click-test-readout">aucun clic encore</div>
+        <div class="state" id="state-click-delay"></div>
+      </section>
+
+      <!-- DWELL CLICK -->
+      <section class="axis critical">
+        <h2>Dwell Click <span class="badge">B-107</span></h2>
+        <div class="controls">
+          <input type="number" id="dwell-ms" min="500" max="3000" value="1000" />
+          <button id="dwell-set">setDwellClick</button>
+          <button id="dwell-clear">clear</button>
+        </div>
+        <p style="font-size:0.85em;opacity:0.7">Active dwell, puis SURVOLE la cible sans bouger. Un clic synthétique se déclenche après N ms (accessibilité main).</p>
+        <div id="dwell-test-target" class="test-target">survole-moi sans bouger</div>
+        <div class="readout" id="dwell-test-readout">aucun clic synthétique encore</div>
+        <div class="state" id="state-dwell"></div>
+      </section>
+
+      <!-- TREMOR FILTER -->
+      <section class="axis critical">
+        <h2>Tremor Filter <span class="badge">B-108</span></h2>
+        <div class="controls">
+          <input type="number" id="tremor-window" min="1" max="20" value="5" />
+          <button id="tremor-set">setTremorFilter</button>
+          <button id="tremor-clear">clear</button>
+          <button id="tremor-canvas-clear">clear canvas</button>
+        </div>
+        <p style="font-size:0.85em;opacity:0.7">Active le filtre puis bouge le pointeur dans la zone. <span style="color:#ef4444">Rouge</span> = trajectoire brute. <span style="color:#22c55e">Vert</span> = trajectoire lissée (moyenne glissante). Plus le windowSize est grand, plus le lissage est fort.</p>
+        <canvas id="tremor-canvas" width="320" height="180" aria-label="visualizer tremor"></canvas>
+        <div class="legend">
+          <span><span class="dot raw"></span>raw pointermove</span>
+          <span><span class="dot filt"></span>morphic-pointermove (filtré)</span>
+        </div>
+        <div class="state" id="state-tremor"></div>
+      </section>
+
+      <!-- RECOVERY MODE -->
+      <section class="axis critical">
+        <h2>Recovery Mode <span class="badge">B-109</span></h2>
+        <div class="controls">
+          <button id="recovery-enter">enterRecoveryMode</button>
+          <button id="recovery-exit">exitRecoveryMode</button>
+        </div>
+        <p style="font-size:0.85em;opacity:0.7">Bascule profile low-stim (motion=reduced, density=spacious, cap=3, theme=sepia). Restore au exit.</p>
+        <div class="state" id="state-recovery"></div>
+      </section>
+
+      <!-- IDLE DETECTION -->
+      <section class="axis">
+        <h2>Idle Detection <span class="badge">B-110</span></h2>
+        <div class="controls">
+          <input type="number" id="idle-ms" min="10000" max="600000" step="5000" value="15000" />
+          <button id="idle-set">setIdleDetection</button>
+          <button id="idle-clear">clear</button>
+        </div>
+        <p style="font-size:0.85em;opacity:0.7">Inactif &gt;= X ms → event <code>morphic:energy:pause-suggested</code></p>
+        <div class="state" id="state-idle"></div>
+      </section>
+
+      <!-- POMODORO -->
+      <section class="axis critical">
+        <h2>Pomodoro Engine <span class="badge">B-111</span></h2>
+        <div class="controls">
+          <button id="pomo-start">start (default 25/5/15)</button>
+          <button id="pomo-pause">pause</button>
+          <button id="pomo-resume">resume</button>
+          <button id="pomo-skip">skipPhase</button>
+          <button id="pomo-stop">stop</button>
+        </div>
+        <div class="state" id="state-pomo"></div>
+      </section>
+    </main>
+
+    <aside id="global-events">
+      <h4>Events <span class="badge">live</span> <button id="clear-events" style="float:right;padding:2px 6px;font-size:0.9em">clear</button></h4>
+      <div class="events-log" id="events-log"></div>
+    </aside>
+  </morphic-provider>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
