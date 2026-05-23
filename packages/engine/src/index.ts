@@ -106,6 +106,12 @@ export {
   type MorphicKeyPair,
 } from './e2e-crypto.js';
 export {
+  EXPORT_SCHEMA_VERSION,
+  exportPreferences,
+  type MorphicExport,
+  type MorphicExportAxes,
+} from './export-gdpr.js';
+export {
   type FontFamilyChoice,
   getFontFamily,
   type ResolvedFontFamily,
