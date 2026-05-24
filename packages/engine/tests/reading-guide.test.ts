@@ -529,3 +529,88 @@ describe('reading-guide — full lifecycle integration', () => {
     expect(queryMarkers().length).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// B-021i — Chrome-safe topOffset / bottomOffset
+// ---------------------------------------------------------------------------
+//
+// The overlay starts BELOW topOffset and stops ABOVE bottomOffset, leaving
+// host chrome (fixed navbar, mobile tab bar) untouched. Defaults are 0/0 so
+// behavior is fully backward-compatible with v2.0.0-beta.3 consumers.
+// ---------------------------------------------------------------------------
+
+describe('reading-guide — B-021i chrome-safe offsets', () => {
+  it('defaults topOffset/bottomOffset to 0 on line mode (backward-compat)', () => {
+    setReadingGuide('line');
+    const root = document.querySelector(
+      `[${MORPHIC_READING_GUIDE_MARKER}="line"]`,
+    ) as HTMLElement | null;
+    expect(root).not.toBeNull();
+    expect(root?.style.top).toBe('0px');
+    expect(root?.style.bottom).toBe('0px');
+    expect(root?.dataset.morphicTopOffset).toBe('0');
+    expect(root?.dataset.morphicBottomOffset).toBe('0');
+  });
+
+  it('applies topOffset to root style.top on line mode', () => {
+    setReadingGuide('line', { topOffset: 64 });
+    const root = document.querySelector(
+      `[${MORPHIC_READING_GUIDE_MARKER}="line"]`,
+    ) as HTMLElement | null;
+    expect(root?.style.top).toBe('64px');
+    expect(root?.dataset.morphicTopOffset).toBe('64');
+  });
+
+  it('applies bottomOffset to root style.bottom on line mode', () => {
+    setReadingGuide('line', { bottomOffset: 56 });
+    const root = document.querySelector(
+      `[${MORPHIC_READING_GUIDE_MARKER}="line"]`,
+    ) as HTMLElement | null;
+    expect(root?.style.bottom).toBe('56px');
+    expect(root?.dataset.morphicBottomOffset).toBe('56');
+  });
+
+  it('applies both offsets on mask mode', () => {
+    setReadingGuide('mask', { topOffset: 64, bottomOffset: 56 });
+    const root = document.querySelector(
+      `[${MORPHIC_READING_GUIDE_MARKER}="mask"]`,
+    ) as HTMLElement | null;
+    expect(root?.style.top).toBe('64px');
+    expect(root?.style.bottom).toBe('56px');
+    expect(root?.dataset.morphicTopOffset).toBe('64');
+    expect(root?.dataset.morphicBottomOffset).toBe('56');
+  });
+
+  it('applies both offsets on ruler mode', () => {
+    setReadingGuide('ruler', { topOffset: 64, bottomOffset: 56 });
+    const root = document.querySelector(
+      `[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`,
+    ) as HTMLElement | null;
+    expect(root?.style.top).toBe('64px');
+    expect(root?.style.bottom).toBe('56px');
+    expect(root?.dataset.morphicTopOffset).toBe('64');
+    expect(root?.dataset.morphicBottomOffset).toBe('56');
+  });
+
+  it('accepts 0 explicitly for both offsets (non-negative, not strict positive)', () => {
+    expect(() => setReadingGuide('line', { topOffset: 0, bottomOffset: 0 })).not.toThrow();
+  });
+
+  it('rejects negative topOffset', () => {
+    expect(() => setReadingGuide('line', { topOffset: -1 })).toThrow(TypeError);
+  });
+
+  it('rejects negative bottomOffset', () => {
+    expect(() => setReadingGuide('ruler', { bottomOffset: -10 })).toThrow(TypeError);
+  });
+
+  it('rejects non-finite topOffset (NaN)', () => {
+    expect(() => setReadingGuide('mask', { topOffset: Number.NaN })).toThrow(TypeError);
+  });
+
+  it('rejects non-finite bottomOffset (Infinity)', () => {
+    expect(() => setReadingGuide('mask', { bottomOffset: Number.POSITIVE_INFINITY })).toThrow(
+      TypeError,
+    );
+  });
+});

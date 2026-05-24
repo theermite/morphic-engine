@@ -31,27 +31,34 @@ import {
   COLOR_VISION_TYPES,
   type ColorVisionCorrection,
   type ColorVisionType,
+  __resetColorVisionTargetForTests,
   clearColorVisionCorrection,
   computeDaltonizationMatrix,
   daltonize,
   delinearizeSrgb,
   getColorVisionCorrection,
+  getColorVisionTarget,
   linearizeSrgb,
   MORPHIC_DALTONIZE_DEFAULT_SEVERITY,
   MORPHIC_DALTONIZE_FILTER_ID,
   setColorVisionCorrection,
+  setColorVisionTarget,
 } from '../src/daltonization.js';
 import { MORPHIC_STORAGE_KEY } from '../src/init.js';
 
 beforeEach(() => {
   clearColorVisionCorrection();
+  __resetColorVisionTargetForTests();
   localStorage.clear();
+  document.body.innerHTML = '';
   vi.restoreAllMocks();
 });
 
 afterEach(() => {
   clearColorVisionCorrection();
+  __resetColorVisionTargetForTests();
   localStorage.clear();
+  document.body.innerHTML = '';
 });
 
 // ---------------------------------------------------------------------------
@@ -610,5 +617,210 @@ describe('clearColorVisionCorrection', () => {
     // DOM cleanup still happens
     expect(document.getElementById(MORPHIC_DALTONIZE_FILTER_ID)).toBeNull();
     spy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setColorVisionTarget / getColorVisionTarget — B-021h chrome-safe scoping
+// ---------------------------------------------------------------------------
+//
+// Default scope = <html> (backward-compatible with v2.0.0-beta.3 consumers).
+// Opt-in scope via setColorVisionTarget(selector) keeps host chrome (navbar,
+// brand colors) untouched while still correcting the main content area.
+// ---------------------------------------------------------------------------
+
+describe('setColorVisionTarget — input validation', () => {
+  it('accepts a non-empty string selector', () => {
+    expect(() => setColorVisionTarget('main')).not.toThrow();
+    expect(setColorVisionTarget('#app')).toBe('#app');
+  });
+
+  it('accepts null (reset to default <html> scope)', () => {
+    expect(() => setColorVisionTarget(null)).not.toThrow();
+    expect(setColorVisionTarget(null)).toBeNull();
+  });
+
+  it('throws TypeError on empty string', () => {
+    expect(() => setColorVisionTarget('')).toThrow(TypeError);
+  });
+
+  it('throws TypeError on whitespace-only string', () => {
+    expect(() => setColorVisionTarget('   ')).toThrow(TypeError);
+  });
+
+  it('throws TypeError on number input', () => {
+    expect(() => setColorVisionTarget(42 as unknown as string)).toThrow(TypeError);
+  });
+
+  it('throws TypeError on undefined input', () => {
+    expect(() => setColorVisionTarget(undefined as unknown as string)).toThrow(TypeError);
+  });
+
+  it('throws TypeError on object input', () => {
+    expect(() => setColorVisionTarget({} as unknown as string)).toThrow(TypeError);
+  });
+});
+
+describe('setColorVisionTarget — DOM scoping behavior', () => {
+  it('applies the filter to the matched element, not <html>, when correction follows', () => {
+    const main = document.createElement('main');
+    document.body.appendChild(main);
+    setColorVisionTarget('main');
+    setColorVisionCorrection('protan');
+
+    // <html> stays untouched, the target carries the filter.
+    expect(document.documentElement.style.filter).toBe('');
+    expect(main.style.filter).toMatch(
+      new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`),
+    );
+  });
+
+  it('falls back silently to <html> when the selector matches nothing', () => {
+    // No <main> in the DOM — Dignity §a : user's corrective need wins over
+    // chrome-safety intent. Engine never denies the correction.
+    setColorVisionTarget('main');
+    setColorVisionCorrection('protan');
+
+    expect(document.documentElement.style.filter).toMatch(
+      new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`),
+    );
+  });
+
+  it('keeps the SVG defs container on documentElement regardless of target', () => {
+    const main = document.createElement('main');
+    document.body.appendChild(main);
+    setColorVisionTarget('main');
+    setColorVisionCorrection('protan');
+
+    // The <svg> container injecting <filter id="morphic-daltonize"> stays on
+    // documentElement so url(#id) resolves regardless of where the filter
+    // CSS reference is applied.
+    const svg = document.getElementById(MORPHIC_DALTONIZE_FILTER_ID);
+    expect(svg).not.toBeNull();
+  });
+
+  it('migrates an active correction from <html> to a new target atomically', () => {
+    // 1) Start with default scope, correction active on <html>.
+    setColorVisionCorrection('protan');
+    expect(document.documentElement.style.filter).not.toBe('');
+
+    // 2) Mount the target and scope to it — no flash, no double-filter.
+    const main = document.createElement('main');
+    document.body.appendChild(main);
+    setColorVisionTarget('main');
+
+    expect(document.documentElement.style.filter).toBe('');
+    expect(main.style.filter).toMatch(
+      new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`),
+    );
+  });
+
+  it('migrates an active correction back to <html> when target is reset to null', () => {
+    const main = document.createElement('main');
+    document.body.appendChild(main);
+    setColorVisionTarget('main');
+    setColorVisionCorrection('protan');
+    expect(main.style.filter).not.toBe('');
+
+    setColorVisionTarget(null);
+
+    expect(main.style.filter).toBe('');
+    expect(document.documentElement.style.filter).toMatch(
+      new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`),
+    );
+  });
+
+  it('is a no-op on DOM when no correction is currently active', () => {
+    const main = document.createElement('main');
+    document.body.appendChild(main);
+    // No prior setColorVisionCorrection — DOM stays clean.
+    setColorVisionTarget('main');
+
+    expect(document.documentElement.style.filter).toBe('');
+    expect(main.style.filter).toBe('');
+    expect(document.getElementById(MORPHIC_DALTONIZE_FILTER_ID)).toBeNull();
+  });
+
+  it("removes the filter from the scoped target on clear/'none'", () => {
+    const main = document.createElement('main');
+    document.body.appendChild(main);
+    setColorVisionTarget('main');
+    setColorVisionCorrection('protan');
+    expect(main.style.filter).not.toBe('');
+
+    setColorVisionCorrection('none');
+
+    expect(main.style.filter).toBe('');
+    expect(document.getElementById(MORPHIC_DALTONIZE_FILTER_ID)).toBeNull();
+  });
+});
+
+describe('setColorVisionTarget — persistence', () => {
+  it('persists the selector under the colorVisionTarget sub-key', () => {
+    setColorVisionTarget('main');
+    const raw = JSON.parse(localStorage.getItem(MORPHIC_STORAGE_KEY) as string) as {
+      colorVisionTarget?: string;
+    };
+    expect(raw.colorVisionTarget).toBe('main');
+  });
+
+  it('clears the persisted entry when target is reset to null', () => {
+    setColorVisionTarget('main');
+    setColorVisionTarget(null);
+    const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    if (raw === null) return; // both axes empty — also acceptable
+    const parsed = JSON.parse(raw) as { colorVisionTarget?: string };
+    expect(parsed.colorVisionTarget).toBeUndefined();
+  });
+
+  it('preserves other axes in storage', () => {
+    localStorage.setItem(
+      MORPHIC_STORAGE_KEY,
+      JSON.stringify({ theme: 'dark', colorVision: { type: 'protan', severity: 1 } }),
+    );
+    setColorVisionTarget('#app');
+    const raw = JSON.parse(localStorage.getItem(MORPHIC_STORAGE_KEY) as string) as Record<
+      string,
+      unknown
+    >;
+    expect(raw.theme).toBe('dark');
+    expect(raw.colorVision).toBeDefined();
+    expect(raw.colorVisionTarget).toBe('#app');
+  });
+
+  it('does not throw when localStorage fails', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+    expect(() => setColorVisionTarget('main')).not.toThrow();
+    spy.mockRestore();
+  });
+});
+
+describe('getColorVisionTarget', () => {
+  it('returns null by default (no opt-in scope)', () => {
+    expect(getColorVisionTarget()).toBeNull();
+  });
+
+  it('returns the selector set via setColorVisionTarget', () => {
+    setColorVisionTarget('main');
+    expect(getColorVisionTarget()).toBe('main');
+  });
+
+  it('reads from storage when in-memory state is null', () => {
+    localStorage.setItem(
+      MORPHIC_STORAGE_KEY,
+      JSON.stringify({ colorVisionTarget: '#app' }),
+    );
+    // In-memory state is null (fresh module / reset for tests).
+    expect(getColorVisionTarget()).toBe('#app');
+  });
+
+  it('returns null when storage holds a non-string value', () => {
+    localStorage.setItem(
+      MORPHIC_STORAGE_KEY,
+      JSON.stringify({ colorVisionTarget: 42 }),
+    );
+    expect(getColorVisionTarget()).toBeNull();
   });
 });

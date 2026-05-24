@@ -58,6 +58,18 @@ export interface ReadingGuideOptions {
   dimOpacity?: number;
   /** z-index for overlays. Default 9998. */
   zIndex?: number;
+  /**
+   * Chrome-safe gap at the top of the viewport in px (B-021i). The overlay
+   * (dim/mask/ruler) starts BELOW this gap so a fixed navbar remains
+   * untouched and fully visible. Default 0.
+   */
+  topOffset?: number;
+  /**
+   * Chrome-safe gap at the bottom of the viewport in px (B-021i). The overlay
+   * stops ABOVE this gap so a fixed footer / mobile tab bar remains
+   * untouched and fully visible. Default 0.
+   */
+  bottomOffset?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +92,15 @@ function assertPositiveFinite(value: number | undefined, label: string): void {
   if (value === undefined) return;
   if (!Number.isFinite(value) || value <= 0) {
     throw new TypeError(`reading-guide: ${label} must be a positive finite number; got ${value}`);
+  }
+}
+
+function assertNonNegativeFinite(value: number | undefined, label: string): void {
+  if (value === undefined) return;
+  if (!Number.isFinite(value) || value < 0) {
+    throw new TypeError(
+      `reading-guide: ${label} must be a non-negative finite number; got ${value}`,
+    );
   }
 }
 
@@ -175,12 +196,21 @@ function sweepStrayMarkers(): void {
   }
 }
 
-function applyCommonRootStyle(root: HTMLElement, zIndex: number, reducedMotion: boolean): void {
+function applyCommonRootStyle(
+  root: HTMLElement,
+  zIndex: number,
+  reducedMotion: boolean,
+  topOffset: number,
+  bottomOffset: number,
+): void {
   root.style.position = 'fixed';
-  root.style.top = '0';
+  // Chrome-safe gaps (B-021i) — overlay starts below topOffset, ends above
+  // bottomOffset, leaving fixed navbars / tab bars untouched. Defaults are 0
+  // so behavior is backward-compatible with v2.0.0-beta.3 consumers.
+  root.style.top = `${topOffset}px`;
   root.style.left = '0';
   root.style.right = '0';
-  root.style.bottom = '0';
+  root.style.bottom = `${bottomOffset}px`;
   root.style.pointerEvents = 'none';
   root.style.zIndex = String(zIndex);
   root.style.transition = reducedMotion ? 'none' : `clip-path ${TRANSITION_DURATION_MS}ms ease-out`;
@@ -198,12 +228,16 @@ function mountLineOrMask(
   const bandHeight = options.bandHeight ?? MORPHIC_READING_GUIDE_DEFAULT_BAND_HEIGHT;
   const dimOpacity = options.dimOpacity ?? (mode === 'mask' ? DIM_OPACITY_MASK : DIM_OPACITY_LINE);
   const zIndex = options.zIndex ?? MORPHIC_READING_GUIDE_DEFAULT_Z_INDEX;
+  const topOffset = options.topOffset ?? 0;
+  const bottomOffset = options.bottomOffset ?? 0;
 
   const root = document.createElement('div');
   root.setAttribute(MORPHIC_READING_GUIDE_MARKER, mode);
   root.dataset.morphicBandHeight = String(bandHeight);
   root.dataset.morphicDimOpacity = String(dimOpacity);
-  applyCommonRootStyle(root, zIndex, reducedMotion);
+  root.dataset.morphicTopOffset = String(topOffset);
+  root.dataset.morphicBottomOffset = String(bottomOffset);
+  applyCommonRootStyle(root, zIndex, reducedMotion, topOffset, bottomOffset);
   root.style.background = `rgba(0, 0, 0, ${dimOpacity})`;
 
   // Initial cursor position: viewport center.
@@ -251,13 +285,19 @@ function mountLineOrMask(
 function mountRuler(options: ReadingGuideOptions, reducedMotion: boolean): ActiveGuide {
   const rulerWidth = options.rulerWidth ?? MORPHIC_READING_GUIDE_DEFAULT_RULER_WIDTH;
   const zIndex = options.zIndex ?? MORPHIC_READING_GUIDE_DEFAULT_Z_INDEX;
+  const topOffset = options.topOffset ?? 0;
+  const bottomOffset = options.bottomOffset ?? 0;
 
   const root = document.createElement('div');
   root.setAttribute(MORPHIC_READING_GUIDE_MARKER, 'ruler');
   root.dataset.morphicRulerWidth = String(rulerWidth);
+  root.dataset.morphicTopOffset = String(topOffset);
+  root.dataset.morphicBottomOffset = String(bottomOffset);
   root.style.position = 'fixed';
-  root.style.top = '0';
-  root.style.bottom = '0';
+  // Chrome-safe gaps (B-021i) — ruler bar starts below topOffset and stops
+  // above bottomOffset. Defaults are 0 so behavior is backward-compatible.
+  root.style.top = `${topOffset}px`;
+  root.style.bottom = `${bottomOffset}px`;
   root.style.width = `${rulerWidth}px`;
   root.style.background = RULER_COLOR;
   root.style.pointerEvents = 'none';
@@ -297,6 +337,9 @@ export function setReadingGuide(mode: ReadingGuideMode, options: ReadingGuideOpt
   assertPositiveFinite(options.rulerWidth, 'rulerWidth');
   assertUnitInterval(options.dimOpacity, 'dimOpacity');
   assertPositiveFinite(options.zIndex, 'zIndex');
+  // topOffset / bottomOffset accept 0 (default) — non-negative validator.
+  assertNonNegativeFinite(options.topOffset, 'topOffset');
+  assertNonNegativeFinite(options.bottomOffset, 'bottomOffset');
 
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     persistMode(mode);

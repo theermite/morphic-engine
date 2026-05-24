@@ -54,6 +54,9 @@ export const MORPHIC_DALTONIZE_DEFAULT_SEVERITY = 1 as const;
 /** Storage sub-key for the persisted correction choice. */
 const STORAGE_SUBKEY = 'colorVision' as const;
 
+/** Storage sub-key for the persisted chrome-safe target selector (B-021h). */
+const STORAGE_SUBKEY_TARGET = 'colorVisionTarget' as const;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -280,6 +283,26 @@ function clamp01(x: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Chrome-safe target (B-021h)
+// ---------------------------------------------------------------------------
+
+/**
+ * Module-level scoped target for the daltonization filter.
+ *
+ * `null` (default) means the engine applies the filter on `documentElement`,
+ * which is the v2.0.0-beta.3 behavior. Hosts that need to spare a chrome
+ * region (navbar logo, brand colors) opt in via `setColorVisionTarget(sel)`.
+ */
+let targetSelector: string | null = null;
+
+function isValidTargetSelector(value: unknown): value is string | null {
+  if (value === null) return true;
+  if (typeof value !== 'string') return false;
+  // Empty / whitespace-only string is not a valid selector.
+  return value.trim().length > 0;
+}
+
+// ---------------------------------------------------------------------------
 // SVG filter injection (DOM side effects)
 // ---------------------------------------------------------------------------
 
@@ -317,11 +340,44 @@ function matrix3x3ToFeColorMatrix(m: readonly number[]): string {
   ].join(' ');
 }
 
+/**
+ * Resolve the DOM target the daltonization filter should be applied to.
+ *
+ * Backward-compatibility contract (BLOCKING) :
+ *   - When no target selector is set (default) → `document.documentElement`.
+ *     Existing consumers continue to receive the v2.0.0-beta.3 behavior.
+ *   - When a selector is set AND it matches → the matched element.
+ *   - When a selector is set BUT misses → silent fallback to documentElement
+ *     (the host's chrome-safety intent loses to the user's correction need).
+ */
+function resolveFilterTarget(): HTMLElement {
+  if (typeof document === 'undefined') {
+    // Caller-side guards already short-circuit before reaching here; this
+    // branch only exists to satisfy the type system in SSR-style imports.
+    return null as unknown as HTMLElement;
+  }
+  if (targetSelector === null) return document.documentElement;
+  try {
+    const el = document.querySelector(targetSelector);
+    if (el instanceof HTMLElement) return el;
+  } catch {
+    // Invalid CSS selector at runtime — fall through to documentElement.
+  }
+  return document.documentElement;
+}
+
 function removeFilterDom(): void {
   if (typeof document === 'undefined') return;
   const existing = document.getElementById(MORPHIC_DALTONIZE_FILTER_ID);
   if (existing !== null) existing.remove();
+  // Clear style on the current resolved target AND documentElement, in case
+  // the target was changed mid-correction (defensive — guarantees no stale
+  // `filter: url(...)` left on a previously-targeted element).
   document.documentElement.style.filter = '';
+  const current = resolveFilterTarget();
+  if (current !== document.documentElement) {
+    current.style.filter = '';
+  }
 }
 
 function injectFilterDom(type: Exclude<ColorVisionType, 'none'>, severity: number): void {
@@ -350,9 +406,19 @@ function injectFilterDom(type: Exclude<ColorVisionType, 'none'>, severity: numbe
 
   filter.appendChild(fe);
   svg.appendChild(filter);
+  // SVG defs container always lives on documentElement so the `url(#id)`
+  // reference resolves regardless of where the consumer scopes the filter.
   document.documentElement.appendChild(svg);
 
-  document.documentElement.style.filter = `url(#${MORPHIC_DALTONIZE_FILTER_ID})`;
+  // Apply the filter on the configured target (defaults to documentElement
+  // for backward-compat with v2.0.0-beta.3 and earlier consumers).
+  const target = resolveFilterTarget();
+  // Clear documentElement style first if the target is something else, so we
+  // do not double-filter (target inherits from html in some setups).
+  if (target !== document.documentElement) {
+    document.documentElement.style.filter = '';
+  }
+  target.style.filter = `url(#${MORPHIC_DALTONIZE_FILTER_ID})`;
 }
 
 // ---------------------------------------------------------------------------
@@ -401,6 +467,25 @@ function unpersistCorrection(): void {
     delete obj[STORAGE_SUBKEY];
     writeStorageObject(obj);
   }
+}
+
+function persistTarget(selector: string | null): void {
+  const obj = readStorageObject();
+  if (selector === null) {
+    if (STORAGE_SUBKEY_TARGET in obj) {
+      delete obj[STORAGE_SUBKEY_TARGET];
+      writeStorageObject(obj);
+    }
+    return;
+  }
+  obj[STORAGE_SUBKEY_TARGET] = selector;
+  writeStorageObject(obj);
+}
+
+function readPersistedTarget(): string | null {
+  const obj = readStorageObject();
+  const stored = obj[STORAGE_SUBKEY_TARGET];
+  return isValidTargetSelector(stored) ? stored : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -465,4 +550,80 @@ export function getColorVisionCorrection(): ColorVisionCorrection | null {
 export function clearColorVisionCorrection(): void {
   removeFilterDom();
   unpersistCorrection();
+}
+
+// ---------------------------------------------------------------------------
+// Chrome-safe target API (B-021h)
+// ---------------------------------------------------------------------------
+
+/**
+ * Scope the daltonization SVG filter to a specific DOM element instead of
+ * `documentElement`. This lets a host spare its chrome (navbar logo, brand
+ * colors) from the color shift.
+ *
+ * Contract :
+ *   - `null` (or omitted) restores the default behavior (filter on `<html>`).
+ *   - A CSS selector string targets `document.querySelector(selector)`.
+ *   - If the selector misses at apply-time, the engine silently falls back to
+ *     `documentElement` — the user's correction need wins over the host's
+ *     chrome-safety intent (Dignity §a: never deny a corrective tool over a
+ *     cosmetic concern).
+ *   - When an active correction is currently applied, calling this function
+ *     migrates the filter from the old target to the new one in a single
+ *     atomic operation (no flash, no double-filter).
+ *   - The selector is persisted under sub-key `colorVisionTarget` so that the
+ *     scope survives reloads and follows `setColorVisionCorrection` calls
+ *     after `init()` rehydrates state.
+ *
+ * @param selector CSS selector string (e.g. `'main'`, `'#morphic-zone'`) or
+ *                 `null` to restore default `<html>` scope.
+ * @returns The selector that was applied (echo, including `null`).
+ * @throws  TypeError on non-null, non-string, or empty-string input.
+ */
+export function setColorVisionTarget(selector: string | null): string | null {
+  if (!isValidTargetSelector(selector)) {
+    throw new TypeError(
+      `setColorVisionTarget: selector must be a non-empty string or null, got ${String(selector)}.`,
+    );
+  }
+
+  const previousTarget: HTMLElement | null =
+    typeof document === 'undefined' ? null : resolveFilterTarget();
+
+  targetSelector = selector;
+  persistTarget(selector);
+
+  // If a correction is currently active in the DOM, migrate it to the new
+  // target without flashing the page (clear old target style, apply new).
+  if (typeof document !== 'undefined') {
+    const filterEl = document.getElementById(MORPHIC_DALTONIZE_FILTER_ID);
+    if (filterEl !== null && previousTarget !== null) {
+      previousTarget.style.filter = '';
+      const newTarget = resolveFilterTarget();
+      newTarget.style.filter = `url(#${MORPHIC_DALTONIZE_FILTER_ID})`;
+    }
+  }
+
+  return selector;
+}
+
+/**
+ * Read back the currently-scoped target selector for the daltonization filter.
+ * Returns `null` when the engine uses its default `documentElement` scope.
+ */
+export function getColorVisionTarget(): string | null {
+  // In-memory state wins over storage to avoid stale reads after a runtime
+  // `setColorVisionTarget(null)` call within the same session.
+  if (targetSelector !== null) return targetSelector;
+  return readPersistedTarget();
+}
+
+/**
+ * Test-only reset of the in-memory target. Not exported through the package
+ * barrel (`index.ts`) — used by unit tests to isolate cases.
+ *
+ * @internal
+ */
+export function __resetColorVisionTargetForTests(): void {
+  targetSelector = null;
 }
