@@ -211,6 +211,8 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-021b | Démo theermite.com — page `/lab/morphic` intégration drop-in (5 sections, ~16 axes) avec `@morphic/adapter` + `@morphic/engine` via cross-repo `file:` linkage (transitional pre-npm B-026), panneau de réglages live FR/EN/ES, persistance localStorage démontrée (block `morphic-prefs` + refresh button) | F-020 | 🟢 Done | **Standard 80%** ✅ (5/5 tests jsdom + RTL, type-check 0 errors, lint exit 0) | next@16.1.6, next-intl@4.7.0, @testing-library/react@16.3.2, jsdom@29.0.1, vitest@4.0.18 (verifie 2026-05-23 via npm) | 486009c (The-Ermite) | 2026-05-23 |
 | B-021c | Lighthouse CI ≥95 sur démo `/lab/morphic` + Feedback Widget (D25, 2 clics, zero PII) + polish onboarding adaptatif (choix sensoriel AVANT identité) | F-020 | ⬜ Pending | Standard 80% | Lighthouse CI 12.x | — | — |
 | B-021d | SSR-safe Custom Elements `@morphic/engine` 2.0.0-beta.1 — guard `extends HTMLElement` dans `morphic-provider.ts` + `command-palette.ts` (pattern `typeof HTMLElement === 'undefined' ? class {} : HTMLElement`), republish patch Verdaccio, holdout SSR import test (Node sans jsdom). Surfacé par B-026 deploy prod The-Ermite (ReferenceError x2/SSR request). | F-020 | ⬜ Pending | Standard 80% (+ holdout SSR import) | next@16.1.6 SSR sandbox | — | — |
+| B-021e | Engine alignment — motion/contrast/density/fontSize alignés sur le pattern setAttribute `data-morphic-*` (au-delà du seul `setProperty` CSS var), comme theme.ts et font-family.ts. Limitation CSS : `[attr=value]` ne peut pas cibler une custom property. Sans attribut DOM, le sélecteur attribut-driven de B-021b restait inerte sur ces 4 axes (bug visible v3 prod). Bootstrap density manquant dans `init.ts` (régression silencieuse B-009) corrigé. Republish `@morphic/engine@2.0.0-beta.1` Verdaccio + bump consumer The-Ermite `^2.0.0-beta.0 → ^2.0.0-beta.1`. Beyoncé Rule : +14 tests verrouillent le comportement setAttribute sur les 4 axes. | F-002,F-003,F-005,F-009 | 🟢 Done | **Standard 80%** ✅ (1218 tests pass, +14 nouveaux locks) | semver@2.0.0 verifie 2026-05-24 via semver.org | 2086303 | 2026-05-24 |
+| B-021f | Lab v4 visible state — Pomodoro countdown badge (`role="timer"`, polling 1s `getPomodoroState`, format mm:ss + phase + cycle), Recovery prominent badge (`.morphic-state-badge--active`, `role="status" aria-live="polite"`), CommandPalette feedback badge (polling 500ms `getCommandPaletteState`, `open · X cmd` / `closed · X cmd`). CSS `.morphic-state-badge` avec `color-mix()` + `@supports not` fallback (Safari < 16.4). Résolution retour Jay 2026-05-24 (Pomodoro/Recovery/CommandPalette invisibles en v3). | F-020 | 🟢 Done | **Standard 80%** ✅ | (consumer-side, pas de veille deps) | 00133dd (The-Ermite) | 2026-05-24 |
 | B-022 | Telemetry opt-in OpenTelemetry (client JS + Elixir backend) — audit PII regex BLOCKING zero | F-021 | ⬜ Pending | Sensitive 90% | @opentelemetry/api 1.27 | — | — |
 | B-023 | API import GPII Morphic.org + WAI-Adapt — fuzzing Schemathesis sur schemas import | F-022 | ⬜ Pending | Sensitive 90% | GPII Preferences registry 2026 | — | — |
 | B-024a | Export préférences JSON GDPR Art. 20 — 1 clic, schema documenté | F-023 | 🟢 Done | **Critical 95%** (GDPR) ✅ 100% lines/branches/funcs/stmts sur `export-gdpr.ts`, 33 tests dont 2 PBT (fast-check 256+128 runs) + 1 mock défensif | fast-check@4.8.0, vitest@4.1.7 (verifie 2026-05-23 via npm) | 5f87b08 | 2026-05-23 |
@@ -1762,6 +1764,93 @@ v2 prouvait que les attributs se posaient sur `<html>` et que le CSS Module char
 - 2 files changed, 245 insertions(+), 57 deletions(-)
 - Push : OK (theermite-gms/The-Ermite `b072b8b..903d0ff`)
 - Deploy : `shinkofa-prod-the-ermite` rebuilt + recreated 2026-05-24 02:41
+
+---
+
+### B-021e — Engine alignment 4 axes + density bootstrap
+
+#### Contexte
+
+Post-deploy v3 sur theermite.com/lab/morphic, Jay rapporte 8 issues visuelles dont 4 axes sensoriels **visuellement inertes** (motion, contrast, density, font-size) : le bouton change la valeur en localStorage, l'engine met à jour la CSS var `--morphic-X`, mais aucun changement visible dans la démo. Diagnostic : les sélecteurs de B-021b `[data-morphic-X=value]` (pattern utilisé par theme.ts et font-family.ts) ne pouvaient pas matcher car les 4 axes n'écrivaient **que** la CSS var, jamais l'attribut DOM. CSS limitation : `[attr=val]` ne cible pas une `--custom-property`.
+
+Constat secondaire en lisant `init.ts` : le bloc bootstrap de density n'existait pas du tout — régression silencieuse depuis B-009. Sans bootstrap, la première peinture utilisait toujours `comfortable` par défaut quel que soit le choix persisté.
+
+#### Architecture du fix
+
+| Axe | Fichier | Pattern ajouté |
+|-----|---------|----------------|
+| motion | `src/motion.ts` | `setAttribute('data-morphic-motion', resolved)` à côté du `setProperty` existant |
+| contrast | `src/contrast.ts` | `setAttribute('data-morphic-contrast', resolved)` |
+| density | `src/density.ts` | `setAttribute('data-morphic-density', resolved)` |
+| typography (fontSize) | `src/typography.ts` | `setAttribute('data-morphic-font-size', resolved)` |
+| init bootstrap | `src/init.ts` | + `isValidDensity` + bloc Density complet (CSS var + data attr) |
+
+Alignement sur theme.ts (déjà conforme) et font-family.ts (déjà conforme depuis B-112). Zéro changement comportemental sur le CSS var — backward-compat 100%.
+
+#### Tests (Beyoncé Rule — verrouillage du nouveau comportement)
+
+`packages/engine/tests/{motion,contrast,density,typography}.test.ts` : +14 tests new (`it.each(...)('sets data-morphic-X attribute to "%s" (selector cascade)', ...)`) + cleanup beforeEach/afterEach (`removeAttribute('data-morphic-X')`). Total : **1218 tests pass**, 0 fail, 0 skip.
+
+Justification : sans test, la régression « quelqu'un retire le setAttribute en pensant que setProperty suffit » réapparaîtrait silencieusement (le bug initial vient exactement de là).
+
+#### Publication
+
+- Bump `packages/engine/package.json` : `2.0.0-beta.0 → 2.0.0-beta.1` (semver pre-release increment §9)
+- `pnpm publish` → Verdaccio https://npm.shinkofa.com/@morphic%2fengine
+- Consumer The-Ermite : `@morphic/engine` `^2.0.0-beta.0 → ^2.0.0-beta.1`, `pnpm install` from `apps/the-ermite/` (`.npmrc` scope-routed)
+- Commit engine : `2086303`
+
+---
+
+### B-021f — Lab v4 visible state (Pomodoro + Recovery + CommandPalette)
+
+#### Contexte
+
+Retour Jay 2026-05-24 sur 3 fonctionnalités du Lab v3 invisibles à l'œil :
+
+- Pomodoro engine : le toggle active la machine mais aucun timer visible — Jay : « il faudrait que le timer soit visible quelque part, de manière discrète, mais il faut qu'il soit visible tout de même »
+- Recovery state : badge texte plat indistinguable des autres labels
+- Command Palette : « ne s'ouvre pas » → en fait elle s'ouvrait mais sans feedback visible sur la page (le panel custom-element est portalisé)
+
+#### Architecture du fix (consumer-side, zéro changement engine)
+
+Fichiers The-Ermite touchés :
+
+- `src/app/[locale]/(public)/lab/morphic/MorphicLab.tsx`
+  - Imports nouveaux : `getCommandPaletteState`, `getPomodoroState` (déjà exposés par `@morphic/engine`)
+  - Helper local `formatMs(ms)` : MS → `mm:ss` zero-padded, `Math.max(0, …)` guard
+  - `EnergySection` : `useState<PomodoroState|null>` + `useEffect` polling 1000ms when `pomodoroRunning`, cleanup `clearInterval` on unmount/toggle
+  - Pomodoro `AxisRow` rightSlot : `<span role="timer" className="morphic-state-badge morphic-state-badge--active">{phase} · {formatMs(remainingMs)} · cycle {cycle}</span>`
+  - Recovery `AxisRow` rightSlot : `<span role="status" aria-live="polite" className="morphic-state-badge morphic-state-badge--active">● {t('status.active')}</span>` (vs plain text en v3)
+  - `ToolsSection` : `useState<CommandPaletteState|null>` + polling 500ms, badge `open · X cmd` / `closed · X cmd`
+
+- `src/app/[locale]/(public)/lab/morphic/MorphicLab.css`
+  - `.morphic-state-badge` : pill 0.2em/0.6em, border 1px, font-size 0.75rem, `tabular-nums`
+  - `.morphic-state-badge--active` : `color-mix(in srgb, fg 8%, surface)` background + `color-mix(in srgb, fg 30%, transparent)` border
+  - `@supports not (background: color-mix(in srgb, red, blue))` : fallback `#fef3c7/#f59e0b/#78350f` (Safari < 16.4, Firefox < 113)
+
+#### Pollings — justification
+
+| Composant | Intervalle | Raison |
+|-----------|-----------|--------|
+| Pomodoro | 1000ms | Tick visible utilisateur, granularité seconde suffisante, batterie OK |
+| CommandPalette | 500ms | Feedback ouverture/fermeture doit être ~instantané, état change rarement |
+
+Pas de `requestAnimationFrame` (overkill pour un compteur seconde), pas de subscribe (engine n'expose pas d'observable — décision B-001).
+
+#### Preuves d'exécution
+
+- Build local : `next build` OK après `prisma generate` (régénère client Prisma — schema avait dérivé localement depuis le dernier checkout)
+- Push : `00133dd` `theermite-gms/The-Ermite main`
+- Build Docker : `DOCKER_BUILDKIT=1 docker compose -f compose/theermite.yml build the-ermite` OK (27s export image, BuildKit secret npmrc OK pour @morphic/* Verdaccio fetch)
+- Deploy : `docker compose up -d the-ermite` → `Container shinkofa_the_ermite_prod Recreated/Starting/Started`
+- Smoke : `GET https://theermite.com/api/health` → HTTP 200 (135b, 100ms). `GET https://theermite.com/fr/lab/morphic` → HTTP 200 (207KB, 766ms after redirect)
+- Validation visuelle : Jay (à venir)
+
+#### Erreurs rencontrées (transparence)
+
+- 1er `next build` local échouait sur 4 routes API avec des erreurs TS Prisma (`socialCaptions`, `generateVideo`, `article` relation). Diagnostic : le Prisma client local n'avait pas été régénéré depuis les derniers commits du schema (commit `080e476` ajoutait ces champs). Le pipeline Docker exécute `prisma generate` automatiquement avant `next build` (Dockerfile ligne 25), donc v3 avait déployé sans souci. Fix : `pnpm exec prisma generate` localement avant le 2e build. Pas un bug du Lab — friction d'env local.
+- Hook `reformulate-gate.py` bloqué 10+ fois sur edits multi-fichiers — protocole de récupération appliqué à chaque fois (REFORMULATION + retry), travail méthodique respecté.
 
 ---
 
