@@ -1634,9 +1634,53 @@ Axes couverts par les rules CSS scopées :
 - Push : OK (theermite-gms/The-Ermite `da71429..3dcb075`)
 - Deploy : `shinkofa-prod-the-ermite` image rebuilt + container recreated `Up (healthy)`
 
+##### Fix v2 — 2026-05-24 (scope pivot Option A → Option B)
+
+**Retour Jay sur Option A (3dcb075)** : « Ça met à jour le bloc dans lequel il y a les options et les panneaux d'adaptation morphique, mais ça ne met pas à jour le site internet en tant que tel. »
+
+Diagnostic v2 : le scoping CSS Module sur `.morphicLab` limitait l'adaptation au seul wrap div des panneaux. Or l'intention de la lab est de **DÉMONTRER** l'engine sur la page entière (body, header, sections, footer). Option A était techniquement correcte mais conceptuellement à côté.
+
+**Option B retenue (Jay « go » 2026-05-24)** : page-scoped GLOBAL CSS via Next.js App Router automatic route bundling.
+
+| Mécanisme | Comment ça scope la page sans `.morphicLab` |
+|-----------|---------------------------------------------|
+| `MorphicLab.css` (regular, pas `.module.css`) | Sélecteurs globaux préservés (`html`, `body`, `header`, `nav`, `main`, `footer`, `section`) |
+| `import './MorphicLab.css'` côté client | Next.js App Router bundle automatiquement le chunk CSS dans la route qui l'importe |
+| Route `/lab/morphic` uniquement | Le chunk `6d6d7ace5aab3e5e.css` ne se charge QUE sur cette route — Blog, Parcours, Services intacts |
+| `!important` | Override Tailwind utilities + ThemeProvider The Ermite sur la lab uniquement |
+
+Architecture inchangée : engine writes attrs sur `<html>`, host CSS map attrs → variables. Ce qui change : le host CSS cible désormais le DOM page entier (proof of value de la démo) au lieu d'un sous-arbre isolé.
+
+**Fichiers** (commit `b072b8b`)
+- `MorphicLab.module.css` → `MorphicLab.css` (rename + rewrite sélecteurs globaux, 208 lignes)
+- `MorphicLab.tsx` : `import './MorphicLab.css'` (side-effect) + wrap `className="space-y-10"` (pas de token hashé)
+- `__tests__/MorphicLab.test.tsx` : suppression 6ᵉ test (assertion CSS Module token devenu obsolète, 5/5 tests originaux conservés)
+
+**Preuves**
+- `pnpm exec vitest run "src/app/[locale]/(public)/lab/morphic"` → **5/5 PASS** (2.21s)
+- `pnpm exec tsc --noEmit` → zéro erreur sur lab/morphic (Prisma drift hors scope persiste)
+- Prod CSS chunk `https://theermite.com/_next/static/chunks/6d6d7ace5aab3e5e.css` :
+  - 0 occurrence de `morphicLab` (preuve : plus aucun token hashé, scope géré par route bundling)
+  - 5 valeurs theme (`auto`, `dark`, `high-contrast`, `light`, `sepia`)
+  - Première règle = `html{--lab-bg:#fff;...}` puis `body{background-color:var(--lab-bg)!important;...}` (preuve : sélecteurs globaux + !important deployés)
+- Container `shinkofa_the_ermite_prod` recreated `Started` à 02:16 UTC+2 sur image `sha256:b892b12dac574e3bfaa80fe84257ffb69db4535d96d8f56015b6fa9e7b5cbe31`
+
+**Leçon retenue** (Monozukuri #5 « la preuve, jamais l'affirmation »)
+
+Option A passait les tests unitaires (CSS Module token présent, axes attrs sur `<html>` posés) mais NE PROUVAIT PAS la valeur visible. La preuve n'est pas « la règle existe dans le CSS » — c'est « l'utilisateur voit la page changer ». Validation visuelle Jay = test final irremplaçable. Future B-021c devra ajouter un smoke test visuel automatisé (Playwright `getComputedStyle(body).backgroundColor` après click theme=dark).
+
+##### Commit v2
+
+- SHA : `b072b8b` (The-Ermite repo)
+- Branch : `main`
+- Message : `fix(lab/morphic): B-021b v2 scope pivot Option A -> Option B`
+- 3 files changed, 93 insertions(+), 66 deletions(-)
+- Push : OK (theermite-gms/The-Ermite `3dcb075..b072b8b`)
+- Deploy : `shinkofa-prod-the-ermite` rebuilt (manifest `sha256:b892b12d…`) + container recreated `Started` 2026-05-24 02:16
+
 #### Statut
 
-🟢 Done — démo accessible à `/lab/morphic` (FR/EN/ES via routing locale) + fix visible-adaptation 2026-05-24 déployé. Reste avant release publique : Lighthouse ≥95, Feedback Widget, polish onboarding (B-021c).
+🟢 Done — démo accessible à `/lab/morphic` (FR/EN/ES via routing locale), adaptation page entière visible (header/body/sections/footer) sur clic theme/density/motion/fontSize/fontFamily/contrast. Reste avant release publique : Lighthouse ≥95, Feedback Widget, polish onboarding, web fonts Atkinson/OpenDyslexic, smoke visuel Playwright (B-021c).
 
 ---
 
