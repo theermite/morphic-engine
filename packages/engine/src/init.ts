@@ -48,6 +48,10 @@ type FontSize = (typeof VALID_FONT_SIZES)[number];
 export const VALID_FONT_FAMILIES = ['system', 'serif', 'atkinson', 'dyslexic'] as const;
 type FontFamily = (typeof VALID_FONT_FAMILIES)[number];
 
+/** Valid density values (closed enum). Exported for cross-module sync check (B-009). */
+export const VALID_DENSITIES = ['compact', 'comfortable', 'spacious'] as const;
+type Density = (typeof VALID_DENSITIES)[number];
+
 // ---------------------------------------------------------------------------
 // Type
 // ---------------------------------------------------------------------------
@@ -59,6 +63,7 @@ export interface MorphicPrefs {
   contrast?: string;
   fontSize?: string;
   fontFamily?: string;
+  density?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +88,10 @@ function isValidFontSize(value: unknown): value is FontSize {
 
 function isValidFontFamily(value: unknown): value is FontFamily {
   return typeof value === 'string' && (VALID_FONT_FAMILIES as readonly string[]).includes(value);
+}
+
+function isValidDensity(value: unknown): value is Density {
+  return typeof value === 'string' && (VALID_DENSITIES as readonly string[]).includes(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,16 +190,19 @@ export function morphicInit(): void {
   const motion: Motion =
     prefs !== null && isValidMotion(prefs.motion) ? prefs.motion : readMediaMotion();
   root.style.setProperty('--morphic-motion', motion);
+  root.setAttribute('data-morphic-motion', motion);
 
   // --- Contrast ---
   const contrast: Contrast =
     prefs !== null && isValidContrast(prefs.contrast) ? prefs.contrast : readMediaContrast();
   root.style.setProperty('--morphic-contrast', contrast);
+  root.setAttribute('data-morphic-contrast', contrast);
 
   // --- Font Size ---
   const fontSize: FontSize =
     prefs !== null && isValidFontSize(prefs.fontSize) ? prefs.fontSize : 'md';
   root.style.setProperty('--morphic-font-size', fontSize);
+  root.setAttribute('data-morphic-font-size', fontSize);
 
   // --- Font Family ---
   // No `prefers-font-family` media query exists. Default to 'system'.
@@ -198,4 +210,11 @@ export function morphicInit(): void {
     prefs !== null && isValidFontFamily(prefs.fontFamily) ? prefs.fontFamily : 'system';
   root.style.setProperty('--morphic-font-family', fontFamily);
   root.setAttribute('data-morphic-font-family', fontFamily);
+
+  // --- Density ---
+  // No `prefers-density` media query exists. Default to 'comfortable'.
+  const density: Density =
+    prefs !== null && isValidDensity(prefs.density) ? prefs.density : 'comfortable';
+  root.style.setProperty('--morphic-density', density);
+  root.setAttribute('data-morphic-density', density);
 }

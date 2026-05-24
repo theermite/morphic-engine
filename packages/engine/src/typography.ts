@@ -74,7 +74,11 @@ export function setFontSize(size: FontSizeChoice): ResolvedFontSize {
 
   const resolved: ResolvedFontSize = size === 'auto' ? resolveAutoFontSize() : size;
 
+  // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
+  // CSS attribute selectors cannot target custom properties, so the
+  // `data-morphic-font-size` attribute is required for consumer stylesheets.
   document.documentElement.style.setProperty('--morphic-font-size', resolved);
+  document.documentElement.setAttribute('data-morphic-font-size', resolved);
 
   try {
     let existing: Record<string, unknown> = {};

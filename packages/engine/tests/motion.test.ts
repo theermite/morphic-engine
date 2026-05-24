@@ -15,12 +15,14 @@ import { MOTIONS } from '../src/tokens.js';
 
 beforeEach(() => {
   document.documentElement.style.removeProperty('--morphic-motion');
+  document.documentElement.removeAttribute('data-morphic-motion');
   localStorage.clear();
   vi.restoreAllMocks();
 });
 
 afterEach(() => {
   document.documentElement.style.removeProperty('--morphic-motion');
+  document.documentElement.removeAttribute('data-morphic-motion');
   localStorage.clear();
 });
 
@@ -36,6 +38,15 @@ describe('setMotion — DOM updates', () => {
   ] as const)('sets --morphic-motion CSS var to "%s"', (motion) => {
     setMotion(motion);
     expect(document.documentElement.style.getPropertyValue('--morphic-motion')).toBe(motion);
+  });
+
+  it.each([
+    'full',
+    'reduced',
+    'none',
+  ] as const)('sets data-morphic-motion attribute to "%s" (selector cascade)', (motion) => {
+    setMotion(motion);
+    expect(document.documentElement.getAttribute('data-morphic-motion')).toBe(motion);
   });
 
   it('resolves "auto" to "reduced" when prefers-reduced-motion: reduce IS matched', () => {

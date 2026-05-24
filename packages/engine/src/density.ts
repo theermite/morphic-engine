@@ -74,7 +74,11 @@ export function setDensity(density: DensityChoice): ResolvedDensity {
 
   const resolved: ResolvedDensity = density === 'auto' ? resolveAutoDensity() : density;
 
+  // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
+  // CSS attribute selectors cannot target custom properties, so the
+  // `data-morphic-density` attribute is required for consumer stylesheets.
   document.documentElement.style.setProperty('--morphic-density', resolved);
+  document.documentElement.setAttribute('data-morphic-density', resolved);
 
   try {
     let existing: Record<string, unknown> = {};

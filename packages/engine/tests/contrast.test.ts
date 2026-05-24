@@ -18,12 +18,14 @@ import { CONTRASTS } from '../src/tokens.js';
 
 beforeEach(() => {
   document.documentElement.style.removeProperty('--morphic-contrast');
+  document.documentElement.removeAttribute('data-morphic-contrast');
   localStorage.clear();
   vi.restoreAllMocks();
 });
 
 afterEach(() => {
   document.documentElement.style.removeProperty('--morphic-contrast');
+  document.documentElement.removeAttribute('data-morphic-contrast');
   localStorage.clear();
 });
 
@@ -40,6 +42,16 @@ describe('setContrast — DOM updates', () => {
   ] as const)('sets --morphic-contrast CSS var to "%s"', (contrast) => {
     setContrast(contrast);
     expect(document.documentElement.style.getPropertyValue('--morphic-contrast')).toBe(contrast);
+  });
+
+  it.each([
+    'no-preference',
+    'more',
+    'less',
+    'custom',
+  ] as const)('sets data-morphic-contrast attribute to "%s" (selector cascade)', (contrast) => {
+    setContrast(contrast);
+    expect(document.documentElement.getAttribute('data-morphic-contrast')).toBe(contrast);
   });
 
   it('resolves "auto" via media query and sets CSS var', () => {

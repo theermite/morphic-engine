@@ -1,8 +1,26 @@
 {
   "name": "@morphic/engine",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-beta.1",
   "description": "Shinkofa Morphic Adaptation Engine — framework-agnostic core",
   "license": "AGPL-3.0-or-later",
+  "author": "Shinkofa & contributors",
+  "homepage": "https://github.com/theermite/morphic-engine#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theermite/morphic-engine.git",
+    "directory": "packages/engine"
+  },
+  "bugs": {
+    "url": "https://github.com/theermite/morphic-engine/issues"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "adaptation",
+    "morphic",
+    "neurodivergent",
+    "shinkofa"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -22,6 +40,10 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.shinkofa.com/"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
@@ -45,9 +67,6 @@
     "y-indexeddb": "9.0.12",
     "yjs": "13.6.30",
     "zod": "4.4.3"
-  },
-  "optionalDependencies": {
-    "@morphic/wasm-core": "workspace:*"
   },
   "peerDependencies": {
     "effect": "^3.21.2"

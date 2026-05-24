@@ -18,12 +18,14 @@ import { getFontSize, resolveAutoFontSize, setFontSize } from '../src/typography
 
 beforeEach(() => {
   document.documentElement.style.removeProperty('--morphic-font-size');
+  document.documentElement.removeAttribute('data-morphic-font-size');
   localStorage.clear();
   vi.restoreAllMocks();
 });
 
 afterEach(() => {
   document.documentElement.style.removeProperty('--morphic-font-size');
+  document.documentElement.removeAttribute('data-morphic-font-size');
   localStorage.clear();
 });
 
@@ -35,6 +37,16 @@ describe('setFontSize — DOM updates', () => {
   it.each(['sm', 'md', 'lg', 'xl'] as const)('sets --morphic-font-size CSS var to "%s"', (size) => {
     setFontSize(size);
     expect(document.documentElement.style.getPropertyValue('--morphic-font-size')).toBe(size);
+  });
+
+  it.each([
+    'sm',
+    'md',
+    'lg',
+    'xl',
+  ] as const)('sets data-morphic-font-size attribute to "%s" (selector cascade)', (size) => {
+    setFontSize(size);
+    expect(document.documentElement.getAttribute('data-morphic-font-size')).toBe(size);
   });
 
   it('resolves "auto" to "md" (no OS media query for font-size)', () => {

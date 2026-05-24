@@ -18,12 +18,14 @@ import { DENSITIES } from '../src/tokens.js';
 
 beforeEach(() => {
   document.documentElement.style.removeProperty('--morphic-density');
+  document.documentElement.removeAttribute('data-morphic-density');
   localStorage.clear();
   vi.restoreAllMocks();
 });
 
 afterEach(() => {
   document.documentElement.style.removeProperty('--morphic-density');
+  document.documentElement.removeAttribute('data-morphic-density');
   localStorage.clear();
 });
 
@@ -39,6 +41,15 @@ describe('setDensity — DOM updates', () => {
   ] as const)('sets --morphic-density CSS var to "%s"', (density) => {
     setDensity(density);
     expect(document.documentElement.style.getPropertyValue('--morphic-density')).toBe(density);
+  });
+
+  it.each([
+    'compact',
+    'comfortable',
+    'spacious',
+  ] as const)('sets data-morphic-density attribute to "%s" (selector cascade)', (density) => {
+    setDensity(density);
+    expect(document.documentElement.getAttribute('data-morphic-density')).toBe(density);
   });
 
   it('resolves "auto" to "comfortable" (no OS media query for density)', () => {

@@ -92,7 +92,11 @@ export function setMotion(motion: MotionChoice): ResolvedMotion {
   const resolved: ResolvedMotion = motion === 'auto' ? resolveAutoMotion() : motion;
 
   // Apply to DOM first — this MUST succeed even if storage fails.
+  // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
+  // CSS attribute selectors cannot target custom properties, so the
+  // `data-morphic-motion` attribute is required for consumer stylesheets.
   document.documentElement.style.setProperty('--morphic-motion', resolved);
+  document.documentElement.setAttribute('data-morphic-motion', resolved);
 
   // Persist the USER choice (not the resolved value), preserving other axes.
   try {

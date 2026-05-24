@@ -77,7 +77,11 @@ export function setContrast(contrast: ContrastChoice): ResolvedContrast {
 
   const resolved: ResolvedContrast = contrast === 'auto' ? resolveAutoContrast() : contrast;
 
+  // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
+  // CSS attribute selectors cannot target custom properties, so the
+  // `data-morphic-contrast` attribute is required for consumer stylesheets.
   document.documentElement.style.setProperty('--morphic-contrast', resolved);
+  document.documentElement.setAttribute('data-morphic-contrast', resolved);
 
   try {
     let existing: Record<string, unknown> = {};
