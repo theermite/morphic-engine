@@ -1682,6 +1682,87 @@ Option A passait les tests unitaires (CSS Module token présent, axes attrs sur 
 
 🟢 Done — démo accessible à `/lab/morphic` (FR/EN/ES via routing locale), adaptation page entière visible (header/body/sections/footer) sur clic theme/density/motion/fontSize/fontFamily/contrast. Reste avant release publique : Lighthouse ≥95, Feedback Widget, polish onboarding, web fonts Atkinson/OpenDyslexic, smoke visuel Playwright (B-021c).
 
+#### Fix v3 — 2026-05-24 (câblage 7 axes + démo Site/ColorVision/WAI)
+
+##### Symptôme rapporté Jay (post v2 deploy)
+
+Après Option B (page-wide scope) confirmé visible, Jay rapporte 8 régressions de comportement sur les axes individuels :
+
+| # | Axe | Symptôme |
+|---|-----|----------|
+| 1 | theme | Pas d'option pour revenir au thème site The Ermite |
+| 2 | motion | Aucune transition perceptible (durée non câblée à des éléments visibles) |
+| 3 | contrast | Filter `contrast(1.25)` / `contrast(0.85)` imperceptible à l'œil nu |
+| 4 | density | Tailwind `space-y-*` et `gap-*` non overridés → spacing inchangé |
+| 5 | fontSize | `font-size` posé sur `body` n'atteint pas les `text-*` (rem-based) |
+| 6 | fontFamily | Sélecteurs trop étroits (body only) → la majorité du contenu inchangée |
+| 7 | colorVision | Daltonization SVG filter actif mais zéro couleur saturée sur la page → invisible |
+| 8 | waiSymbols | Resolver passé = `() => null` (no-op intentionnel démo) → aucun glyphe injecté |
+
+##### Diagnostic
+
+Aucune régression engine (`@morphic/engine` ne change pas). Les 8 problèmes sont 100% côté consumer (CSS + Lab UI markup). Engine = framework-agnostic by design (ships zero CSS). C'est au consumer de :
+1. Écrire des règles CSS assez fortes pour battre les utilitaires Tailwind
+2. Fournir les éléments DOM que l'engine walke (color swatches, `[adapt-symbol]`)
+3. Fournir le resolver de glyphes (BCI index → URL)
+
+##### Actions
+
+**CSS (`MorphicLab.css` v3)** :
+- theme rules gated par `html[data-morphic-theme]` → option Site = `removeAttribute('data-morphic-theme')` désactive override
+- `font-size` pivoté sur `<html>` (14/16/18/20px par axe) → tous les `text-*` Tailwind (rem) cascadent
+- density override `.space-y-{2,3,4,6,10} > * + *` + `[class*='gap-*']` via `--lab-gap`
+- contrast bumped à `contrast(1.5) saturate(1.15)` / `contrast(0.6) saturate(0.85)` (1.25/0.85 imperceptible)
+- motion visible : `transition: transform var(--lab-motion-duration)` + `transform: translateY(var(--lab-motion-hover-lift))` sur button hover ; `none` → `*::before/after { transition:none; animation:none }` universel
+- font-family appliqué sur `body, h1-h6, p, span, div, label, button, input` ; `pre, code, kbd, samp` gardent monospace
+- demo helpers : `.morphic-color-swatches` (R/G/B/Y saturés) + `.morphic-wai-demo` (container border dashed)
+
+**Lab UI (`MorphicLab.tsx` v3)** :
+- SensorySection `onSiteTheme` useCallback + bouton "site" à côté du RadioGroup theme
+- SensorySection 4 swatches `<span className="morphic-color-swatch morphic-color-swatch--{red,green,blue,yellow}">` sous ColorVision pour daltonization visible
+- CognitiveSection `DEMO_SYMBOLS` record mappant BCI 1-4 vers inline SVG data URI (home/food/walk/book) ; resolver `(bciIndex) => DEMO_SYMBOLS[bciIndex] ?? null`
+- CognitiveSection `<div className="morphic-wai-demo">` avec 4 `<span {...{ 'adapt-symbol': 'N' }}>label</span>` (spread syntax pour contourner JSX strict sur attribut custom non-standard)
+
+##### Tests post-fix v3
+
+| Test | État | Notes |
+|------|------|-------|
+| tsc strict scoped lab/morphic | 🟢 0 errors | `npx tsc --noEmit` filtré sur `lab/morphic` = vide |
+| vitest 5/5 lab/morphic | 🟢 5 passed (2.27s) | Tests Option A (#6 CSS Module token) retirés post-v2 ; structure inchangée |
+| Pre-existing Prisma drift | 🟡 Pre-existing | `socialCaptions`/`generateVideo`/`article` toujours hors-scope B-021b |
+
+##### Preuves prod (post-deploy)
+
+- Image rebuilt : `shinkofa-prod-the-ermite` manifest `sha256:81110300ce4f4c5c305f6ea70fa3e24d6767ab126976ddf3c4e3593b52e51afb`
+- Container recreated `Started` 2026-05-24 02:41 (UTC)
+- CSS chunk prod `21cca555109fc587.css` contient :
+  - 6/6 `data-morphic-*` attributes (theme/motion/contrast/density/font-family/font-size)
+  - 8/8 `--lab-*` variables (bg/fg/border/surface/font-family/font-size-base/gap/motion-duration/motion-hover-lift/section-pad)
+  - `data-morphic-wai-symbol` (selector engine target)
+  - demo classes `morphic-color-swatch`, `morphic-wai-demo`
+- HTTP 200 sur `https://theermite.com/lab/morphic` (207 KB HTML)
+
+##### Erreurs rencontrées et résolution
+
+| # | Erreur | Cause | Résolution |
+|---|--------|-------|------------|
+| 1 | Reformulate-gate hook BLOCKED 4× | 2+ fichiers touchés multi-turn sans REFORMULATION fresh | Emit REFORMULATION bloc avec liste numérotée 4 points avant chaque retry |
+| 2 | JSX strict refuse `<span adapt-symbol="1">` | TS intrinsic span ne connaît pas attribut custom hyphenated | Spread syntax `{...{ 'adapt-symbol': '1' }}` contourne le check |
+| 3 | curl regex `/_next/static/css/` ne match pas en prod | Next.js 16 stocke CSS dans `/_next/static/chunks/*.css` (pas `/css/`) | Regex ajustée pour chunks |
+
+##### Décision Monozukuri #5 réaffirmée (RIGUEUR > VITESSE)
+
+v2 prouvait que les attributs se posaient sur `<html>` et que le CSS Module chargeait — mais ne prouvait pas que CHAQUE AXE produisait un changement visible. Le smoke chunk grep ne remplace pas la validation visuelle Jay axe par axe. B-021c devra impérativement automatiser `getComputedStyle` per-axis (Playwright) pour empêcher cette régression silencieuse.
+
+##### Commit v3
+
+- SHA : `903d0ff` (The-Ermite repo)
+- Branch : `main`
+- Message : `fix(lab/morphic): B-021b v3 wire 7 axes + Site theme + WAI/ColorVision demos`
+- 2 files changed, 245 insertions(+), 57 deletions(-)
+- Push : OK (theermite-gms/The-Ermite `b072b8b..903d0ff`)
+- Deploy : `shinkofa-prod-the-ermite` rebuilt + recreated 2026-05-24 02:41
+
 ---
 
 ### B-024a — Export GDPR Article 20 (préférences morphiques)
