@@ -1,10 +1,28 @@
 {
   "name": "@morphic/adapter",
-  "version": "2.0.0-alpha.0",
-  "description": "Shinkofa Morphic Adaptation — React adapter (B-021a)",
+  "version": "2.0.0-beta.0",
+  "description": "Shinkofa Morphic Adaptation — React adapter (provider + hooks)",
   "license": "AGPL-3.0-or-later",
+  "author": "Shinkofa & contributors",
+  "homepage": "https://github.com/theermite/morphic-engine/tree/main/packages/adapter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theermite/morphic-engine.git",
+    "directory": "packages/adapter"
+  },
+  "bugs": {
+    "url": "https://github.com/theermite/morphic-engine/issues"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "adaptation",
+    "morphic",
+    "react",
+    "react-hooks",
+    "shinkofa"
+  ],
   "type": "module",
-  "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -15,8 +33,13 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.shinkofa.com/"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
@@ -25,7 +48,7 @@
     "clean": "rm -rf dist coverage"
   },
   "peerDependencies": {
-    "@morphic/engine": "workspace:*",
+    "@morphic/engine": "^2.0.0-beta.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
