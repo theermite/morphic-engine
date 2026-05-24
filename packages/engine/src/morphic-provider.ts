@@ -35,7 +35,16 @@ interface ReadyCarrier {
   [READY_FLAG]?: boolean;
 }
 
-export class MorphicProvider extends HTMLElement {
+// B-021d SSR safety — in a pure Node env (Next RSC, Astro server-island,
+// SvelteKit `+page.server`), `HTMLElement` is undefined and the class
+// declaration would throw `ReferenceError` at module load. Falling back to
+// an empty class shim keeps the module importable. The shim is never
+// instantiated server-side because `defineMorphicProvider()` short-circuits
+// when `customElements` is undefined.
+const SafeHTMLElement: typeof HTMLElement =
+  typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
+
+export class MorphicProvider extends SafeHTMLElement {
   constructor() {
     super();
     // Custom Elements v1 spec guarantees the constructor is invoked exactly

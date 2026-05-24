@@ -322,7 +322,14 @@ async function loadFuse(): Promise<typeof FuseCtor> {
   return FuseCtor;
 }
 
-class MorphicCommandPaletteElement extends HTMLElement {
+// B-021d SSR safety — see morphic-provider.ts for the rationale: server-side
+// renders never instantiate the element (registration is gated on
+// `customElements`), but the class declaration itself needs `HTMLElement`
+// to exist at module load. Empty-class shim keeps imports safe in Node.
+const SafeHTMLElement: typeof HTMLElement =
+  typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
+
+class MorphicCommandPaletteElement extends SafeHTMLElement {
   private commands: Command[] = [];
   private filtered: Command[] = [];
   private selectedIndex = 0;
