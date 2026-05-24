@@ -28,6 +28,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY, VALID_MOTIONS } from './init.js';
+import { getTarget } from './target.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,8 +96,10 @@ export function setMotion(motion: MotionChoice): ResolvedMotion {
   // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
   // CSS attribute selectors cannot target custom properties, so the
   // `data-morphic-motion` attribute is required for consumer stylesheets.
-  document.documentElement.style.setProperty('--morphic-motion', resolved);
-  document.documentElement.setAttribute('data-morphic-motion', resolved);
+  // Target defaults to `document.documentElement` (see `target.ts`).
+  const root = getTarget();
+  root.style.setProperty('--morphic-motion', resolved);
+  root.setAttribute('data-morphic-motion', resolved);
 
   // Persist the USER choice (not the resolved value), preserving other axes.
   try {

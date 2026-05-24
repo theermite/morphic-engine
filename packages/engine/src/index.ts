@@ -9,7 +9,7 @@
  * License: AGPL-3.0-or-later.
  */
 
-export const VERSION = '2.0.0-alpha.0' as const;
+export const VERSION = '2.0.0-beta.2' as const;
 
 export {
   CLICK_DELAY_MAX,
@@ -261,6 +261,7 @@ export {
   type SyncEngineStatus,
   setSyncedPreference,
 } from './sync-engine.js';
+export { __resetTargetForTests, getTarget, setTarget } from './target.js';
 export {
   getTheme,
   type ResolvedTheme,

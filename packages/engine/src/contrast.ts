@@ -19,6 +19,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { getTarget } from './target.js';
 import { CONTRASTS } from './tokens.js';
 
 // ---------------------------------------------------------------------------
@@ -80,8 +81,10 @@ export function setContrast(contrast: ContrastChoice): ResolvedContrast {
   // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
   // CSS attribute selectors cannot target custom properties, so the
   // `data-morphic-contrast` attribute is required for consumer stylesheets.
-  document.documentElement.style.setProperty('--morphic-contrast', resolved);
-  document.documentElement.setAttribute('data-morphic-contrast', resolved);
+  // Target defaults to `document.documentElement` (see `target.ts`).
+  const root = getTarget();
+  root.style.setProperty('--morphic-contrast', resolved);
+  root.setAttribute('data-morphic-contrast', resolved);
 
   try {
     let existing: Record<string, unknown> = {};

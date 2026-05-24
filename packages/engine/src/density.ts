@@ -19,6 +19,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { getTarget } from './target.js';
 import { DENSITIES } from './tokens.js';
 
 // ---------------------------------------------------------------------------
@@ -77,8 +78,10 @@ export function setDensity(density: DensityChoice): ResolvedDensity {
   // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
   // CSS attribute selectors cannot target custom properties, so the
   // `data-morphic-density` attribute is required for consumer stylesheets.
-  document.documentElement.style.setProperty('--morphic-density', resolved);
-  document.documentElement.setAttribute('data-morphic-density', resolved);
+  // Target defaults to `document.documentElement` (see `target.ts`).
+  const root = getTarget();
+  root.style.setProperty('--morphic-density', resolved);
+  root.setAttribute('data-morphic-density', resolved);
 
   try {
     let existing: Record<string, unknown> = {};

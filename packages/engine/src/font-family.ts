@@ -26,6 +26,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { getTarget } from './target.js';
 import { FONT_FAMILIES } from './tokens.js';
 
 // ---------------------------------------------------------------------------
@@ -86,7 +87,8 @@ export function setFontFamily(family: FontFamilyChoice): ResolvedFontFamily {
 
   const resolved: ResolvedFontFamily = family === 'auto' ? resolveAutoFontFamily() : family;
 
-  const root = document.documentElement;
+  // Target defaults to `document.documentElement` (see `target.ts`).
+  const root = getTarget();
   root.style.setProperty('--morphic-font-family', resolved);
   root.setAttribute('data-morphic-font-family', resolved);
 

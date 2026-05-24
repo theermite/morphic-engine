@@ -19,6 +19,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { getTarget } from './target.js';
 import { FONT_SIZES } from './tokens.js';
 
 // ---------------------------------------------------------------------------
@@ -77,8 +78,10 @@ export function setFontSize(size: FontSizeChoice): ResolvedFontSize {
   // Write BOTH the CSS var (legacy) AND the data attribute (selector cascade).
   // CSS attribute selectors cannot target custom properties, so the
   // `data-morphic-font-size` attribute is required for consumer stylesheets.
-  document.documentElement.style.setProperty('--morphic-font-size', resolved);
-  document.documentElement.setAttribute('data-morphic-font-size', resolved);
+  // Target defaults to `document.documentElement` (see `target.ts`).
+  const root = getTarget();
+  root.style.setProperty('--morphic-font-size', resolved);
+  root.setAttribute('data-morphic-font-size', resolved);
 
   try {
     let existing: Record<string, unknown> = {};

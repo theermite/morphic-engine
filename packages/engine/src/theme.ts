@@ -21,6 +21,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY, VALID_THEMES } from './init.js';
+import { getTarget } from './target.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,7 +81,8 @@ export function setTheme(theme: ThemeChoice): ResolvedTheme {
   const resolved: ResolvedTheme = theme === 'auto' ? resolveAutoTheme() : theme;
 
   // Apply to DOM first — this MUST succeed even if storage fails.
-  const root = document.documentElement;
+  // Target defaults to `document.documentElement` (see `target.ts`).
+  const root = getTarget();
   root.setAttribute('data-morphic-theme', resolved);
   root.style.setProperty('--morphic-theme', resolved);
 
