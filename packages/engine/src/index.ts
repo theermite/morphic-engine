@@ -9,7 +9,7 @@
  * License: AGPL-3.0-or-later.
  */
 
-export const VERSION = '2.0.0-beta.2' as const;
+export const VERSION = '2.0.0-beta.3' as const;
 
 export {
   CLICK_DELAY_MAX,
@@ -71,6 +71,14 @@ export {
   MORPHIC_DALTONIZE_FILTER_ID,
   setColorVisionCorrection,
 } from './daltonization.js';
+export {
+  __resetDeleteGdprStateForTests,
+  __setDeleteGdprUndoWindowForTests,
+  DELETE_GDPR_DEFAULT_UNDO_WINDOW_MS,
+  deleteAllPreferences,
+  MORPHIC_GDPR_DELETED_EVENT,
+  undoLastDelete,
+} from './delete-gdpr.js';
 export {
   type DensityChoice,
   getDensity,
