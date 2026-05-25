@@ -110,17 +110,13 @@ function makeWasmBackend(mod: WasmModule): CryptoBackend {
       return new Uint8Array(mod.wasmGenerateNonce());
     },
     encryptBox(plaintext, recipientPk, senderSk, nonce) {
-      return new Uint8Array(
-        mod.wasmEncryptBox(plaintext, recipientPk, senderSk, nonce),
-      );
+      return new Uint8Array(mod.wasmEncryptBox(plaintext, recipientPk, senderSk, nonce));
     },
     decryptBox(ciphertext, nonce, senderPk, recipientSk) {
       // wasm-bindgen surfaces `Err(JsError)` as a thrown Error — let it
       // propagate; callers expect a thrown failure on authentication errors,
       // matching the JS backend contract.
-      return new Uint8Array(
-        mod.wasmDecryptBox(ciphertext, nonce, senderPk, recipientSk),
-      );
+      return new Uint8Array(mod.wasmDecryptBox(ciphertext, nonce, senderPk, recipientSk));
     },
   };
 }
@@ -145,8 +141,7 @@ let backendPromise: Promise<CryptoBackend> | null = null;
  */
 export function getCryptoBackend(): Promise<CryptoBackend> {
   if (backendPromise === null) {
-    backendPromise = loadWasmBackend()
-      .catch(() => jsBackend);
+    backendPromise = loadWasmBackend().catch(() => jsBackend);
   }
   return backendPromise;
 }

@@ -22,7 +22,7 @@
  */
 
 import nacl from 'tweetnacl';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   __setBackendForTesting,
   type CryptoBackend,
@@ -53,18 +53,8 @@ describe('getJsBackend — always-available fallback', () => {
     // whose constructor fails tweetnacl's strict `instanceof` check).
     const message = Uint8Array.from([0x68, 0x65, 0x6c, 0x6c, 0x6f]); // "hello"
 
-    const ciphertext = js.encryptBox(
-      message,
-      recipient.publicKey,
-      sender.secretKey,
-      nonce,
-    );
-    const plaintext = js.decryptBox(
-      ciphertext,
-      nonce,
-      sender.publicKey,
-      recipient.secretKey,
-    );
+    const ciphertext = js.encryptBox(message, recipient.publicKey, sender.secretKey, nonce);
+    const plaintext = js.decryptBox(ciphertext, nonce, sender.publicKey, recipient.secretKey);
 
     expect(Array.from(plaintext)).toEqual(Array.from(message));
   });
@@ -83,14 +73,9 @@ describe('getJsBackend — always-available fallback', () => {
     );
     ciphertext[0] ^= 0x01; // single bit flip
 
-    expect(() =>
-      js.decryptBox(
-        ciphertext,
-        nonce,
-        sender.publicKey,
-        recipient.secretKey,
-      ),
-    ).toThrow(/authentication failure/);
+    expect(() => js.decryptBox(ciphertext, nonce, sender.publicKey, recipient.secretKey)).toThrow(
+      /authentication failure/,
+    );
   });
 
   it('produces 32-byte keys and 24-byte nonces', () => {
@@ -184,12 +169,7 @@ describe('loadWasmBackend — direct WASM loader', () => {
     expect(nonce).not.toBe(synthNonce);
 
     // Exercise encryptBox / decryptBox — bridge MUST copy outputs.
-    const cipher = backend.encryptBox(
-      new Uint8Array([1]),
-      synthPk,
-      synthSk,
-      synthNonce,
-    );
+    const cipher = backend.encryptBox(new Uint8Array([1]), synthPk, synthSk, synthNonce);
     expect(Array.from(cipher)).toEqual([0x11, 0x22, 0x33]);
 
     const plain = backend.decryptBox(synthCipher, synthNonce, synthPk, synthSk);

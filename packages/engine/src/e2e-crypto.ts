@@ -230,8 +230,11 @@ function assertKeyLength(key: Uint8Array, name: string): void {
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
-    // Safe non-null: loop invariant `i < bytes.length` guarantees a defined byte.
-    binary += String.fromCharCode(bytes[i]!);
+    const byte = bytes[i];
+    if (byte === undefined) {
+      throw new RangeError(`uint8ToBase64: unexpected undefined byte at index ${i}`);
+    }
+    binary += String.fromCharCode(byte);
   }
   return btoa(binary);
 }

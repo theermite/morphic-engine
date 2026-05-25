@@ -28,10 +28,10 @@
 import fc from 'fast-check';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  __resetColorVisionTargetForTests,
   COLOR_VISION_TYPES,
   type ColorVisionCorrection,
   type ColorVisionType,
-  __resetColorVisionTargetForTests,
   clearColorVisionCorrection,
   computeDaltonizationMatrix,
   daltonize,
@@ -670,9 +670,7 @@ describe('setColorVisionTarget — DOM scoping behavior', () => {
 
     // <html> stays untouched, the target carries the filter.
     expect(document.documentElement.style.filter).toBe('');
-    expect(main.style.filter).toMatch(
-      new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`),
-    );
+    expect(main.style.filter).toMatch(new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`));
   });
 
   it('falls back silently to <html> when the selector matches nothing', () => {
@@ -710,9 +708,7 @@ describe('setColorVisionTarget — DOM scoping behavior', () => {
     setColorVisionTarget('main');
 
     expect(document.documentElement.style.filter).toBe('');
-    expect(main.style.filter).toMatch(
-      new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`),
-    );
+    expect(main.style.filter).toMatch(new RegExp(`^url\\("?#${MORPHIC_DALTONIZE_FILTER_ID}"?\\)$`));
   });
 
   it('migrates an active correction back to <html> when target is reset to null', () => {
@@ -808,19 +804,13 @@ describe('getColorVisionTarget', () => {
   });
 
   it('reads from storage when in-memory state is null', () => {
-    localStorage.setItem(
-      MORPHIC_STORAGE_KEY,
-      JSON.stringify({ colorVisionTarget: '#app' }),
-    );
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ colorVisionTarget: '#app' }));
     // In-memory state is null (fresh module / reset for tests).
     expect(getColorVisionTarget()).toBe('#app');
   });
 
   it('returns null when storage holds a non-string value', () => {
-    localStorage.setItem(
-      MORPHIC_STORAGE_KEY,
-      JSON.stringify({ colorVisionTarget: 42 }),
-    );
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ colorVisionTarget: 42 }));
     expect(getColorVisionTarget()).toBeNull();
   });
 });
