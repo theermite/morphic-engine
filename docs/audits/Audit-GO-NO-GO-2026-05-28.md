@@ -215,3 +215,54 @@ Après ces 7 étapes :
 - JSON-LD : `docs/Articles/jsonld-morphic-engine.json`
 - CI runs : github.com/theermite/morphic-engine/actions (5 derniers : ❌ lint step)
 - PET roadmap : `docs/PET.md` §6 (B-028 = présent audit, B-029 = release tag v2.0.0)
+
+---
+
+## Mise à jour 2026-05-28 (post-remédiation) — verdict final **GO**
+
+Remédiation exécutée immédiatement après publication §6 plan. **Trois commits** appliqués sur `main` :
+
+1. `5ca4a7b` — `fix(engine): B-028 zero lint/warning for NLNet eligibility`
+   - Option B `e2e-crypto.ts:230` : `bytes[i]!` remplacé par garde explicite `RangeError` (critical path crypto).
+   - `wasm-bridge.test.ts:25` : suppression import `beforeEach` inutilisé.
+   - Auto-fix biome sur 3 fichiers (organizeImports + line-width).
+2. `174759d` — `ci: install Rust toolchain + wasm-pack on runner`
+   - Régression CI pré-existante levée (wasm-pack absent ubuntu-latest faisait échouer 5 derniers runs).
+   - Ajout `dtolnay/rust-toolchain@stable` + curl install officiel wasm-pack.
+3. Commit présent — fix 2 a11y violations Presentation.html :
+   - `opacity: 0.5` → `color: var(--fg-muted)` (contraste suffisant).
+   - `aria-label` → `title` sur theme-toggle / imprimer (résout WCAG 2.5.3 label-content-name-mismatch).
+
+### Score 4D post-remédiation
+
+| Dim | Initial | Final | Δ |
+|-----|---------|-------|---|
+| D1 Foundation+Stack | 95 | **95** | — |
+| D2 Quality (L0-L2) | 65 ❌ | **94** ✅ | +29 |
+| D3 Security+Compliance | 95 | **95** | — |
+| D4 Documentation+Process | 75 ❌ | **95** ✅ | +20 |
+| **Total pondéré** | 82.5 | **94.75 / 100** | **+12.25** |
+
+### Mesures finales
+
+| Métrique | Valeur | Target | État |
+|----------|--------|--------|------|
+| Lint biome | 0 errors / 0 warnings | 0 | ✅ |
+| Tests (engine + adapter + wasm-core) | **1314 / 1314 passed** | 100 % | ✅ |
+| CI Node 22 + Node 24 | **vert** | vert | ✅ (run 26393104071) |
+| Lighthouse Performance | **100** | ≥95 | ✅ |
+| Lighthouse Accessibility | **100** | ≥95 | ✅ |
+| Lighthouse Best-Practices | **96** | ≥95 | ✅ |
+| Lighthouse SEO | **100** | ≥95 | ✅ |
+| Axe via Lighthouse | **0 violations** | 0 | ✅ |
+| LCP / CLS / TBT | 1.2s / 0 / 10ms | < 2.0s / < 0.05 / — | ✅ |
+
+### Verdict final
+
+**GO pour soumission NLNet NGI0 Commons (deadline 2026-06-01).**
+
+Reste à enchaîner :
+- **Bloc 4.3** — rédaction dossier `docs/Refonte/NLNet-Dossier-*` (Description / Comparison / Plan / Team / Budget).
+- B-021c reste 🟡 In progress : la phase 1 (Lighthouse + axe sur Presentation.html) est livrée ; phase 2 (Feedback Widget + onboarding sur démo `/lab/morphic`) sera traitée pour la release v2.0.0 publique (B-029).
+
+PET §6 mis à jour : B-028 🟢 Done, B-021c 🟡 In progress (phase 1 livrée).

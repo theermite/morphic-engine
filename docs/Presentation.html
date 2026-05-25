@@ -175,7 +175,9 @@
     text-transform: uppercase;
     margin-top: 2rem;
   }
-  .meta span + span::before { content: " — "; opacity: 0.5; }
+  .meta span + span::before { content: " — "; color: var(--fg-muted); }
+
+  .mark-version { color: var(--fg-muted); }
 
   blockquote {
     margin: 2rem 0;
@@ -398,10 +400,10 @@
 <body>
 
 <header class="site">
-  <div class="mark">Shinkofa Morphic Engine <span style="opacity:0.5;">— v2.0.0</span></div>
+  <div class="mark">Shinkofa Morphic Engine <span class="mark-version">— v2.0.0</span></div>
   <nav>
-    <button id="theme-toggle" type="button" aria-label="Changer le thème">Auto</button>
-    <button onclick="window.print()" type="button" aria-label="Imprimer">Imprimer</button>
+    <button id="theme-toggle" type="button" title="Changer le thème">Auto</button>
+    <button onclick="window.print()" type="button" title="Imprimer la page">Imprimer</button>
   </nav>
 </header>
 
