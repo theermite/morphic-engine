@@ -1,0 +1,71 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "morphic-engine",
+  "alternateName": "Shinkofa Morphic Adaptation Engine",
+  "description": "Framework-agnostic morphic adaptation engine. Eighteen independent adaptation axes (color vision correction, reading guide, tremor filter, reading focus, adaptive typography, reduced motion, pomodoro, etc.) with local persistence, designed to be integrated into a site's design system rather than overlaid on top of it. AGPL-3.0.",
+  "url": "https://github.com/theermite/morphic-engine",
+  "downloadUrl": "https://www.npmjs.com/package/@morphic/engine",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "Accessibility",
+  "operatingSystem": "Cross-platform",
+  "softwareVersion": "2.0.0-beta.5",
+  "datePublished": "2026-05-15",
+  "softwareRequirements": "Modern browser with ES2020+ support",
+  "programmingLanguage": "TypeScript",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Jay Goncalves",
+    "alternateName": "The Ermite",
+    "url": "https://the-ermite.com"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Shinkofa",
+    "url": "https://shinkofa.com"
+  },
+  "keywords": [
+    "accessibility",
+    "WCAG",
+    "morphic adaptation",
+    "neurodiversity",
+    "color vision",
+    "reading guide",
+    "tremor",
+    "ADHD",
+    "HSP",
+    "framework-agnostic",
+    "TypeScript"
+  ],
+  "featureList": [
+    "Color vision correction (protanopia, deuteranopia, tritanopia) via SVG color matrix",
+    "Reading guide overlay (line, mask, ruler modes) with configurable top/bottom offsets",
+    "Tremor filter with configurable pointer damping",
+    "Reading focus mode (isolate content block)",
+    "Adaptive typography (size, line-height, spacing)",
+    "Reduced motion compliance with per-axis intent extensions",
+    "Integrated Pomodoro mode for cognitive load management",
+    "Recovery mode (post-burnout, post-overstimulation)",
+    "WAI-ARIA symbol library",
+    "Local-first preference persistence",
+    "Framework-agnostic core (vanilla, React, Astro adapters)",
+    "GDPR Article 17 right-to-erasure built-in (deleteAllPreferences)"
+  ],
+  "creativeWorkStatus": "Beta",
+  "developmentStatus": "Active",
+  "codeRepository": "https://github.com/theermite/morphic-engine",
+  "issueTracker": "https://github.com/theermite/morphic-engine/issues",
+  "funder": {
+    "@type": "Organization",
+    "name": "NLNet Foundation",
+    "url": "https://nlnet.nl",
+    "description": "Candidate for NGI0 Commons funding round 2026-06"
+  }
+}
