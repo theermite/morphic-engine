@@ -9,7 +9,7 @@
  * License: AGPL-3.0-or-later.
  */
 
-export const VERSION = '2.0.0-beta.4' as const;
+export const VERSION = '2.0.0-beta.5' as const;
 
 export {
   CLICK_DELAY_MAX,
