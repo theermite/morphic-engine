@@ -44,7 +44,7 @@ jobs:
         run: pnpm -r run build
 
       - name: Test with coverage
-        run: pnpm -r --filter @morphic/engine run test:coverage
+        run: pnpm -r --filter @theermite/morphic-engine run test:coverage
         env:
           NODE_OPTIONS: --max-old-space-size=2048
 

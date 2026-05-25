@@ -1,9 +1,9 @@
 {
-  "name": "@morphic/engine",
+  "name": "@theermite/morphic-engine",
   "version": "2.0.0-beta.5",
   "description": "Shinkofa Morphic Adaptation Engine — framework-agnostic core",
   "license": "AGPL-3.0-or-later",
-  "author": "Shinkofa & contributors",
+  "author": "Jean-Pierre Gonçalves (The Ermite)",
   "homepage": "https://github.com/theermite/morphic-engine#readme",
   "repository": {
     "type": "git",
@@ -41,8 +41,8 @@
     "LICENSE"
   ],
   "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.shinkofa.com/"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
