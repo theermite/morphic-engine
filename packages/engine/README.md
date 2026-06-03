@@ -1,6 +1,6 @@
-# @morphic/engine
+# @theermite/morphic-engine
 
-Framework-agnostic core of the **Shinkofa Morphic Adaptation Engine**.
+Framework-agnostic core of the **Shinkofa Morphic Adaptation Engine** — created and maintained by [Jean-Pierre Gonçalves (The Ermite)](https://github.com/theermite).
 
 Drop-in TypeScript module that listens to the user's morphic preferences (sensory, cognitive, motor, energy axes) and exposes them via deterministic getters/setters. Persistence to `localStorage` is automatic; subscribers receive change events.
 
@@ -11,9 +11,9 @@ Drop-in TypeScript module that listens to the user's morphic preferences (sensor
 ## Install
 
 ```bash
-pnpm add @morphic/engine
+pnpm add @theermite/morphic-engine
 # or
-npm install @morphic/engine
+npm install @theermite/morphic-engine
 ```
 
 For React projects, add the adapter:
@@ -25,7 +25,7 @@ pnpm add @morphic/adapter
 ## Quick start (framework-agnostic)
 
 ```ts
-import { morphicInit, setClickDelay, getClickDelay } from '@morphic/engine';
+import { morphicInit, setClickDelay, getClickDelay } from '@theermite/morphic-engine';
 
 await morphicInit(); // load persisted prefs from localStorage
 setClickDelay({ delay: 250 });
@@ -53,7 +53,7 @@ All preferences are persisted under the `morphic-prefs` localStorage key. Schema
 CRDT sync via Yjs + IndexedDB is lazy-loaded; enabling it does not add weight to apps that don't use it.
 
 ```ts
-import { initSyncEngine, syncPreferences } from '@morphic/engine';
+import { initSyncEngine, syncPreferences } from '@theermite/morphic-engine';
 
 await initSyncEngine({ userId: 'anonymous-uuid', e2e: true });
 await syncPreferences();
