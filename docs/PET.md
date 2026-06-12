@@ -237,10 +237,10 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|-------|---------|--------|----------------|----------------|--------|------|
 | B-030a | Composant `MorphicButton` câblé moteur (hooks 6 axes + reading focus/guide + WAI), zéro coupling host (pas de ThemeProvider/Tailwind/lucide), icônes SVG inline, props `labels`/`axes`/`waiResolver`. Fichiers `src/ui/{MorphicButton.tsx,types.ts,labels.ts,wai-emoji.ts,index.ts}`. 40 tests (component+labels+wai). | F-036 | 🟢 Done | Standard 80% (atteint 97.4% lines / 90.7% branches) | react@19.2.7 (verifie 2026-06-12 via registry.npmjs.org) | _à compléter au push_ | 2026-06-12 |
-| B-030b | Styles autonomes `src/ui/morphic-button.css` — bouton+modale, variables CSS thématisables (`--morphic-ui-*`), 44px, focus-visible, prefers-reduced-motion. | F-036 | ⬜ Pending | — | — | — | — |
-| B-030c | CSS de base page `src/ui/morphic-base.css` — règles canoniques `html[data-morphic-*]` (font-size/family, motion, density, contrast, sepia/high-contrast). Fait agir le bouton sur tout hôte. | F-036 | ⬜ Pending | — | — | — | — |
-| B-030d | Packaging : exports `./ui` + `./ui.css` + `./morphic.css`, copie CSS au build, bump adapter 2.0.0-beta.0→beta.1, `pnpm publish` Verdaccio. | F-036 | ⬜ Pending | — | — | — | — |
-| B-030e | Migration The-Ermite vers `@morphic/adapter/ui` : retrait `ermite-theme`, unification dark/light sur `data-morphic-theme`, suppression fichiers locaux, déploiement + smoke test live. | F-036 | ⬜ Pending | — | — | — | — |
+| B-030b | Styles autonomes `src/ui/morphic-button.css` — bouton+modale, variables CSS thématisables (`--morphic-ui-*`), 44px, focus-visible, prefers-reduced-motion. | F-036 | 🟢 Done | Standard 80% | — | ed7f54d | 2026-06-12 |
+| B-030c | CSS de base page `src/ui/morphic-base.css` — règles canoniques `html[data-morphic-*]` (font-size/family, motion, density, contrast, sepia/high-contrast). Fait agir le bouton sur tout hôte. | F-036 | 🟢 Done | Standard 80% | — | 790fa92 | 2026-06-12 |
+| B-030d | Packaging : exports `./ui` + `./ui.css` + `./morphic.css`, copie CSS au build (`scripts/copy-assets.mjs`), bump adapter 2.0.0-beta.0→beta.1, `pnpm publish` Verdaccio (vérifié sans `workspace:`). | F-036 | 🟢 Done | — | react@19.2.7 (verifie 2026-06-12 via registry.npmjs.org) | 905d1ea | 2026-06-12 |
+| B-030e | Migration The-Ermite vers `@morphic/adapter/ui` : `MorphicThemeBridge` (clair/sombre suit le moteur), retrait `ermite-theme` parallèle, suppression bouton local, déployé + **smoke test live** (sepia fantôme prouvé mort : vieille clé `ermite-theme=sepia` ignorée ; sepia choisi persiste). The-Ermite commit `e842eee`. | F-036 | 🟢 Done | — | @morphic/adapter@2.0.0-beta.1 (publié cette session) | e842eee (The-Ermite) | 2026-06-12 |
 
 **Statuts possibles** : ⬜ Pending · 🟡 In progress · 🔵 Tests written (red) · 🟢 Done · 🔴 Blocked · ⚫ Skipped
 
