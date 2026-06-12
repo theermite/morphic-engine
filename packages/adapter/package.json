@@ -1,6 +1,6 @@
 {
   "name": "@morphic/adapter",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "description": "Shinkofa Morphic Adaptation — React adapter (provider + hooks)",
   "license": "AGPL-3.0-or-later",
   "author": "Shinkofa & contributors",
@@ -29,7 +29,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js"
+    },
+    "./ui.css": "./dist/ui/morphic-button.css",
+    "./morphic.css": "./dist/ui/morphic-base.css"
   },
   "files": [
     "dist",
@@ -41,7 +47,7 @@
     "registry": "https://npm.shinkofa.com/"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
