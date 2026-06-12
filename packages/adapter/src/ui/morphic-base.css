@@ -1,0 +1,94 @@
+/**
+ * morphic-base.css — canonical page-level adaptation rules.
+ *
+ * CDC ref : F-036. Brick : B-030c. License : AGPL-3.0-or-later.
+ *
+ * The engine only SETS attributes (`data-morphic-*`) on <html>; this stylesheet
+ * is what makes them visible. Import it once in any host so <MorphicButton>
+ * actually adapts the page — no per-site re-implementation.
+ *
+ * Fonts: the host is responsible for loading the Atkinson Hyperlegible and
+ * OpenDyslexic font files (e.g. via @fontsource). This file only references
+ * the family names.
+ *
+ * Caveat (theme/contrast filters): a CSS `filter` on <body> creates a stacking
+ * context that breaks `position: fixed` descendants. Hosts with a fixed navbar
+ * SHOULD override the `[data-morphic-theme]` / `[data-morphic-contrast]` rules
+ * below to scope the filter to their content containers (see The-Ermite).
+ */
+
+/* ── Font size (cascades to rem-based layouts) ───────────────────────── */
+html[data-morphic-font-size="sm"] {
+  font-size: 14px;
+}
+html[data-morphic-font-size="md"] {
+  font-size: 16px;
+}
+html[data-morphic-font-size="lg"] {
+  font-size: 18px;
+}
+html[data-morphic-font-size="xl"] {
+  font-size: 20px;
+}
+
+/* ── Font family ─────────────────────────────────────────────────────── */
+html[data-morphic-font-family="system"] body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+html[data-morphic-font-family="serif"] body {
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+html[data-morphic-font-family="atkinson"] body {
+  font-family: "Atkinson Hyperlegible", Verdana, sans-serif;
+}
+html[data-morphic-font-family="dyslexic"] body {
+  font-family: "OpenDyslexic", "Comic Sans MS", Verdana, sans-serif;
+}
+/* Always keep code/pre monospace regardless of the chosen family. */
+html[data-morphic-font-family] body pre,
+html[data-morphic-font-family] body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────── */
+html[data-morphic-motion="reduced"] *,
+html[data-morphic-motion="reduced"] *::before,
+html[data-morphic-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 200ms !important;
+}
+html[data-morphic-motion="none"] *,
+html[data-morphic-motion="none"] *::before,
+html[data-morphic-motion="none"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* ── Density (exposes a multiplier; hosts consume --morphic-gap) ──────── */
+html[data-morphic-density="compact"] {
+  --morphic-gap: 0.75;
+}
+html[data-morphic-density="comfortable"] {
+  --morphic-gap: 1;
+}
+html[data-morphic-density="spacious"] {
+  --morphic-gap: 1.5;
+}
+
+/* ── Theme : sepia + high-contrast (filter — see caveat above) ───────── */
+html[data-morphic-theme="sepia"] body {
+  filter: sepia(0.45) brightness(0.96) saturate(0.85);
+}
+html[data-morphic-theme="high-contrast"] body {
+  filter: contrast(1.5) brightness(1.05);
+}
+
+/* ── Contrast axis (independent of theme) ────────────────────────────── */
+html[data-morphic-contrast="more"] body {
+  filter: contrast(1.4);
+}
+html[data-morphic-contrast="less"] body {
+  filter: contrast(0.75);
+}
