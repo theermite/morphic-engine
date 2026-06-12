@@ -148,13 +148,23 @@ describe('MorphicButton — axes route through engine (single source of truth)',
     expect(getReadingFocus()).toBe('medium');
   });
 
-  it('reading guide routes through the engine', () => {
+  it('reading guide band routes through the engine', () => {
     renderButton();
     openModal();
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Ligne' }));
     });
-    expect(getReadingGuide()).toBe('line');
+    expect(getReadingGuide()).toEqual({ band: 'line', ruler: false });
+  });
+
+  it('ruler cumulates with the band (mask + ruler both active)', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Masque' }));
+      fireEvent.click(screen.getByRole('button', { name: 'On' }));
+    });
+    expect(getReadingGuide()).toEqual({ band: 'mask', ruler: true });
   });
 
   it('WAI symbols toggle does not throw and marks the chip active', () => {
@@ -190,7 +200,7 @@ describe('MorphicButton — reset', () => {
     expect(root().style.getPropertyValue('--morphic-density')).toBe('comfortable');
     expect(root().getAttribute('data-morphic-contrast')).toBe('no-preference');
     expect(getReadingFocus()).toBeNull();
-    expect(getReadingGuide()).toBeNull();
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
   });
 });
 

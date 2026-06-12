@@ -25,7 +25,8 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
     density: 'Densité',
     contrast: 'Contraste',
     readingFocus: 'Focus texte',
-    readingGuide: 'Guide ligne',
+    readingGuide: 'Bande',
+    readingRuler: 'Règle',
     wai: 'Symboles WAI',
   },
   fontFamily: { system: 'Système', serif: 'Serif', atkinson: 'Atkinson', dyslexic: 'OpenDyslexic' },
@@ -41,7 +42,8 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
   density: { compact: 'Compact', comfortable: 'Confort', spacious: 'Aéré' },
   contrast: { noPreference: 'Défaut', more: 'Élevé', less: 'Faible' },
   readingFocus: { off: 'Off', low: 'Léger', medium: 'Moyen', high: 'Fort' },
-  readingGuide: { off: 'Off', line: 'Ligne', mask: 'Masque', ruler: 'Règle' },
+  readingGuide: { off: 'Off', line: 'Ligne', mask: 'Masque' },
+  readingRuler: { off: 'Off', on: 'On' },
   wai: { off: 'Off', before: 'Avant', after: 'Après' },
 };
 

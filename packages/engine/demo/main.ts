@@ -310,7 +310,7 @@ document.querySelectorAll('[data-guide]').forEach((btn) => {
       if (mode === 'clear') clearReadingGuide();
       else setReadingGuide(mode as Parameters<typeof setReadingGuide>[0]);
     } catch (e) { logEvent('error/reading-guide', String(e)); }
-    show('state-reading-guide', getReadingGuide());
+    show('state-reading-guide', JSON.stringify(getReadingGuide()));
   });
 });
 show('state-reading-guide', getReadingGuide());

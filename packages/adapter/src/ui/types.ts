@@ -52,6 +52,7 @@ export interface MorphicButtonLabels {
     contrast: string;
     readingFocus: string;
     readingGuide: string;
+    readingRuler: string;
     wai: string;
   };
   fontFamily: { system: string; serif: string; atkinson: string; dyslexic: string };
@@ -61,7 +62,8 @@ export interface MorphicButtonLabels {
   density: { compact: string; comfortable: string; spacious: string };
   contrast: { noPreference: string; more: string; less: string };
   readingFocus: { off: string; low: string; medium: string; high: string };
-  readingGuide: { off: string; line: string; mask: string; ruler: string };
+  readingGuide: { off: string; line: string; mask: string };
+  readingRuler: { off: string; on: string };
   wai: { off: string; before: string; after: string };
 }
 

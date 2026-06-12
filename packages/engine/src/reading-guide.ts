@@ -1,20 +1,29 @@
 /**
  * @morphic/engine — reading-guide axis (B-103, F-027).
  *
- * Three modes for visual reading assistance:
- *  - 'line'  : horizontal highlight band following cursor Y (light dim 0.3)
- *  - 'mask'  : strong dim everywhere except reading band (heavier dim 0.65)
- *  - 'ruler' : vertical bar following cursor X (high-contrast guide)
+ * Two INDEPENDENT, cumulable families of visual reading assistance:
  *
- * Each mode mounts overlays as `position: fixed` with `pointer-events: none`,
- * so the page underneath remains fully interactive. The overlay root carries
+ *  - band  : one of 'line' | 'mask' (mutually exclusive — both occupy the
+ *            horizontal Y reading strip).
+ *      'line'  : horizontal highlight band following cursor Y (light dim 0.3)
+ *      'mask'  : strong dim everywhere except reading band (heavier dim 0.65)
+ *  - ruler : vertical bar following cursor X (high-contrast guide).
+ *
+ * band and ruler are perpendicular, so they can be active AT THE SAME TIME —
+ * e.g. 'mask' + 'ruler' forms a reading crosshair. 'line' and 'mask' remain
+ * mutually exclusive because they are the same horizontal strip.
+ *
+ * Each mount uses `position: fixed` + `pointer-events: none`, so the page
+ * underneath stays fully interactive. The overlay root carries
  * `data-morphic-reading-guide="<mode>"` for idempotent re-application and
  * clean teardown. All listeners are scoped to an AbortController so a single
- * `clearReadingGuide()` call removes every side effect.
+ * clear removes every side effect of that family.
  *
- * Persistence: stored under sub-key `readingGuide` of MORPHIC_STORAGE_KEY,
- * coexisting with other axes. Storage is the source of truth for *intent*,
- * not for live DOM — the host explicitly opts-in by calling `setReadingGuide`.
+ * Persistence: stored under sub-key `readingGuide` of MORPHIC_STORAGE_KEY as
+ * `{ band: 'line'|'mask'|null, ruler: boolean }`, coexisting with other axes.
+ * Legacy string values ('line'|'mask'|'ruler') from earlier versions are read
+ * back transparently. Storage is the source of truth for *intent*, not for
+ * live DOM — the host explicitly opts-in by calling `setReadingGuide`.
  *
  * Motion: cursor tracking itself is preserved when `prefers-reduced-motion`
  * is set (the user activated the tool and moves it intentionally) — only the
@@ -32,6 +41,15 @@ import { MORPHIC_STORAGE_KEY } from './init.js';
 export const READING_GUIDE_MODES = Object.freeze(['line', 'mask', 'ruler'] as const);
 export type ReadingGuideMode = (typeof READING_GUIDE_MODES)[number];
 
+/** The horizontal-strip family — mutually exclusive members. */
+export type ReadingBand = 'line' | 'mask';
+
+/** Composite active state: a band (or none) plus an independent ruler flag. */
+export interface ReadingGuideState {
+  band: ReadingBand | null;
+  ruler: boolean;
+}
+
 export const MORPHIC_READING_GUIDE_MARKER = 'data-morphic-reading-guide' as const;
 export const MORPHIC_READING_GUIDE_DEFAULT_BAND_HEIGHT = 64 as const;
 export const MORPHIC_READING_GUIDE_DEFAULT_RULER_WIDTH = 3 as const;
@@ -44,6 +62,8 @@ const HIGHLIGHT_COLOR = 'rgba(228, 239, 238, 0.18)';
 const TRANSITION_DURATION_MS = 80;
 
 const STORAGE_SUBKEY = 'readingGuide';
+const BAND_MODES: readonly string[] = ['line', 'mask'];
+const RULER_MODES: readonly string[] = ['ruler'];
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -139,18 +159,34 @@ function writeStorageObject(obj: Record<string, unknown>): void {
   }
 }
 
-function persistMode(mode: ReadingGuideMode): void {
-  const obj = readStorageObject();
-  obj[STORAGE_SUBKEY] = mode;
-  writeStorageObject(obj);
+/** Coerce any stored value (new object shape OR legacy string) into a state. */
+function coerceState(value: unknown): ReadingGuideState {
+  if (value === 'line' || value === 'mask') return { band: value, ruler: false };
+  if (value === 'ruler') return { band: null, ruler: true };
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    const o = value as { band?: unknown; ruler?: unknown };
+    const band = o.band === 'line' || o.band === 'mask' ? o.band : null;
+    return { band, ruler: o.ruler === true };
+  }
+  return { band: null, ruler: false };
 }
 
-function unpersistMode(): void {
+function readStoredState(): ReadingGuideState {
+  return coerceState(readStorageObject()[STORAGE_SUBKEY]);
+}
+
+/** Persist a state; an empty state removes the sub-key (preserving others). */
+function writeState(state: ReadingGuideState): void {
   const obj = readStorageObject();
-  if (STORAGE_SUBKEY in obj) {
-    delete obj[STORAGE_SUBKEY];
-    writeStorageObject(obj);
+  if (state.band === null && !state.ruler) {
+    if (STORAGE_SUBKEY in obj) {
+      delete obj[STORAGE_SUBKEY];
+      writeStorageObject(obj);
+    }
+    return;
   }
+  obj[STORAGE_SUBKEY] = state;
+  writeStorageObject(obj);
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +201,8 @@ interface ActiveGuide {
   parts: HTMLElement[];
 }
 
-let activeGuide: ActiveGuide | null = null;
+let activeBand: ActiveGuide | null = null;
+let activeRuler: ActiveGuide | null = null;
 
 function isReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
@@ -176,24 +213,43 @@ function isReducedMotion(): boolean {
   }
 }
 
-function removeActiveGuide(): void {
-  if (activeGuide === null) return;
-  activeGuide.abort.abort();
-  for (const part of activeGuide.parts) {
+function teardown(guide: ActiveGuide | null): void {
+  if (guide === null) return;
+  guide.abort.abort();
+  for (const part of guide.parts) {
     part.remove();
   }
-  activeGuide.root.remove();
-  activeGuide = null;
+  guide.root.remove();
 }
 
-// Also defensively sweep any stray markers that did not go through activeGuide
-// (e.g. duplicate roots from a previously crashed setReadingGuide call).
-function sweepStrayMarkers(): void {
+function removeBand(): void {
+  teardown(activeBand);
+  activeBand = null;
+}
+
+function removeRuler(): void {
+  teardown(activeRuler);
+  activeRuler = null;
+}
+
+// Defensively sweep stray roots for the given marker modes (e.g. duplicate
+// roots from a previously crashed call). Scoped per family so sweeping the
+// band never removes an active ruler and vice-versa.
+function sweepStray(modes: readonly string[]): void {
   if (typeof document === 'undefined') return;
-  const stray = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}]`);
-  for (const el of Array.from(stray)) {
-    el.remove();
+  for (const mode of modes) {
+    const stray = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="${mode}"]`);
+    for (const el of Array.from(stray)) {
+      el.remove();
+    }
   }
+}
+
+function currentDomState(): ReadingGuideState {
+  return {
+    band: activeBand !== null ? (activeBand.mode as ReadingBand) : null,
+    ruler: activeRuler !== null,
+  };
 }
 
 function applyCommonRootStyle(
@@ -326,10 +382,12 @@ function mountRuler(options: ReadingGuideOptions, reducedMotion: boolean): Activ
 // ---------------------------------------------------------------------------
 
 /**
- * Activate the reading guide in the given mode. Validates input, mounts
- * overlay(s) in the DOM, attaches a single mousemove listener scoped to an
- * AbortController, and persists the active mode under the readingGuide
- * sub-key. Repeated calls are idempotent — only the latest mode is active.
+ * Activate one reading-guide family. 'line' or 'mask' (re)mounts the band
+ * slot, leaving any active ruler untouched; 'ruler' (re)mounts the ruler
+ * slot, leaving any active band untouched. This is what makes band + ruler
+ * cumulable. Validates input, mounts overlay(s), attaches a single mousemove
+ * listener scoped to an AbortController, and persists the composite state.
+ * Repeated calls for the same family are idempotent.
  */
 export function setReadingGuide(mode: ReadingGuideMode, options: ReadingGuideOptions = {}): void {
   assertMode(mode);
@@ -341,50 +399,67 @@ export function setReadingGuide(mode: ReadingGuideMode, options: ReadingGuideOpt
   assertNonNegativeFinite(options.topOffset, 'topOffset');
   assertNonNegativeFinite(options.bottomOffset, 'bottomOffset');
 
+  // SSR / non-DOM — persist intent only, merging into the stored state.
   if (typeof document === 'undefined' || typeof window === 'undefined') {
-    persistMode(mode);
+    const next = readStoredState();
+    if (mode === 'ruler') next.ruler = true;
+    else next.band = mode;
+    writeState(next);
     return;
   }
 
-  // Idempotence — tear down any previous guide (same or different mode).
-  removeActiveGuide();
-  sweepStrayMarkers();
-
   const reduced = isReducedMotion();
-  let guide: ActiveGuide;
-  switch (mode) {
-    case 'line':
-    case 'mask':
-      guide = mountLineOrMask(mode, options, reduced);
-      break;
-    case 'ruler':
-      guide = mountRuler(options, reduced);
-      break;
+  if (mode === 'ruler') {
+    removeRuler();
+    sweepStray(RULER_MODES);
+    activeRuler = mountRuler(options, reduced);
+  } else {
+    removeBand();
+    sweepStray(BAND_MODES);
+    activeBand = mountLineOrMask(mode, options, reduced);
   }
-  activeGuide = guide;
 
-  persistMode(mode);
+  writeState(currentDomState());
 }
 
 /**
- * Return the persisted mode, or null when nothing valid is stored.
- * Storage is the source of truth for *intent*; the host must call
- * `setReadingGuide` to actually mount the DOM (no surprise overlays on load).
+ * Return the persisted composite state `{ band, ruler }`. Storage is the
+ * source of truth for *intent*; the host must call `setReadingGuide` to
+ * actually mount the DOM (no surprise overlays on load). Legacy string values
+ * are coerced transparently.
  */
-export function getReadingGuide(): ReadingGuideMode | null {
-  const obj = readStorageObject();
-  const value = obj[STORAGE_SUBKEY];
-  return isReadingGuideMode(value) ? value : null;
+export function getReadingGuide(): ReadingGuideState {
+  return readStoredState();
 }
 
 /**
- * Remove every DOM side effect of the active guide (overlays, listeners) and
- * clear the persisted sub-key. Safe to call when nothing is active.
+ * Remove reading-guide side effects (overlays, listeners) and update the
+ * persisted state. With no argument, clears BOTH families. Pass 'band' to
+ * clear only the line/mask strip (keeping the ruler), or 'ruler' to clear
+ * only the vertical ruler (keeping the band). Safe to call when nothing is
+ * active.
  */
-export function clearReadingGuide(): void {
+export function clearReadingGuide(which?: 'band' | 'ruler'): void {
   if (typeof document !== 'undefined') {
-    removeActiveGuide();
-    sweepStrayMarkers();
+    if (which === undefined || which === 'band') {
+      removeBand();
+      sweepStray(BAND_MODES);
+    }
+    if (which === undefined || which === 'ruler') {
+      removeRuler();
+      sweepStray(RULER_MODES);
+    }
+    writeState(currentDomState());
+    return;
   }
-  unpersistMode();
+
+  // SSR — update stored intent without touching the DOM.
+  if (which === undefined) {
+    writeState({ band: null, ruler: false });
+    return;
+  }
+  const next = readStoredState();
+  if (which === 'band') next.band = null;
+  else next.ruler = false;
+  writeState(next);
 }

@@ -20,8 +20,8 @@ import {
   enableWaiSymbols,
   getReadingFocus,
   getReadingGuide,
+  type ReadingBand,
   type ReadingFocusIntensity,
-  type ReadingGuideMode,
   setReadingFocus,
   setReadingGuide,
 } from '@morphic/engine';
@@ -121,14 +121,17 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   const [contrast, setContrast] = useMorphicContrast();
 
   const [rf, setRf] = useState<ReadingFocusIntensity | null>(null);
-  const [rg, setRg] = useState<ReadingGuideMode | null>(null);
+  const [band, setBand] = useState<ReadingBand | null>(null);
+  const [ruler, setRuler] = useState<boolean>(false);
   const [wai, setWai] = useState<WaiMode | null>(null);
 
   // Sync engine-only axes (reading focus/guide) into local state on open.
   useEffect(() => {
     if (!open) return;
     setRf(getReadingFocus());
-    setRg(getReadingGuide());
+    const guide = getReadingGuide();
+    setBand(guide.band);
+    setRuler(guide.ruler);
   }, [open]);
 
   // Escape + outside click close the dialog.
@@ -154,10 +157,16 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     setRf(v);
   }, []);
 
-  const handleRg = useCallback((v: ReadingGuideMode | null) => {
-    if (v === null) clearReadingGuide();
+  const handleBand = useCallback((v: ReadingBand | null) => {
+    if (v === null) clearReadingGuide('band');
     else setReadingGuide(v);
-    setRg(v);
+    setBand(v);
+  }, []);
+
+  const handleRuler = useCallback((on: boolean) => {
+    if (on) setReadingGuide('ruler');
+    else clearReadingGuide('ruler');
+    setRuler(on);
   }, []);
 
   const handleWai = useCallback(
@@ -177,7 +186,8 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     setDensity('comfortable');
     setContrast('no-preference');
     handleRf(null);
-    handleRg(null);
+    handleBand(null);
+    handleRuler(false);
     handleWai(null);
   }, [
     setTheme,
@@ -187,7 +197,8 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     setDensity,
     setContrast,
     handleRf,
-    handleRg,
+    handleBand,
+    handleRuler,
     handleWai,
   ]);
 
@@ -330,17 +341,27 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
               <Row label={t.rows.readingGuide}>
                 <Chip
                   label={t.readingGuide.off}
-                  active={rg === null}
-                  onClick={() => handleRg(null)}
+                  active={band === null}
+                  onClick={() => handleBand(null)}
                 />
-                {(['line', 'mask', 'ruler'] as const).map((v) => (
+                {(['line', 'mask'] as const).map((v) => (
                   <Chip
                     key={v}
                     label={t.readingGuide[v]}
-                    active={rg === v}
-                    onClick={() => handleRg(v)}
+                    active={band === v}
+                    onClick={() => handleBand(v)}
                   />
                 ))}
+              </Row>
+            )}
+            {has('readingGuide') && (
+              <Row label={t.rows.readingRuler}>
+                <Chip
+                  label={t.readingRuler.off}
+                  active={!ruler}
+                  onClick={() => handleRuler(false)}
+                />
+                <Chip label={t.readingRuler.on} active={ruler} onClick={() => handleRuler(true)} />
               </Row>
             )}
 

@@ -234,8 +234,10 @@ export {
   MORPHIC_READING_GUIDE_DEFAULT_Z_INDEX,
   MORPHIC_READING_GUIDE_MARKER,
   READING_GUIDE_MODES,
+  type ReadingBand,
   type ReadingGuideMode,
   type ReadingGuideOptions,
+  type ReadingGuideState,
   setReadingGuide,
 } from './reading-guide.js';
 export {

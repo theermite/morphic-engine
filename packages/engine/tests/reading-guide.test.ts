@@ -269,13 +269,33 @@ describe('reading-guide — idempotence', () => {
     expect(maskRoots.length).toBe(1);
   });
 
-  it('replaces ruler with line cleanly', () => {
+  it('keeps the ruler when a band is set on top (cumulation)', () => {
     setReadingGuide('ruler');
     setReadingGuide('line');
     const rulerRoots = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`);
     const lineRoots = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="line"]`);
-    expect(rulerRoots.length).toBe(0);
+    expect(rulerRoots.length).toBe(1);
     expect(lineRoots.length).toBe(1);
+  });
+
+  it('keeps the band when the ruler is set on top (cumulation)', () => {
+    setReadingGuide('mask');
+    setReadingGuide('ruler');
+    expect(
+      document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="mask"]`).length,
+    ).toBe(1);
+    expect(
+      document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`).length,
+    ).toBe(1);
+  });
+
+  it('switching the band (line -> mask) keeps a single band root and the ruler', () => {
+    setReadingGuide('ruler');
+    setReadingGuide('line');
+    setReadingGuide('mask');
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="line"]`).length).toBe(0);
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="mask"]`).length).toBe(1);
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`).length).toBe(1);
   });
 });
 
@@ -290,6 +310,32 @@ describe('reading-guide — clearReadingGuide', () => {
   it('is safe to call when nothing is active (idempotent)', () => {
     expect(() => clearReadingGuide()).not.toThrow();
     expect(() => clearReadingGuide()).not.toThrow();
+  });
+
+  it("clearReadingGuide('ruler') removes only the ruler, keeps the band", () => {
+    setReadingGuide('mask');
+    setReadingGuide('ruler');
+    clearReadingGuide('ruler');
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`).length).toBe(0);
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="mask"]`).length).toBe(1);
+    expect(getReadingGuide()).toEqual({ band: 'mask', ruler: false });
+  });
+
+  it("clearReadingGuide('band') removes only the band, keeps the ruler", () => {
+    setReadingGuide('line');
+    setReadingGuide('ruler');
+    clearReadingGuide('band');
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="line"]`).length).toBe(0);
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`).length).toBe(1);
+    expect(getReadingGuide()).toEqual({ band: null, ruler: true });
+  });
+
+  it('clearReadingGuide() with no argument removes both families', () => {
+    setReadingGuide('mask');
+    setReadingGuide('ruler');
+    clearReadingGuide();
+    expect(queryMarkers().length).toBe(0);
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
   });
 
   it('detaches mousemove listener (cursor position no longer tracked)', () => {
@@ -308,23 +354,30 @@ describe('reading-guide — persistence', () => {
     const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw as string) as Record<string, unknown>;
-    expect(parsed.readingGuide).toBe('mask');
+    expect(parsed.readingGuide).toEqual({ band: 'mask', ruler: false });
   });
 
-  it('getReadingGuide returns the persisted mode', () => {
+  it('getReadingGuide returns the persisted state', () => {
     setReadingGuide('ruler');
-    expect(getReadingGuide()).toBe('ruler');
+    expect(getReadingGuide()).toEqual({ band: null, ruler: true });
   });
 
-  it('getReadingGuide returns null when nothing persisted', () => {
-    expect(getReadingGuide()).toBeNull();
+  it('getReadingGuide returns the empty state when nothing persisted', () => {
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
+  });
+
+  it('getReadingGuide coerces a legacy string value into the composite state', () => {
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ readingGuide: 'line' }));
+    expect(getReadingGuide()).toEqual({ band: 'line', ruler: false });
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ readingGuide: 'ruler' }));
+    expect(getReadingGuide()).toEqual({ band: null, ruler: true });
   });
 
   it('clearReadingGuide removes the persisted sub-key', () => {
     setReadingGuide('line');
-    expect(getReadingGuide()).toBe('line');
+    expect(getReadingGuide()).toEqual({ band: 'line', ruler: false });
     clearReadingGuide();
-    expect(getReadingGuide()).toBeNull();
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
   });
 
   it('preserves other sub-keys when writing readingGuide', () => {
@@ -339,7 +392,7 @@ describe('reading-guide — persistence', () => {
     >;
     expect(parsed.colorVision).toEqual({ type: 'protan', severity: 1 });
     expect(parsed.readingFocus).toBe('low');
-    expect(parsed.readingGuide).toBe('mask');
+    expect(parsed.readingGuide).toEqual({ band: 'mask', ruler: false });
   });
 
   it('preserves other sub-keys when clearing readingGuide', () => {
@@ -359,19 +412,22 @@ describe('reading-guide — persistence', () => {
 
   it('ignores malformed JSON in storage on read', () => {
     localStorage.setItem(MORPHIC_STORAGE_KEY, '{not json');
-    expect(getReadingGuide()).toBeNull();
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
   });
 
   it('ignores storage entries that are not objects', () => {
     localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify('a string'));
-    expect(getReadingGuide()).toBeNull();
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
     localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify([1, 2, 3]));
-    expect(getReadingGuide()).toBeNull();
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
   });
 
-  it('ignores invalid mode values in storage', () => {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ readingGuide: 'invalid-mode' }));
-    expect(getReadingGuide()).toBeNull();
+  it('ignores invalid band values in storage (keeps a valid ruler flag)', () => {
+    localStorage.setItem(
+      MORPHIC_STORAGE_KEY,
+      JSON.stringify({ readingGuide: { band: 'invalid-mode', ruler: true } }),
+    );
+    expect(getReadingGuide()).toEqual({ band: null, ruler: true });
   });
 
   it('survives a localStorage write quota exception', () => {
@@ -463,13 +519,13 @@ describe('reading-guide — property-based', () => {
         setReadingGuide(mode);
         clearReadingGuide();
         expect(queryMarkers().length).toBe(0);
-        expect(getReadingGuide()).toBeNull();
+        expect(getReadingGuide()).toEqual({ band: null, ruler: false });
       }),
       { numRuns: 50 },
     );
   });
 
-  it('property: switching between modes leaves exactly one active mode root', () => {
+  it('property: any sequence leaves at most one band root and at most one ruler root', () => {
     fc.assert(
       fc.property(fc.array(fc.constantFrom(...MODES), { minLength: 1, maxLength: 12 }), (seq) => {
         document.body.innerHTML = '';
@@ -477,14 +533,17 @@ describe('reading-guide — property-based', () => {
         for (const mode of seq) {
           setReadingGuide(mode);
         }
-        const last = seq[seq.length - 1] as ReadingGuideMode;
-        const lastRoots = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="${last}"]`);
-        expect(lastRoots.length).toBe(1);
-        for (const other of MODES.filter((m) => m !== last)) {
-          expect(
-            document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="${other}"]`).length,
-          ).toBe(0);
-        }
+        // line and mask are mutually exclusive — never both present.
+        const lineRoots = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="line"]`);
+        const maskRoots = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="mask"]`);
+        const rulerRoots = document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`);
+        expect(lineRoots.length + maskRoots.length).toBeLessThanOrEqual(1);
+        expect(rulerRoots.length).toBeLessThanOrEqual(1);
+
+        // The active state matches the last band seen and whether a ruler was set.
+        const lastBand = [...seq].reverse().find((m) => m === 'line' || m === 'mask') ?? null;
+        const hasRuler = seq.includes('ruler');
+        expect(getReadingGuide()).toEqual({ band: lastBand, ruler: hasRuler });
         clearReadingGuide();
       }),
       { numRuns: 50 },
@@ -508,24 +567,27 @@ describe('reading-guide — property-based', () => {
 });
 
 describe('reading-guide — full lifecycle integration', () => {
-  it('full cycle: set line -> set mask -> set ruler -> clear', () => {
+  it('full cycle: set line -> set mask -> add ruler -> clear', () => {
     setReadingGuide('line');
-    expect(getReadingGuide()).toBe('line');
+    expect(getReadingGuide()).toEqual({ band: 'line', ruler: false });
 
     setReadingGuide('mask');
-    expect(getReadingGuide()).toBe('mask');
+    expect(getReadingGuide()).toEqual({ band: 'mask', ruler: false });
 
     setReadingGuide('ruler');
-    expect(getReadingGuide()).toBe('ruler');
+    expect(getReadingGuide()).toEqual({ band: 'mask', ruler: true });
 
     clearReadingGuide();
-    expect(getReadingGuide()).toBeNull();
+    expect(getReadingGuide()).toEqual({ band: null, ruler: false });
     expect(queryMarkers().length).toBe(0);
   });
 
   it('rehydrate scenario: storage value alone does not auto-apply DOM', () => {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ readingGuide: 'mask' }));
-    expect(getReadingGuide()).toBe('mask');
+    localStorage.setItem(
+      MORPHIC_STORAGE_KEY,
+      JSON.stringify({ readingGuide: { band: 'mask', ruler: true } }),
+    );
+    expect(getReadingGuide()).toEqual({ band: 'mask', ruler: true });
     expect(queryMarkers().length).toBe(0);
   });
 });
