@@ -1,0 +1,213 @@
+/**
+ * morphic-button.css — self-contained styles for <MorphicButton>.
+ *
+ * CDC ref : F-036. Brick : B-030b. License : AGPL-3.0-or-later.
+ *
+ * Zero framework dependency. Themeable via `--morphic-ui-*` custom properties
+ * a host can override (on `.morphic-mb` or any ancestor). Neutral dark-friendly
+ * defaults. Touch targets >= 44px, visible focus, reduced-motion honored.
+ */
+
+.morphic-mb {
+  /* Theming knobs — override any of these from the host. */
+  --morphic-ui-accent: #6c8cff;
+  --morphic-ui-on-accent: #ffffff;
+  --morphic-ui-surface: #1c1f26;
+  --morphic-ui-surface-2: #262a33;
+  --morphic-ui-text: #e8eaed;
+  --morphic-ui-text-muted: #9aa0ab;
+  --morphic-ui-border: rgba(255, 255, 255, 0.12);
+  --morphic-ui-radius: 12px;
+  --morphic-ui-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  position: relative;
+  display: inline-block;
+}
+
+.morphic-mb-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--morphic-ui-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.morphic-mb-trigger:hover {
+  color: var(--morphic-ui-accent);
+  background: var(--morphic-ui-surface-2);
+}
+
+.morphic-mb-trigger:focus-visible,
+.morphic-mb-chip:focus-visible,
+.morphic-mb-close:focus-visible,
+.morphic-mb-reset:focus-visible {
+  outline: 2px solid var(--morphic-ui-accent);
+  outline-offset: 2px;
+}
+
+.morphic-mb-modal {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  width: min(520px, calc(100vw - 16px));
+  max-height: 78vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--morphic-ui-border);
+  border-radius: var(--morphic-ui-radius);
+  background: var(--morphic-ui-surface);
+  color: var(--morphic-ui-text);
+  box-shadow: var(--morphic-ui-shadow);
+}
+
+.morphic-mb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--morphic-ui-border);
+}
+
+.morphic-mb-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.morphic-mb-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--morphic-ui-text-muted);
+  cursor: pointer;
+}
+
+.morphic-mb-close:hover {
+  color: var(--morphic-ui-text);
+}
+
+.morphic-mb-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.morphic-mb-section {
+  margin: 4px 0 0;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--morphic-ui-text-muted);
+}
+
+.morphic-mb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.morphic-mb-row-label {
+  flex-shrink: 0;
+  width: 6rem;
+  font-size: 0.8rem;
+  color: var(--morphic-ui-text-muted);
+}
+
+.morphic-mb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.morphic-mb-chip {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--morphic-ui-surface-2);
+  color: var(--morphic-ui-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.morphic-mb-chip:hover {
+  color: var(--morphic-ui-text);
+}
+
+.morphic-mb-chip.is-active {
+  background: var(--morphic-ui-accent);
+  color: var(--morphic-ui-on-accent);
+  font-weight: 500;
+}
+
+.morphic-mb-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--morphic-ui-border);
+}
+
+.morphic-mb-note {
+  font-size: 0.66rem;
+  color: var(--morphic-ui-text-muted);
+}
+
+.morphic-mb-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--morphic-ui-text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.morphic-mb-reset:hover {
+  color: var(--morphic-ui-text);
+}
+
+/* Mobile: dock the modal near the top, full-width with side gutters. */
+@media (max-width: 640px) {
+  .morphic-mb-modal {
+    position: fixed;
+    top: 64px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .morphic-mb-trigger,
+  .morphic-mb-chip {
+    transition: none;
+  }
+}
