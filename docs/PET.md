@@ -69,6 +69,7 @@ Chaque feature CDC §3 mappée vers ≥1 brick PET §6 + ≥1 test. Aucun featur
 | F-022 API import GPII / WAI-Adapt | B-023 | unit/import.test.ts (Schemathesis fuzz), e2e/gpii-import.spec.ts | Sensitive |
 | F-023 Export préférences JSON (GDPR Art. 20) | B-024a | unit/export.test.ts, e2e/export-flow.spec.ts | **Critical** (GDPR) |
 | F-024 Delete préférences (GDPR Art. 17) | B-024b | unit/delete.test.ts, e2e/delete-flow.spec.ts | **Critical** (GDPR) |
+| F-036 Bouton morphique publiable drop-in (`@morphic/adapter/ui`) | B-030a→e | ui/MorphicButton.test.tsx, ui/labels.test.ts, ui/wai-emoji.test.ts | Standard |
 
 **Phase 2** (F-101 à F-105 browser extension) : non couvert en v2.0.0, traçabilité ajoutée quand Phase 2 démarre.
 
@@ -228,6 +229,18 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-027 | Série pillar The Ermite « Adaptation morphique vs accessibility overlays » — 2 articles FR (split sur retour Jay : longueur + pertinence série). Article 1 (~1100 mots) : `2026-05-25-article-01-overlays-ftc.md` (slug `overlays-accessibilite-ftc-accessibe-2025`) — diagnostic FTC vs accessiBe consent order final 2025-04-22. Article 2 (~950 mots) : `2026-05-25-article-02-adaptation-morphique.md` (slug `adaptation-morphique-concevoir-au-lieu-de-patcher`) — alternative structurelle + présentation morphic-engine. JSON-LD SoftwareApplication compagnon (`jsonld-morphic-engine.json`). Brouillons DRAFT insérés directement en base prod The-Ermite (id `cmpki8eh25y05zm47jwqfnexd` + `cmpki8ehazfnk3zszodacz5ez`, status DRAFT, publishedAt null, contenu HTML converti via marked@18.0.4) — Jay publie quand il veut depuis l'admin. | §12 SEO + GEO | 🟢 Done | — | schema.org SoftwareApplication, FTC press release 2025-01-03 + final order 2025-04-22 (verifie 2026-05-25 via lflegal.com + adrianroselli.com WebFetch direct) | — | 2026-05-25 |
 | B-028 | Audit final GO/NO-GO Quality-Gates Refonte (4D ≥ 80/100) + Lighthouse ≥95 + axe 0 + Pa11y 0 + cross-browser pass. Audit `docs/audits/Audit-GO-NO-GO-2026-05-28.md` — verdict initial NO-GO (D2 65, D4 75 < floor 80, total 82.5) → remédiation 3 commits (`5ca4a7b` lint zero, `174759d` CI wasm-pack fix, présent commit a11y Presentation.html) → verdict final **GO** (D1 95 / D2 94 / D3 95 / D4 95 = **94.75/100**). CI **vert** Node 22+24. Lighthouse 100/100/96/100, axe 0 violations. Tests 1314/1314 ✅. | §11 Compliance | 🟢 Done | — | CDC §11 Quality-Gates Refonte + Lighthouse 12.x (verifie 2026-05-28) | dc669ca + 5ca4a7b + 174759d + commit présent | 2026-05-28 |
 | B-029 | Release v2.0.0 publique : tag `morphic-v2.0.0`, npm publish, GitHub release, annonce LinkedIn/Discord/Telegram (pipeline The Ermite) | §12 Distribution | ⬜ Pending | — | — | — | — |
+
+### Phase 1.7 — Bouton morphique publiable (B-030a à B-030e)
+
+> Extraction du bouton d'adaptation (codé dans The-Ermite) vers un composant publiable `@morphic/adapter/ui`. Câblé sur les axes du moteur (thème via `useMorphicTheme` → source unique `morphic-prefs`), ce qui supprime la duplication "sepia fantôme" + rend le bouton drop-in pour toute navbar (Kakusei, refontes). Decision Jay 2026-06-12.
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-030a | Composant `MorphicButton` câblé moteur (hooks 6 axes + reading focus/guide + WAI), zéro coupling host (pas de ThemeProvider/Tailwind/lucide), icônes SVG inline, props `labels`/`axes`/`waiResolver`. Fichiers `src/ui/{MorphicButton.tsx,types.ts,labels.ts,wai-emoji.ts,index.ts}`. 40 tests (component+labels+wai). | F-036 | 🟢 Done | Standard 80% (atteint 97.4% lines / 90.7% branches) | react@19.2.7 (verifie 2026-06-12 via registry.npmjs.org) | _à compléter au push_ | 2026-06-12 |
+| B-030b | Styles autonomes `src/ui/morphic-button.css` — bouton+modale, variables CSS thématisables (`--morphic-ui-*`), 44px, focus-visible, prefers-reduced-motion. | F-036 | ⬜ Pending | — | — | — | — |
+| B-030c | CSS de base page `src/ui/morphic-base.css` — règles canoniques `html[data-morphic-*]` (font-size/family, motion, density, contrast, sepia/high-contrast). Fait agir le bouton sur tout hôte. | F-036 | ⬜ Pending | — | — | — | — |
+| B-030d | Packaging : exports `./ui` + `./ui.css` + `./morphic.css`, copie CSS au build, bump adapter 2.0.0-beta.0→beta.1, `pnpm publish` Verdaccio. | F-036 | ⬜ Pending | — | — | — | — |
+| B-030e | Migration The-Ermite vers `@morphic/adapter/ui` : retrait `ermite-theme`, unification dark/light sur `data-morphic-theme`, suppression fichiers locaux, déploiement + smoke test live. | F-036 | ⬜ Pending | — | — | — | — |
 
 **Statuts possibles** : ⬜ Pending · 🟡 In progress · 🔵 Tests written (red) · 🟢 Done · 🔴 Blocked · ⚫ Skipped
 
