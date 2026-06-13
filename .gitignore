@@ -32,6 +32,12 @@ pnpm-debug.log*
 # Rust / WASM (B-005+)
 target/
 *.wasm.map
+# wasm-pack output: kept out of git, but SHIPPED in the npm tarball.
+# npm packs the sub-package without reading this root .gitignore, so the
+# .wasm binary is included. The inner pkg/.gitignore (which wasm-pack
+# regenerates with "*") is stripped by the build script — it would
+# otherwise exclude the binary from the published package.
+packages/wasm-core/pkg/
 
 # Local state
 .env

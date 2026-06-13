@@ -43,8 +43,8 @@
     "LICENSE"
   ],
   "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.shinkofa.com/"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
