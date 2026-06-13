@@ -33,7 +33,9 @@ describe('defaultWaiResolver', () => {
       fillText: vi.fn(),
     } as unknown as CanvasRenderingContext2D;
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fakeCtx);
-    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,AAAA');
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/png;base64,AAAA',
+    );
 
     const res = defaultWaiResolver(1);
     expect(res).not.toBeNull();

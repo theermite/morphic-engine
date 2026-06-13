@@ -281,12 +281,8 @@ describe('reading-guide — idempotence', () => {
   it('keeps the band when the ruler is set on top (cumulation)', () => {
     setReadingGuide('mask');
     setReadingGuide('ruler');
-    expect(
-      document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="mask"]`).length,
-    ).toBe(1);
-    expect(
-      document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`).length,
-    ).toBe(1);
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="mask"]`).length).toBe(1);
+    expect(document.querySelectorAll(`[${MORPHIC_READING_GUIDE_MARKER}="ruler"]`).length).toBe(1);
   });
 
   it('switching the band (line -> mask) keeps a single band root and the ruler', () => {
