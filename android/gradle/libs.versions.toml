@@ -7,6 +7,11 @@
 agp = "9.0.1"
 kover = "0.9.8"
 junit = "4.13.2"
+# DataStore (A-3 persistence). 1.2.1 stable, verified 2026-06-14 (developer.android.com
+# + dl.google.com POM). Pulls kotlinx-coroutines-core 1.9.0 transitively; coroutines-test
+# is pinned to that same 1.9.0 below to avoid version skew.
+datastore = "1.2.1"
+coroutines = "1.9.0"
 compileSdk = "35"
 minSdk = "24"
 
@@ -16,3 +21,5 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 [libraries]
 junit = { module = "junit:junit", version.ref = "junit" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
