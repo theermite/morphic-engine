@@ -233,6 +233,42 @@ Le serveur **ne décrypte jamais** les préférences. Il relaie des blobs chiffr
 - **Michi** (futur) — intégration en Phase 1 finale
 - **Shizen, Kakusei** (futur) — intégrations Phase 2 (post-NLNet)
 - **Browser extension** — Phase 2
+- **Apps Android natives** (RoK Message Designer, Hoso, Nikki, tout app tierce) — via la brique Kotlin §4.4
+
+### 4.4 Cible Android native (Kotlin / Jetpack Compose)
+
+**Décision (Jay 2026-06-13)** : le module morphique cible aussi l'Android natif. Pas un produit nouveau — une **nouvelle cible d'exécution** du même module. Même dépôt, sous-dossier Gradle isolé du workspace pnpm (`android/`).
+
+**Principe directeur** : on ne réutilise PAS le code TypeScript (pas de pont WASM ni de moteur JS embarqué — lourd, non-idiomatique, dette). On réutilise les **tokens de design** : le pipeline Style Dictionary émet une cible Kotlin/Compose depuis la MÊME source DTCG. Le cœur logique (axes, validation enum, modulation profil, machine d'onboarding) est réécrit en Kotlin pur — miroir testé de la logique web.
+
+```
+Source unique DTCG (tokens.*)
+   ├─ Style Dictionary → CSS vars (web, existant)
+   └─ Style Dictionary → Kotlin/Compose tokens (Android, nouveau)
+
+LAYER VISIBLE Android (Kotlin + Jetpack Compose, Material 3)
+  • MorphicProvider composable (CompositionLocal) = équivalent natif de <morphic-provider>
+  • Axes sensoriels d'abord : thème / contraste / taille police / motion / densité
+  • Persistance DataStore (coroutines) = équivalent natif d'IndexedDB
+  • Onboarding sensoriel-AVANT-identité (Dignity §a) — différenciateur, absent d'Android natif
+  • Distribution : AAR via Maven Central (équivalent natif du paquet npm)
+```
+
+**Ce qu'Android fournit déjà nativement** (orchestré, jamais recodé) : font scale dynamique, thème Material 3, contraste élevé, `LocalReduceMotion`. **La valeur ajoutée morphique** = ce qu'Android ne fait pas : axes cognitifs, modulation par profil holistique, onboarding digne, aide à la lecture, daltonisation corrective.
+
+**Stack Android** (cohérente écosystème — veille 2026-06-12 RoK Message Designer + veille 2026-06-13 portage) :
+
+| Couche | Techno | Note |
+|--------|--------|------|
+| Langage | Kotlin 2.4 | natif Android |
+| UI | Jetpack Compose + Material 3 | théming runtime natif |
+| SDK cible / min | targetSdk 35 / minSdk 24 | standard écosystème |
+| Persistance | DataStore (Preferences) | coroutines, remplace SharedPreferences |
+| Tokens | Style Dictionary → cible Compose | source DTCG partagée web/Android |
+| Distribution | AAR + Maven Central | versions exactes figées au B-0 scaffold |
+| Tests | JUnit + Compose UI test + property-based | miroir de la stratégie web |
+
+**Hors scope Android (cette itération)** : iOS (SwiftUI), sync E2E chiffrée (réutilisera wasm-core plus tard), backend Phoenix. Sensoriel d'abord, le reste en phases ultérieures.
 
 ---
 
