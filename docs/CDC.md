@@ -42,7 +42,7 @@ Le module est le **levier magnétique** de l'écosystème Shinkofa en 2026 :
 
 1. **AGPL-3.0 + NLNet** (deadline soumission 2026-06-01) → financement Commons + crédibilité auprès de la NGI Initiative + reconnaissance W3C WAI-Adapt alignment.
 2. **Démo theermite.com** → vitrine vivante (le blog Jay l'utilise sur lui-même = preuve par dogfooding, pas marketing).
-3. **NPM `@shinkofa/morphic-engine`** → distribution naturelle (Dev.to/Hashnode/GitHub topics : `morphic`, `neurodiversity`, `ux-adaptation`).
+3. **NPM `@theermite/morphic-engine`** → distribution naturelle (Dev.to/Hashnode/GitHub topics : `morphic`, `neurodiversity`, `ux-adaptation`).
 4. **Citabilité IA** (Perplexity, AI Overviews, Claude-with-web) sur la requête « how to adapt UI for neurodiversity morphically » → JSON-LD `SoftwareApplication` + pillar article The Ermite.
 5. **GPII Preferences Framework interop** (Morphic.org GPII registry) → reconnaissance accessibility standards body.
 
@@ -50,7 +50,7 @@ Aucun outreach push. Aucun dark pattern. Le projet attire ceux qu'il doit attire
 
 ### L1 — Action (la prochaine étape concrète)
 
-Brick B-001 : scaffolding monorepo `@shinkofa/morphic-*` (3 packages : `engine`, `wasm-core`, `adapter`) + Vite + Vitest config conforme `rules/Quality.md` Test Runtime Hygiene (forks pool, maxForks 2, NODE_OPTIONS=2048). Pas une ligne de code applicatif avant que le scaffolding compile et que les tests vides passent en CI.
+Brick B-001 : scaffolding monorepo `@theermite/morphic-*` (3 packages : `engine`, `wasm-core`, `adapter`) + Vite + Vitest config conforme `rules/Quality.md` Test Runtime Hygiene (forks pool, maxForks 2, NODE_OPTIONS=2048). Pas une ligne de code applicatif avant que le scaffolding compile et que les tests vides passent en CI.
 
 ---
 
@@ -77,7 +77,7 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
 
 | ID | Feature | User story | Priorité | Dépend de |
 |----|---------|-----------|----------|-----------|
-| F-001 | Scaffolding 3 packages framework-agnostic | En tant qu'intégrateur, j'installe `@shinkofa/morphic-engine` et je l'utilise en 5 lignes | P0 | — |
+| F-001 | Scaffolding 3 packages framework-agnostic | En tant qu'intégrateur, j'installe `@theermite/morphic-engine` et je l'utilise en 5 lignes | P0 | — |
 | F-002 | Web Component `<morphic-provider>` zero-config | En tant qu'hôte, j'enveloppe `<body>` et le module fonctionne sans framework | P0 | F-001 |
 | F-003 | Synchronous localStorage read en `<head>` (zero flash) | En tant qu'user, je ne vois jamais un flash entre thème par défaut et mon thème préféré | P0 | F-002 |
 | F-004 | Token system W3C DTCG (Design Token Format) | En tant qu'intégrateur, je peux mapper mes tokens existants vers les axes morphiques | P0 | F-001 |
@@ -153,7 +153,7 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
 ┌────────────────────────────────────────────────────────────────────┐
 │  HÔTE (theermite.com, Michi, Shizen, n'importe quel site)          │
 │  <head>                                                              │
-│    <script src="@shinkofa/morphic-engine/init.js"></script>         │
+│    <script src="@theermite/morphic-engine/init.js"></script>         │
 │  </head>                                                             │
 │  <body>                                                              │
 │    <morphic-provider>                                                │
@@ -165,7 +165,7 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
                               ▼
 ┌────────────────────────────────────────────────────────────────────┐
 │  LAYER 1 — VISIBLE (TypeScript strict + Web Components)            │
-│  @shinkofa/morphic-engine                                            │
+│  @theermite/morphic-engine                                            │
 │  • <morphic-provider> custom element zero-config                    │
 │  • Synchronous head-read (zero flash, Dignity §a)                   │
 │  • CSS custom properties --morphic-* injection                      │
@@ -176,7 +176,7 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
                               ▼
 ┌────────────────────────────────────────────────────────────────────┐
 │  LAYER 2 — CRITIQUE (Rust 1.87+ → WebAssembly)                     │
-│  @shinkofa/morphic-wasm-core                                         │
+│  @theermite/morphic-wasm-core                                         │
 │  • Validators schemas (préfs entrantes import GPII/WAI-Adapt)       │
 │  • Mappers HD/ND → axes morphiques (logique typée fort)             │
 │  • Crypto NaCl box (sync E2E)                                       │
@@ -187,7 +187,7 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
                               ▼
 ┌────────────────────────────────────────────────────────────────────┐
 │  LAYER 3 — RÉSILIENCE (Effect-TS 3.x)                              │
-│  @shinkofa/morphic-engine/effects                                    │
+│  @theermite/morphic-engine/effects                                    │
 │  • Algebraic effects (closest TS à Erlang/BEAM let-it-crash)        │
 │  • Structured errors typées, composables                            │
 │  • Pas de throw sauvage, pas de Promise.catch oublié                │
@@ -323,27 +323,27 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 
 | Module / composant | Niveau | Coverage floor | MC/DC ? | Justification |
 |--------------------|--------|----------------|---------|---------------|
-| `@shinkofa/morphic-wasm-core` (validators, mappers, crypto Rust) | **Critical** | 95% + mutation 75% | Oui (conditions ≥4) | Crypto sync E2E + validation préfs entrantes (GPII/WAI-Adapt). Échec = data corruption ou fuite. |
-| `@shinkofa/morphic-engine/storage` (IndexedDB + Yjs + Worker sync) | **Critical** | 95% + mutation 75% | Oui | Persistence préférences. Échec = perte données user, contradiction Adaptation gate (Dignity §a). |
-| `@shinkofa/morphic-engine/init` (synchronous head-read, zero flash) | **Critical** | 95% | Oui | Échec = flash visible = violation Dignity §a (sensoriel). Race condition zero tolerance. |
-| `@shinkofa/morphic-engine/onboarding` (sensoriel-first, ≤3 decision points) | **Critical** | 95% | Non | Échec = violation Dignity §a + Cognitive Load BLOCKING. |
+| `@theermite/morphic-wasm-core` (validators, mappers, crypto Rust) | **Critical** | 95% + mutation 75% | Oui (conditions ≥4) | Crypto sync E2E + validation préfs entrantes (GPII/WAI-Adapt). Échec = data corruption ou fuite. |
+| `@theermite/morphic-engine/storage` (IndexedDB + Yjs + Worker sync) | **Critical** | 95% + mutation 75% | Oui | Persistence préférences. Échec = perte données user, contradiction Adaptation gate (Dignity §a). |
+| `@theermite/morphic-engine/init` (synchronous head-read, zero flash) | **Critical** | 95% | Oui | Échec = flash visible = violation Dignity §a (sensoriel). Race condition zero tolerance. |
+| `@theermite/morphic-engine/onboarding` (sensoriel-first, ≤3 decision points) | **Critical** | 95% | Non | Échec = violation Dignity §a + Cognitive Load BLOCKING. |
 | `sk_morphic.Channels.Sync` (Phoenix CRDT relay) | **Critical** | 95% | Oui | Échec = sync down → users en conflit. Échec backend ≠ down du module (graceful degradation testée). |
-| `@shinkofa/morphic-engine/web-component` (`<morphic-provider>`) | **Sensitive** | 90% | Non | Façade publique du module. Régression = consommateurs cassent. |
-| `@shinkofa/morphic-engine/tokens` (DTCG + Style Dictionary) | **Sensitive** | 90% | Non | Build pipeline tokens. Erreur silencieuse = thème incohérent. |
-| `@shinkofa/morphic-engine/effects` (Effect-TS structured errors) | **Sensitive** | 90% | Non | Couche résilience. Tests sur error paths obligatoires. |
+| `@theermite/morphic-engine/web-component` (`<morphic-provider>`) | **Sensitive** | 90% | Non | Façade publique du module. Régression = consommateurs cassent. |
+| `@theermite/morphic-engine/tokens` (DTCG + Style Dictionary) | **Sensitive** | 90% | Non | Build pipeline tokens. Erreur silencieuse = thème incohérent. |
+| `@theermite/morphic-engine/effects` (Effect-TS structured errors) | **Sensitive** | 90% | Non | Couche résilience. Tests sur error paths obligatoires. |
 | `sk_morphic.API.Telemetry` (OpenTelemetry opt-in) | **Sensitive** | 90% | Non | Opt-in = échec consent = violation GDPR. |
-| `@shinkofa/morphic-engine/ui` (composants visuels onboarding) | **Standard** | 80% | Non | UX, mais Lighthouse + axe gates BLOCKING couvrent. |
-| `@shinkofa/morphic-engine/i18n` (chargement clés FR/EN/ES) | **Standard** | 80% | Non | Fallback strategy testée, mais peu de logique. |
+| `@theermite/morphic-engine/ui` (composants visuels onboarding) | **Standard** | 80% | Non | UX, mais Lighthouse + axe gates BLOCKING couvrent. |
+| `@theermite/morphic-engine/i18n` (chargement clés FR/EN/ES) | **Standard** | 80% | Non | Fallback strategy testée, mais peu de logique. |
 | `apps/the-ermite-demo` (intégration démo theermite.com) | **Standard** | 80% | Non | Démo, pas le module. |
 | `scripts/build-tokens.ts` | **Tooling** | 60% | Non | Outillage dev, smoke test suffit. |
 | `scripts/release.ts` | **Tooling** | 60% | Non | Outillage CI. |
-| `@shinkofa/morphic-engine/axes/daltonization` (F-025 matrices Brettel/Viénot) | **Critical** | 95% + mutation 75% | Oui | Algorithmique (matrices linéaires) — faux résultat = contenu illisible pour daltonien. PBT obligatoire. |
-| `@shinkofa/morphic-engine/axes/reading-guide` (F-027 line/mask/ruler) | **Sensitive** | 90% | Non | Overlay visuel. Régression = guide cassé = perte assistance lecture. |
-| `@shinkofa/morphic-engine/axes/reading-focus` (F-026) | **Standard** | 80% | Non | Transformation typographique, low-risk algorithmique. |
-| `@shinkofa/morphic-engine/axes/wai-symbols` (F-028 `experimental`) | **Sensitive** | 90% | Non | Tag experimental — API peut changer. Tests robustes nécessaires car standard mouvant. |
-| `@shinkofa/morphic-engine/axes/kbd-shortcuts` (F-029) | **Standard** | 80% | Non | UI navigation, fallback OS toujours possible. |
-| `@shinkofa/morphic-engine/axes/motor` (F-030 click-delay + F-031 dwell + F-032 tremor) | **Critical** | 95% + mutation 75% | Oui | Accessibilité motrice — bug = utilisateur exclu. F-032 algorithmique (moyenne mobile) → PBT. |
-| `@shinkofa/morphic-engine/axes/energy` (F-033 recovery + F-034 idle + F-035 pomodoro) | **Critical** | 95% + mutation 75% | Oui | F-033 couplé Ki via API/events — contrat public stable. F-035 state machine timer — transitions exhaustives à tester. |
+| `@theermite/morphic-engine/axes/daltonization` (F-025 matrices Brettel/Viénot) | **Critical** | 95% + mutation 75% | Oui | Algorithmique (matrices linéaires) — faux résultat = contenu illisible pour daltonien. PBT obligatoire. |
+| `@theermite/morphic-engine/axes/reading-guide` (F-027 line/mask/ruler) | **Sensitive** | 90% | Non | Overlay visuel. Régression = guide cassé = perte assistance lecture. |
+| `@theermite/morphic-engine/axes/reading-focus` (F-026) | **Standard** | 80% | Non | Transformation typographique, low-risk algorithmique. |
+| `@theermite/morphic-engine/axes/wai-symbols` (F-028 `experimental`) | **Sensitive** | 90% | Non | Tag experimental — API peut changer. Tests robustes nécessaires car standard mouvant. |
+| `@theermite/morphic-engine/axes/kbd-shortcuts` (F-029) | **Standard** | 80% | Non | UI navigation, fallback OS toujours possible. |
+| `@theermite/morphic-engine/axes/motor` (F-030 click-delay + F-031 dwell + F-032 tremor) | **Critical** | 95% + mutation 75% | Oui | Accessibilité motrice — bug = utilisateur exclu. F-032 algorithmique (moyenne mobile) → PBT. |
+| `@theermite/morphic-engine/axes/energy` (F-033 recovery + F-034 idle + F-035 pomodoro) | **Critical** | 95% + mutation 75% | Oui | F-033 couplé Ki via API/events — contrat public stable. F-035 state machine timer — transitions exhaustives à tester. |
 
 **Source de référence** : `.claude/rules/Quality.md` § Critical Paths + Refonte `Quality-Gates-Refonte.md`.
 
@@ -351,7 +351,7 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 
 ## 8. FMEA simplifiée — modules Critical uniquement
 
-### 8.1 `@shinkofa/morphic-wasm-core`
+### 8.1 `@theermite/morphic-wasm-core`
 
 | Mode de défaillance | Sévérité (1-5) | Mitigation |
 |---------------------|----------------|------------|
@@ -359,7 +359,7 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 | Validator passe préfs malformées (faux négatif) | 5 | PBT fast-check côté TS + proptest côté Rust ; corpus fuzzing (Schemathesis sur schemas import) ; mutation testing ≥75%. |
 | Crypto `box` mal utilisé (nonce reuse) | 5 | Nonces générés par CSPRNG ne se réutilisent jamais ; assertion runtime + test PBT « 1000 encrypt même message → 1000 ciphertexts différents ». |
 
-### 8.2 `@shinkofa/morphic-engine/storage`
+### 8.2 `@theermite/morphic-engine/storage`
 
 | Mode de défaillance | Sévérité (1-5) | Mitigation |
 |---------------------|----------------|------------|
@@ -367,7 +367,7 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 | CRDT merge conflict produit état impossible | 5 | Yjs garantit no-conflict par construction, mais schema validation Rust WASM AVANT apply ; holdout test set avec conflits malicieux. |
 | Sync Worker crash → silence du sync | 4 | Worker restart automatique (supervisor pattern) + telemetry alert opt-in ; circuit breaker côté Effect-TS. |
 
-### 8.3 `@shinkofa/morphic-engine/init`
+### 8.3 `@theermite/morphic-engine/init`
 
 | Mode de défaillance | Sévérité (1-5) | Mitigation |
 |---------------------|----------------|------------|
@@ -375,7 +375,7 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 | Web Component non défini avant `<morphic-provider>` parsé | 4 | `customElements.whenDefined()` + shadow DOM fallback ; test cross-browser. |
 | CSP strict bloque l'injection CSS vars | 4 | Pas d'injection inline ; CSS vars via stylesheet adopted ; nonce serveur-fourni si nécessaire ; test sous CSP strict. |
 
-### 8.4 `@shinkofa/morphic-engine/onboarding`
+### 8.4 `@theermite/morphic-engine/onboarding`
 
 | Mode de défaillance | Sévérité (1-5) | Mitigation |
 |---------------------|----------------|------------|
@@ -442,7 +442,7 @@ Ce qu'on **ne fera PAS** dans cette v2.0.0 :
 |----------|-------|--------|----------|
 | NLNet dossier soumis | 1 | Confirmation email NLNet | 2026-06-01 |
 | NLNet acceptation | Stage 1 passé | Réponse NLNet | T+3 mois |
-| Downloads NPM `@shinkofa/morphic-engine` | 100/mois | npm-stat | T+6 mois |
+| Downloads NPM `@theermite/morphic-engine` | 100/mois | npm-stat | T+6 mois |
 | GitHub stars `theermite/morphic-engine` | 50 | GitHub API | T+6 mois |
 | Citations Perplexity / AI Overviews sur requête cible | 1 | Test trimestriel manuel | T+6 mois |
 | Sites Shinkofa intégrant le module | 3 (Ermite + Michi + 1 autre) | Audit code | T+9 mois |
