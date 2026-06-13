@@ -24,7 +24,7 @@ import {
   type ReadingFocusIntensity,
   setReadingFocus,
   setReadingGuide,
-} from '@morphic/engine';
+} from '@theermite/morphic-engine';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useMorphicContrast,

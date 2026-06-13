@@ -1,5 +1,5 @@
 /**
- * <MorphicProvider> — React adapter for @morphic/engine.
+ * <MorphicProvider> — React adapter for @theermite/morphic-engine.
  *
  * CDC ref : F-020 (Démo theermite.com intégration drop-in) — adapter brick.
  * Brick   : B-021a.
@@ -19,7 +19,7 @@
 
 'use client';
 
-import { morphicInit } from '@morphic/engine';
+import { morphicInit } from '@theermite/morphic-engine';
 import { createContext, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 interface MorphicContextValue {

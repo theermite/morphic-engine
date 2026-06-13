@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — reading-guide axis (B-103, F-027).
+ * @theermite/morphic-engine — reading-guide axis (B-103, F-027).
  *
  * Two INDEPENDENT, cumulable families of visual reading assistance:
  *

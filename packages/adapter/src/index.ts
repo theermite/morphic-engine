@@ -1,5 +1,5 @@
 /**
- * @morphic/adapter — React adapter for the Morphic Adaptation Engine.
+ * @theermite/morphic-adapter — React adapter for the Morphic Adaptation Engine.
  *
  * CDC ref : F-020 (Démo theermite.com intégration drop-in) — adapter brick.
  * Brick   : B-021a.

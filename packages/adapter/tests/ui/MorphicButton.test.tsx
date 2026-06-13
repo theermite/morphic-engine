@@ -15,8 +15,8 @@
  *   - `labels` prop overrides FR defaults; `axes` prop limits sections.
  */
 
-import { getReadingFocus, getReadingGuide } from '@morphic/engine';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { getReadingFocus, getReadingGuide } from '@theermite/morphic-engine';
 import { describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../../src/index.js';
 import { MorphicButton } from '../../src/ui/index.js';

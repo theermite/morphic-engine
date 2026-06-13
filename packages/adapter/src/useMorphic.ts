@@ -36,7 +36,7 @@ import {
   getTheme,
   type MotionChoice,
   type ThemeChoice,
-} from '@morphic/engine';
+} from '@theermite/morphic-engine';
 import { useCallback, useContext } from 'react';
 import { MorphicContext } from './MorphicProvider.js';
 

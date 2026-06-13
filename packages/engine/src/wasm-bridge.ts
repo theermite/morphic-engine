@@ -1,12 +1,12 @@
 /**
- * WASM Crypto Bridge — async loader for @morphic/wasm-core with TS fallback.
+ * WASM Crypto Bridge — async loader for @theermite/morphic-wasm-core with TS fallback.
  *
  * CDC ref : F-017 (Tri-layer Rust→WASM critical paths)
  * Brick   : B-018
  * Risk    : Critical (95% coverage + parity TS↔WASM)
  *
  * Architecture:
- *   - The WASM module is loaded LAZILY via `import('@morphic/wasm-core')`.
+ *   - The WASM module is loaded LAZILY via `import('@theermite/morphic-wasm-core')`.
  *   - If the load succeeds, callers get the high-performance Rust backend.
  *   - If the load fails (no WebAssembly, missing pkg/, bundler omitted it,
  *     hostile environment), callers fall back to `tweetnacl` automatically.
@@ -129,7 +129,7 @@ let backendPromise: Promise<CryptoBackend> | null = null;
 
 /**
  * Resolve a crypto backend. Returns the WASM-backed implementation when
- * `@morphic/wasm-core` is available and successfully initialized; otherwise
+ * `@theermite/morphic-wasm-core` is available and successfully initialized; otherwise
  * returns the tweetnacl-backed implementation.
  *
  * Subsequent calls return the same promise (and therefore the same backend
@@ -147,14 +147,14 @@ export function getCryptoBackend(): Promise<CryptoBackend> {
 }
 
 /**
- * Force-load the WASM backend. Throws if @morphic/wasm-core cannot be
+ * Force-load the WASM backend. Throws if @theermite/morphic-wasm-core cannot be
  * loaded or initialized. Used by tests and by callers that explicitly want
  * to fail loudly when WASM is unavailable (e.g., to log a perf warning).
  */
 export async function loadWasmBackend(): Promise<CryptoBackend> {
   // The string is built dynamically so bundlers without the wasm package
   // installed don't fail at build time — the import is opt-in.
-  const specifier = '@morphic/wasm-core';
+  const specifier = '@theermite/morphic-wasm-core';
   const mod = (await import(/* @vite-ignore */ specifier)) as WasmModule;
   // wasm-pack's `--target web` requires explicit init (async fetch of the
   // .wasm file). On `--target bundler` or Node, init is automatic, but

@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — dwell-click axis (B-107, F-031).
+ * @theermite/morphic-engine — dwell-click axis (B-107, F-031).
  *
  * Accessibility for severe motor impairment:
  *  - Hovering over an interactive element for a configurable delay

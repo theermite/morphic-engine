@@ -8,7 +8,7 @@
  * a richer pictogram set pass their own `waiResolver`.
  */
 
-import type { SymbolResolution, SymbolResolver } from '@morphic/engine';
+import type { SymbolResolution, SymbolResolver } from '@theermite/morphic-engine';
 
 /** BCI index → emoji + FR alt text. Mirrors the demo set (10 common concepts). */
 const EMOJI_TABLE: Readonly<Record<number, { emoji: string; alt: string }>> = {

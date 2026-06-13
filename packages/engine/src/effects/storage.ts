@@ -16,8 +16,8 @@
  *   2. The `operation` field preserves the original call so telemetry can
  *      distinguish "persist failed" from "load failed".
  *
- * Subpath export: consumers reach this via `@morphic/engine/effects` so the
- * core import (`@morphic/engine`) stays Effect-free and tree-shakes the
+ * Subpath export: consumers reach this via `@theermite/morphic-engine/effects` so the
+ * core import (`@theermite/morphic-engine`) stays Effect-free and tree-shakes the
  * Effect-TS bundle (~50 KB) out of the consumer build.
  */
 

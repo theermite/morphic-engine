@@ -167,7 +167,7 @@ function readMediaContrast(): Contrast {
  *
  * Designed to run in `<head>` BEFORE first paint:
  * ```html
- * <script src="@shinkofa/morphic-engine/init.js"></script>
+ * <script src="@theermite/morphic-engine/init.js"></script>
  * ```
  *
  * Reads stored preferences, validates, injects CSS vars, or falls back

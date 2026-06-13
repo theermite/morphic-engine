@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — wai-symbols axis (B-104, F-028, EXPERIMENTAL).
+ * @theermite/morphic-engine — wai-symbols axis (B-104, F-028, EXPERIMENTAL).
  *
  * Polyfill-style renderer for W3C WAI-Adapt Symbols (CR 2023-01-05).
  * No browser implements `adapt-symbol` natively as of 2026-05-22, so this

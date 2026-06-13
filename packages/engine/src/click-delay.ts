@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — click-delay axis (B-106, F-030).
+ * @theermite/morphic-engine — click-delay axis (B-106, F-030).
  *
  * Accessibility for motor impairment (tremor, Parkinson):
  *  - Configurable delay (0-500 ms) between accepted clicks.

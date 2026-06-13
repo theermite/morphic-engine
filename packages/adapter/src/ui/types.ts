@@ -6,7 +6,7 @@
  * License : AGPL-3.0-or-later.
  */
 
-import type { SymbolResolver } from '@morphic/engine';
+import type { SymbolResolver } from '@theermite/morphic-engine';
 import type { CSSProperties } from 'react';
 
 /** Identifier of each configurable section the button can render. */

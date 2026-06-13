@@ -7,12 +7,12 @@
  *
  * Scope:
  *   - bridge caching (idempotent across calls)
- *   - fallback when @morphic/wasm-core fails to load
+ *   - fallback when @theermite/morphic-wasm-core fails to load
  *   - JS backend round-trip parity (sanity — same contract as e2e-crypto.ts)
  *   - WASM backend round-trip via vi.mock (no real .wasm needed in jsdom)
  *   - cross-backend parity: ciphertext from JS decryptable by mocked WASM
  *
- * What we do NOT test here (covered by cargo proptests in @morphic/wasm-core):
+ * What we do NOT test here (covered by cargo proptests in @theermite/morphic-wasm-core):
  *   - real cryptographic properties (round-trip, tamper detection, wrong-key)
  *   - those are validated by 4096 proptest cases on the Rust side.
  *
@@ -33,7 +33,7 @@ import {
 
 afterEach(() => {
   __setBackendForTesting(null);
-  vi.doUnmock('@morphic/wasm-core');
+  vi.doUnmock('@theermite/morphic-wasm-core');
 });
 
 describe('getJsBackend — always-available fallback', () => {
@@ -109,7 +109,7 @@ describe('getCryptoBackend — orchestration', () => {
 
   it('falls back to the JS backend when wasm load throws', async () => {
     __setBackendForTesting(null);
-    vi.doMock('@morphic/wasm-core', () => {
+    vi.doMock('@theermite/morphic-wasm-core', () => {
       throw new Error('simulated wasm load failure');
     });
 
@@ -120,7 +120,7 @@ describe('getCryptoBackend — orchestration', () => {
   it('caches the failure-fallback (does not re-attempt wasm load)', async () => {
     let importAttempts = 0;
     __setBackendForTesting(null);
-    vi.doMock('@morphic/wasm-core', () => {
+    vi.doMock('@theermite/morphic-wasm-core', () => {
       importAttempts += 1;
       throw new Error('boom');
     });
@@ -145,7 +145,7 @@ describe('loadWasmBackend — direct WASM loader', () => {
     const synthCipher = new Uint8Array([0x11, 0x22, 0x33]);
     const synthPlain = new Uint8Array([0x44, 0x55]);
 
-    vi.doMock('@morphic/wasm-core', () => ({
+    vi.doMock('@theermite/morphic-wasm-core', () => ({
       default: async () => undefined,
       wasmGenerateKeypair: () => ({ publicKey: synthPk, secretKey: synthSk }),
       wasmGenerateNonce: () => synthNonce,
@@ -177,7 +177,7 @@ describe('loadWasmBackend — direct WASM loader', () => {
   });
 
   it('throws when the smoke check fails (no 24-byte nonce)', async () => {
-    vi.doMock('@morphic/wasm-core', () => ({
+    vi.doMock('@theermite/morphic-wasm-core', () => ({
       default: async () => undefined,
       wasmGenerateKeypair: () => ({ publicKey: new Uint8Array(32), secretKey: new Uint8Array(32) }),
       wasmGenerateNonce: () => new Uint8Array(8),
@@ -193,7 +193,7 @@ describe('backend injection — covers the WASM-kind code path', () => {
   // Cross-runtime byte parity (Rust WASM ciphertext <-> tweetnacl ciphertext)
   // is guaranteed by the wire format: both implement curve25519-xsalsa20-
   // poly1305 with identical 32-byte keys and 24-byte nonces. The Rust side
-  // is independently validated by `cargo test` on @morphic/wasm-core (4096
+  // is independently validated by `cargo test` on @theermite/morphic-wasm-core (4096
   // proptest cases + round-trip / tamper-detection / wrong-key / wrong-nonce
   // properties). Re-asserting that property in jsdom would require shipping
   // the actual .wasm into a jsdom-compatible loader — out of scope for B-018.

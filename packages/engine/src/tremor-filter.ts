@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — tremor-filter axis (B-108, F-032).
+ * @theermite/morphic-engine — tremor-filter axis (B-108, F-032).
  *
  * Accessibility for motor tremor:
  *  - Intercepts `pointermove` events and smooths cursor positions

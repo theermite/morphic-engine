@@ -6,7 +6,7 @@
  * tsc emits only .js/.d.ts. The publishable component ships two stylesheets
  * (`morphic-button.css`, `morphic-base.css`) that must land in dist/ui so the
  * `./ui.css` and `./morphic.css` subpath exports resolve. Run from the package
- * root (`pnpm --filter @morphic/adapter build` sets the cwd there).
+ * root (`pnpm --filter @theermite/morphic-adapter build` sets the cwd there).
  */
 
 import { copyFileSync, mkdirSync } from 'node:fs';

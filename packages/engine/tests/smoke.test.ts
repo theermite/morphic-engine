@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { VERSION } from '../src/index.js';
 
-describe('@morphic/engine — bootstrap smoke', () => {
+describe('@theermite/morphic-engine — bootstrap smoke', () => {
   it('should export VERSION matching 2.0.0-beta.5', () => {
     expect(VERSION).toBe('2.0.0-beta.5');
   });

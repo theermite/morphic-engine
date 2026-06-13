@@ -10,7 +10,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@morphic/engine': fileURLToPath(new URL('../src/index.ts', import.meta.url)),
+      '@theermite/morphic-engine': fileURLToPath(new URL('../src/index.ts', import.meta.url)),
     },
   },
 });

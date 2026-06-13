@@ -1,5 +1,5 @@
 {
-  "name": "@morphic/adapter",
+  "name": "@theermite/morphic-adapter",
   "version": "2.0.0-beta.1",
   "description": "Shinkofa Morphic Adaptation — React adapter (provider + hooks)",
   "license": "AGPL-3.0-or-later",
@@ -54,12 +54,12 @@
     "clean": "rm -rf dist coverage"
   },
   "peerDependencies": {
-    "@morphic/engine": "^2.0.0-beta.0",
+    "@theermite/morphic-engine": "^2.0.0-beta.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@morphic/engine": "workspace:*",
+    "@theermite/morphic-engine": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.0",

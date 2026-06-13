@@ -1,5 +1,5 @@
 /**
- * Public entry for the publishable morphic UI (`@morphic/adapter/ui`).
+ * Public entry for the publishable morphic UI (`@theermite/morphic-adapter/ui`).
  *
  * CDC ref : F-036. Brick : B-030a. License : AGPL-3.0-or-later.
  */

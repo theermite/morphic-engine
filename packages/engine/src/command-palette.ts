@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — command-palette axis (B-105, F-029).
+ * @theermite/morphic-engine — command-palette axis (B-105, F-029).
  *
  * Keyboard-first navigation:
  *  - Global shortcut registry: hosts declare commands; each command may carry

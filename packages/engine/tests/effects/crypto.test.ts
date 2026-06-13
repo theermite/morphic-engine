@@ -21,13 +21,13 @@ import { __setBackendForTesting } from '../../src/wasm-bridge.js';
 
 afterEach(() => {
   __setBackendForTesting(null);
-  vi.doUnmock('@morphic/wasm-core');
+  vi.doUnmock('@theermite/morphic-wasm-core');
 });
 
 describe('Crypto.getCryptoBackend', () => {
   it('resolves to the JS backend when WASM is unavailable', async () => {
     __setBackendForTesting(null);
-    vi.doMock('@morphic/wasm-core', () => {
+    vi.doMock('@theermite/morphic-wasm-core', () => {
       throw new Error('not present');
     });
 
@@ -54,7 +54,7 @@ describe('Crypto.getCryptoBackend', () => {
 
 describe('Crypto.loadWasmBackend — typed failure', () => {
   it('converts a thrown load error into CryptoError(load-wasm)', async () => {
-    vi.doMock('@morphic/wasm-core', () => {
+    vi.doMock('@theermite/morphic-wasm-core', () => {
       throw new Error('simulated load failure');
     });
 
@@ -71,7 +71,7 @@ describe('Crypto.loadWasmBackend — typed failure', () => {
   });
 
   it('converts a failed smoke check into CryptoError(load-wasm)', async () => {
-    vi.doMock('@morphic/wasm-core', () => ({
+    vi.doMock('@theermite/morphic-wasm-core', () => ({
       default: async () => undefined,
       wasmGenerateKeypair: () => ({
         publicKey: new Uint8Array(32),

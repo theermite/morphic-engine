@@ -88,7 +88,7 @@ export class MorphicProvider extends SafeHTMLElement {
  * Idempotent — calling it after registration is a no-op.
  *
  * Integrators normally do not need to call this directly: importing the
- * module from `@morphic/engine` runs the side-effect registration. The
+ * module from `@theermite/morphic-engine` runs the side-effect registration. The
  * explicit function exists for tests and for hosts that want to register
  * lazily.
  */

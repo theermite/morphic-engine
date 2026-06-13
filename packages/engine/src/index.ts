@@ -1,5 +1,5 @@
 /**
- * @morphic/engine — Shinkofa Morphic Adaptation Engine
+ * @theermite/morphic-engine — Shinkofa Morphic Adaptation Engine
  *
  * Framework-agnostic core engine. Drop-in universal adapter for
  * presentation, navigation, ergonomics, and accessibility based on

@@ -12,8 +12,8 @@
  *   - Provides MorphicContext to descendants (children can read via useMorphic).
  */
 
-import { MORPHIC_STORAGE_KEY } from '@morphic/engine';
 import { render, screen } from '@testing-library/react';
+import { MORPHIC_STORAGE_KEY } from '@theermite/morphic-engine';
 import { describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../src/index.js';
 

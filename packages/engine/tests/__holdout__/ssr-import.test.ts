@@ -2,7 +2,7 @@
  * Holdout — SSR import safety (B-021d).
  *
  * Node environment, no DOM globals. Importing the public barrel
- * `@morphic/engine` from a server-rendered route (Next RSC, Astro
+ * `@theermite/morphic-engine` from a server-rendered route (Next RSC, Astro
  * server-island, SvelteKit `+page.server`) MUST NOT throw, even though
  * the module exports Custom Element classes that extend HTMLElement.
  *
