@@ -351,6 +351,19 @@ LAYER VISIBLE Android (Kotlin + Jetpack Compose, Material 3)
 | **WAI-Adapt** | Symbols CR + Content WD alignement | W3C interop test |
 | **GPII** | Import préférences depuis registry Morphic.org | Test interop |
 
+### 6.bis Cible Android native (NFR spécifiques, CDC §4.4)
+
+| Catégorie | Cible Android | Mesure |
+|-----------|---------------|--------|
+| **Démarrage à froid** | impact ≤ +50 ms sur l'hôte (init Provider) | Macrobenchmark (Jetpack) |
+| **Fluidité** | 0 frame janky ; budget 16 ms/frame (60fps), idéal 8 ms (120fps) | JankStats / Macrobenchmark |
+| **Latence adaptation** | ≤ 50 ms (changement axe → recomposition) | trace systrace |
+| **Taille brique (AAR)** | ≤ 80 KB hors tokens ; impact APK hôte minimal | AAR size CI |
+| **Portée** | minSdk 24 (Android 7+, ~98% parc) | manifest |
+| **Accessibilité module** | TalkBack lit tous les contrôles ; cibles tactiles ≥ 48 dp ; 0 issue Accessibility Scanner | Compose semantics test + Accessibility Scanner |
+| **Mémoire** | < 1 MB drift sur cycle de vie (soak) | Android Profiler |
+| **Sécurité** | 0 secret embarqué ; préférences locales non exportées sans consentement | manual review |
+
 ---
 
 ## 7. Quality Archetype — Risk Classification
@@ -365,6 +378,9 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 | `@theermite/morphic-engine/onboarding` (sensoriel-first, ≤3 decision points) | **Critical** | 95% | Non | Échec = violation Dignity §a + Cognitive Load BLOCKING. |
 | `sk_morphic.Channels.Sync` (Phoenix CRDT relay) | **Critical** | 95% | Oui | Échec = sync down → users en conflit. Échec backend ≠ down du module (graceful degradation testée). |
 | `@theermite/morphic-engine/web-component` (`<morphic-provider>`) | **Sensitive** | 90% | Non | Façade publique du module. Régression = consommateurs cassent. |
+| **Android** `morphic-android/onboarding` (machine d'état, guards — Kotlin pur) | **Critical** | 95% (Kover, logique pure) + MC/DC sur guard | Oui | Contrat Dignity §a (sensoriel AVANT identité). Logique hors Composable pour être mesurable. |
+| **Android** `morphic-android/axes` + `tokens` (Kotlin pur) | **Sensitive** | 90% (Kover) | Non | Adaptation sensorielle. Régression = thème/contraste cassés. |
+| **Android** `morphic-android` Composables (`MorphicProvider`, UI) | **Sensitive** | UI test (pas coverage-gated) | Non | Le code Compose généré n'est pas mesurable en couverture (limite outillage) → testé via Compose UI test + semantics, gardé fin. |
 | `@theermite/morphic-engine/tokens` (DTCG + Style Dictionary) | **Sensitive** | 90% | Non | Build pipeline tokens. Erreur silencieuse = thème incohérent. |
 | `@theermite/morphic-engine/effects` (Effect-TS structured errors) | **Sensitive** | 90% | Non | Couche résilience. Tests sur error paths obligatoires. |
 | `sk_morphic.API.Telemetry` (OpenTelemetry opt-in) | **Sensitive** | 90% | Non | Opt-in = échec consent = violation GDPR. |

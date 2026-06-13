@@ -52,8 +52,23 @@ Aucun pont WASM / moteur JS embarqué dans cette itération.
 ## 5. Veille
 
 [VEILLE] Kotlin 2.4 + Jetpack Compose Material 3 + DataStore + targetSdk 35 / minSdk 24 verifie 2026-06-12 via conception RoK Message Designer (ecosystem standard) + 2026-06-13 via developer.android.com (Compose accessibility, scalable-content)
+[VEILLE] style-dictionary compose/object format (genere objet Kotlin Compose) verifie 2026-06-13 via github.com/style-dictionary/style-dictionary PR#599 — confirme la reutilisation des tokens vers Android
+[VEILLE] Kover (couverture Kotlin, semantique-aware vs JaCoCo) + PIT/pitest-kotlin (mutation) verifie 2026-06-13 via github.com/Kotlin/kotlinx-kover + gradle-pitest-plugin
 
-Versions exactes (AGP, Compose BOM, Kotlin, DataStore) **figées au B-0 scaffold** avec veille datée dédiée.
+Versions exactes (AGP, Compose BOM, Kotlin, DataStore, Kover, PIT) **figées au B-0 scaffold** avec veille datée dédiée.
+
+### 5.bis Stratégie de couverture (piège Compose — BLOCKING)
+
+Le code `@Composable` est en grande partie **généré par le compilateur** : aucun outil
+de couverture ne peut le mesurer fiablement (limite connue 2026). Conséquence sur
+l'architecture, pas optionnelle :
+
+- Toute **logique** (axes, validation enum, machine d'onboarding, guards, mapping tokens)
+  vit dans des classes **Kotlin pures** (non-Composable) → mesurée par Kover, gate 90/95%.
+- Les **Composables** restent **fins** (rendu seul, zéro logique) → testés par Compose UI
+  test + assertions semantics, **pas** soumis au plancher de couverture.
+
+C'est exactement la séparation logique/UI déjà décidée — la limite outillage la rend obligatoire.
 
 ---
 
@@ -65,12 +80,12 @@ Format : une ligne par brique. **Mise à jour obligatoire à chaque brique.**
 
 | ID | Brique | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
 |----|--------|---------|--------|----------------|----------------|--------|------|
-| A-0 | Scaffold sous-projet Gradle `android/` (library module Kotlin + Compose) isolé du workspace pnpm + CI lane (build + lint ktlint/detekt + tests) + versions figées | §4.4 | ⬜ Pending | Tooling 60% | AGP, Kotlin, Compose BOM, DataStore (à figer) | — | — |
+| A-0 | Scaffold sous-projet Gradle `android/` (library module Kotlin + Compose) isolé du workspace pnpm + CI lane (build + lint ktlint/detekt + Kover couverture + PIT mutation + tests) + versions figées. **Décision ouverte** : `groupId` Maven (ex. `com.theermite.morphic`) + licence Android (AGPL héritée vs Apache-2.0 pour adoption — voir §8). | §4.4 | ⬜ Pending | Tooling 60% | AGP, Kotlin, Compose BOM, DataStore, Kover, PIT (à figer) | — | — |
 | A-1 | Pipeline tokens : cible Style Dictionary → fichier Kotlin/Compose depuis la source DTCG partagée. Test de parité valeurs web↔Android. | §4.4 | ⬜ Pending | Sensitive 90% | style-dictionary cible kotlin/compose | — | — |
 | A-2 | Axes sensoriels — logique Kotlin pure : thème / contraste / taille police / motion / densité. API `setX`/`getX`/`resolveAutoX` + validation enum fermée. TDG miroir des axes web B-007→B-011. | §4.4 | ⬜ Pending | Sensitive 90% | — | — | — |
 | A-3 | Persistance DataStore (Preferences) : sauvegarde/restauration des axes entre sessions. Clé manquante → défaut, corruption tolérée. | §4.4 | ⬜ Pending | Sensitive 90% | DataStore API | — | — |
-| A-4 | `MorphicProvider` composable + CompositionLocal : livraison de l'état résolu à l'UI hôte. Pont vers Material 3 (thème, font scale, reduced motion natifs orchestrés). | §4.4 | ⬜ Pending | Sensitive 90% | Compose CompositionLocal, Material 3 | — | — |
-| A-5 | Onboarding sensoriel-AVANT-identité : machine d'état (idle→thème→motion→densité→completed) + guard `canCollectIdentity()`. Contrat Dignity §a BLOCKING. | §4.4 | ⬜ Pending | **Critical 95%** + MC/DC sur le guard | — | — | — |
+| A-4 | `MorphicProvider` composable + CompositionLocal : livraison de l'état résolu à l'UI hôte. Pont vers Material 3 (thème, font scale, reduced motion natifs orchestrés). Composable fin (rendu seul). | §4.4 | ⬜ Pending | Sensitive 90% (logique) / UI test (Composable) | Compose CompositionLocal, Material 3 | — | — |
+| A-5 | Onboarding sensoriel-AVANT-identité : machine d'état (idle→thème→motion→densité→completed) + guard `canCollectIdentity()`. Contrat Dignity §a BLOCKING. **Accessibilité du module** : TalkBack lit chaque étape, cibles ≥48dp, 0 issue Accessibility Scanner (CDC §6.bis). | §4.4 | ⬜ Pending | **Critical 95%** (Kover, logique pure) + MC/DC sur le guard | — | — | — |
 | A-6 | Distribution : publication AAR sur Maven Central + app exemple (sample) démontrant le drop-in. Dry-run avant publish réel (leçon wasm-pack). | §4.4 | ⬜ Pending | Tooling 60% | Maven Central publish, AGP publishing | — | — |
 
 ### Phases ultérieures (différées — hors itération courante)
@@ -90,3 +105,12 @@ Format : une ligne par brique. **Mise à jour obligatoire à chaque brique.**
 ## 7. Historique
 
 - **2026-06-13** : création. Décision Jay : même dépôt, sous-dossier Android ; réutilisation tokens (pas le code) ; sensoriel d'abord. Veille architecture faite (Kotlin/Compose, KMP écarté, tokens via Style Dictionary). Session-2026-06-13-003.
+- **2026-06-13** : audit des docs (demande Jay). Architecture validée (Style Dictionary `compose/object` confirmé). Ajouts : NFR Android (CDC §6.bis), classification risque Android (CDC §7), outillage Kover/PIT, piège couverture Compose (§5.bis), accessibilité du module, décisions ouvertes (§8).
+
+## 8. Décisions ouvertes (à trancher avec Jay avant A-0)
+
+| # | Décision | Options | Reco Takumi |
+|---|----------|---------|-------------|
+| 1 | **Licence de la brique Android** | AGPL-3.0 (héritée, cohérence NLNet) **vs** Apache-2.0 / MPL-2.0 (adoption tierce) | À trancher : l'AGPL freine toute adoption commerciale d'une brique réutilisable. Si l'objectif Android = réutilisation large, une licence permissive sert mieux le but. Si l'objectif = vitrine open-source pure, AGPL reste cohérente. |
+| 2 | **`groupId` Maven** | `com.theermite.morphic` / `com.shinkofa.morphic` / autre | Aligner sur le scope npm `@theermite/*` → `com.theermite.morphic`. |
+| 3 | **Axe font-family (dyslexie) dans le socle ?** | Inclure en A-2 (miroir web B-112) vs différer | Différer : les polices (OpenDyslexic, Atkinson) ajoutent du poids ; le socle sensoriel d'abord, font-family en phase suivante. |
