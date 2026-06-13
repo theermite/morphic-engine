@@ -1,4 +1,4 @@
-# @morphic/wasm-core
+# @theermite/morphic-wasm-core
 
 Rust → WebAssembly critical paths for the Morphic Adaptation Engine.
 
@@ -25,8 +25,8 @@ Exported API (TypeScript via `wasm-bindgen`):
 ## Build
 
 ```bash
-pnpm --filter @morphic/wasm-core build           # target web
-pnpm --filter @morphic/wasm-core build:bundler   # target bundler (Vite/webpack)
+pnpm --filter @theermite/morphic-wasm-core build           # target web
+pnpm --filter @theermite/morphic-wasm-core build:bundler   # target bundler (Vite/webpack)
 ```
 
 Output lands in `pkg/` (ESM + `.d.ts` + raw `.wasm`, ~58 KB). The bundle
@@ -36,7 +36,7 @@ that don't need WASM crypto pay 0 KB.
 ## Tests
 
 ```bash
-pnpm --filter @morphic/wasm-core test            # native cargo tests
+pnpm --filter @theermite/morphic-wasm-core test            # native cargo tests
 ```
 
 Runs 9 tests, including 4 property-based tests × 1024 cases (= 4096

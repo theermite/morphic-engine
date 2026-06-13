@@ -19,7 +19,7 @@ npm install @theermite/morphic-engine
 For React projects, add the adapter:
 
 ```bash
-pnpm add @morphic/adapter
+pnpm add @theermite/morphic-adapter
 ```
 
 ## Quick start (framework-agnostic)
@@ -74,7 +74,7 @@ Preferences can be encrypted with NaCl `crypto_box` before sync. Key never leave
 
 | Framework | Package |
 |-----------|---------|
-| React 19+ | [`@morphic/adapter`](https://github.com/theermite/morphic-engine/tree/main/packages/adapter) |
+| React 19+ | [`@theermite/morphic-adapter`](https://github.com/theermite/morphic-engine/tree/main/packages/adapter) |
 | Vanilla / Web Components | deferred |
 | Astro | deferred |
 

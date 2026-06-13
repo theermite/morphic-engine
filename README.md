@@ -18,16 +18,16 @@ Specification : voir `docs/CDC.md` (intention) + `docs/PET.md` (exécution).
 
 | Package | Role |
 |---------|------|
-| `@morphic/engine` | Core framework-agnostic engine (TypeScript) |
-| `@morphic/wasm-core` | Rust → WASM critical paths (deferred to B-005) |
-| `@morphic/adapter` | Host adapters (vanilla, React, Astro — B-008+) |
+| `@theermite/morphic-engine` | Core framework-agnostic engine (TypeScript) |
+| `@theermite/morphic-wasm-core` | Rust → WASM critical paths (deferred to B-005) |
+| `@theermite/morphic-adapter` | Host adapters (vanilla, React, Astro — B-008+) |
 
 ## Quick start (developer)
 
 ```bash
 pnpm install
-pnpm -F @morphic/engine test
-pnpm -F @morphic/engine build
+pnpm -F @theermite/morphic-engine test
+pnpm -F @theermite/morphic-engine build
 ```
 
 ## Funding

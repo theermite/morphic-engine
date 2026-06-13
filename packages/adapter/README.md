@@ -1,4 +1,4 @@
-# @morphic/adapter
+# @theermite/morphic-adapter
 
 React adapter for the [Morphic Adaptation Engine](../engine).
 
@@ -7,10 +7,10 @@ React adapter for the [Morphic Adaptation Engine](../engine).
 ## Install
 
 ```bash
-pnpm add @morphic/adapter @morphic/engine react react-dom
+pnpm add @theermite/morphic-adapter @theermite/morphic-engine react react-dom
 ```
 
-Peer deps: `react ^19`, `react-dom ^19`, `@morphic/engine` (workspace).
+Peer deps: `react ^19`, `react-dom ^19`, `@theermite/morphic-engine` (workspace).
 
 ## Quick start (Next.js 16 App Router)
 
@@ -18,7 +18,7 @@ Wrap your root layout (or a subtree) with `<MorphicProvider>`:
 
 ```tsx
 // app/layout.tsx
-import { MorphicProvider } from '@morphic/adapter';
+import { MorphicProvider } from '@theermite/morphic-adapter';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ```
 
 For zero-flash hydration, also inline the engine's head-read snippet in `<head>` (see
-`@morphic/engine` README). The provider is the fallback for client-only mounts and
+`@theermite/morphic-engine` README). The provider is the fallback for client-only mounts and
 keeps hooks reactive.
 
 ## Hooks
@@ -48,7 +48,7 @@ import {
   useMorphicDensity,
   useMorphicFontSize,
   useMorphicFontFamily,
-} from '@morphic/adapter';
+} from '@theermite/morphic-adapter';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useMorphicTheme();
@@ -67,7 +67,7 @@ all hook consumers via the provider's internal tick counter.
 ### Aggregate — `useMorphic()`
 
 ```tsx
-import { useMorphic } from '@morphic/adapter';
+import { useMorphic } from '@theermite/morphic-adapter';
 
 export function MorphicDebug() {
   const snap = useMorphic();

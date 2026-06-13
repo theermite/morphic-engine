@@ -5,7 +5,7 @@
   "alternateName": "Shinkofa Morphic Adaptation Engine",
   "description": "Framework-agnostic morphic adaptation engine. Eighteen independent adaptation axes (color vision correction, reading guide, tremor filter, reading focus, adaptive typography, reduced motion, pomodoro, etc.) with local persistence, designed to be integrated into a site's design system rather than overlaid on top of it. AGPL-3.0.",
   "url": "https://github.com/theermite/morphic-engine",
-  "downloadUrl": "https://www.npmjs.com/package/@morphic/engine",
+  "downloadUrl": "https://www.npmjs.com/package/@theermite/morphic-engine",
   "applicationCategory": "DeveloperApplication",
   "applicationSubCategory": "Accessibility",
   "operatingSystem": "Cross-platform",
