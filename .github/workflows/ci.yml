@@ -43,6 +43,11 @@ jobs:
       - name: Type check
         run: pnpm -r run build
 
+      - name: Verify Android tokens are in sync
+        run: |
+          node scripts/gen-android-tokens.mjs
+          git diff --exit-code -- android/morphic/src/main/kotlin/com/theermite/morphic/tokens/MorphicTokens.kt
+
       - name: Test with coverage
         run: pnpm -r --filter @theermite/morphic-engine run test:coverage
         env:

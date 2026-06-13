@@ -18,11 +18,25 @@ import {
   buildMorphicTokens,
   CONTRASTS,
   DENSITIES,
+  FONT_FAMILIES,
   FONT_SIZES,
   getStyleDictionaryConfig,
   MOTIONS,
   THEMES,
 } from '../src/build-tokens.js';
+
+/** Mirror of the generator's value → Kotlin const-name rule (UPPER_SNAKE_CASE). */
+const toConst = (value: string): string => value.toUpperCase().replace(/-/g, '_');
+
+/** All morphic axes paired with their values — single source for parity assertions. */
+const AXES: ReadonlyArray<readonly [string, readonly string[]]> = [
+  ['theme', THEMES],
+  ['motion', MOTIONS],
+  ['contrast', CONTRASTS],
+  ['density', DENSITIES],
+  ['fontSize', FONT_SIZES],
+  ['fontFamily', FONT_FAMILIES],
+];
 
 let outDir: string;
 
@@ -224,6 +238,112 @@ describe('buildMorphicTokens — Tailwind output', () => {
     const raw = readFileSync(join(outDir, 'morphic.tailwind.js'), 'utf-8');
     for (const axis of ['theme', 'motion', 'contrast', 'density', 'fontSize']) {
       expect(raw).toContain(axis);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Kotlin output (A-1 — Android token parity)
+// ---------------------------------------------------------------------------
+
+describe('getStyleDictionaryConfig — kotlin platform', () => {
+  it('declares a kotlin platform writing to MorphicTokens.kt', () => {
+    const config = getStyleDictionaryConfig(outDir);
+    const kotlin = config.platforms?.kotlin;
+    expect(kotlin?.files?.[0].destination).toBe('MorphicTokens.kt');
+  });
+
+  it('routes the kotlin platform to kotlinOutDir when provided', () => {
+    const config = getStyleDictionaryConfig(outDir, '/tmp/android-out');
+    expect(config.platforms?.kotlin?.buildPath).toBe('/tmp/android-out/');
+    // The web platforms stay on the primary outDir — only kotlin diverges.
+    expect(config.platforms?.css?.buildPath).toBe(`${outDir}/`);
+  });
+
+  it('defaults the kotlin buildPath to outDir when kotlinOutDir is omitted', () => {
+    const config = getStyleDictionaryConfig(outDir);
+    expect(config.platforms?.kotlin?.buildPath).toBe(`${outDir}/`);
+  });
+});
+
+describe('buildMorphicTokens — Kotlin output', () => {
+  it('produces MorphicTokens.kt', async () => {
+    await buildMorphicTokens(outDir);
+    expect(existsSync(join(outDir, 'MorphicTokens.kt'))).toBe(true);
+  });
+
+  it('declares the package and the MorphicTokens object', async () => {
+    await buildMorphicTokens(outDir);
+    const kt = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    expect(kt).toContain('package com.theermite.morphic.tokens');
+    expect(kt).toContain('object MorphicTokens {');
+  });
+
+  it('carries a DO-NOT-EDIT generated header', async () => {
+    await buildMorphicTokens(outDir);
+    const kt = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    expect(kt).toContain('DO NOT EDIT');
+  });
+
+  it('exposes a PascalCase object per axis', async () => {
+    await buildMorphicTokens(outDir);
+    const kt = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    for (const [axis] of AXES) {
+      const pascal = axis[0].toUpperCase() + axis.slice(1);
+      expect(kt).toContain(`object ${pascal} {`);
+    }
+  });
+
+  it('emits an UPPER_SNAKE const = "value" for every axis value', async () => {
+    await buildMorphicTokens(outDir);
+    const kt = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    for (const [, values] of AXES) {
+      for (const value of values) {
+        expect(kt).toContain(`const val ${toConst(value)} = "${value}"`);
+      }
+    }
+  });
+
+  it('exposes an `all` list per axis referencing the consts', async () => {
+    await buildMorphicTokens(outDir);
+    const kt = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    for (const [, values] of AXES) {
+      const refs = values.map(toConst).join(', ');
+      expect(kt).toContain(`val all = listOf(${refs})`);
+    }
+  });
+
+  it('is idempotent (second build is byte-identical)', async () => {
+    await buildMorphicTokens(outDir);
+    const first = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    await buildMorphicTokens(outDir);
+    const second = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    expect(second).toBe(first);
+  });
+
+  it('has web↔Android parity: every JSON token value appears in the Kotlin file', async () => {
+    await buildMorphicTokens(outDir);
+    const json = JSON.parse(readFileSync(join(outDir, 'morphic.json'), 'utf-8'));
+    const kt = readFileSync(join(outDir, 'MorphicTokens.kt'), 'utf-8');
+    // morphic.json (json/flat) is a flat name → value string map:
+    // { "MorphicThemeLight": "light", ... }
+    const values = Object.values(json as Record<string, string>);
+    expect(values.length).toBeGreaterThan(0);
+    for (const value of values) {
+      expect(kt).toContain(`= "${value}"`);
+    }
+  });
+
+  it('writes the Kotlin file to a distinct kotlinOutDir', async () => {
+    const kotlinDir = mkdtempSync(join(tmpdir(), 'morphic-kt-'));
+    try {
+      await buildMorphicTokens(outDir, kotlinDir);
+      expect(existsSync(join(kotlinDir, 'MorphicTokens.kt'))).toBe(true);
+      // Web outputs stay on the primary dir, not the kotlin dir.
+      expect(existsSync(join(outDir, 'morphic.css'))).toBe(true);
+      expect(existsSync(join(kotlinDir, 'morphic.css'))).toBe(false);
+    } finally {
+      rmSync(kotlinDir, { recursive: true, force: true });
     }
   });
 });
