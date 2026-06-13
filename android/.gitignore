@@ -1,0 +1,12 @@
+# Gradle / Android build outputs — never committed.
+.gradle/
+build/
+*/build/
+local.properties
+# Gradle wrapper jar is generated on first build (Android Studio or `gradle wrapper`).
+gradle/wrapper/gradle-wrapper.jar
+# IDE
+.idea/
+*.iml
+.kotlin/
+captures/

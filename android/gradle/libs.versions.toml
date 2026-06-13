@@ -1,0 +1,18 @@
+# Version catalog — single source of truth for the Android subtree.
+# Verified 2026-06-13 (veille): AGP 9.0.1, Gradle 9.1.0, Kover 0.9.8.
+# AGP 9 ships built-in Kotlin support, so no separate Kotlin plugin is applied
+# here. Explicit Kotlin/Compose version pinning is deferred to A-4 (Compose),
+# the first brick that needs the Compose compiler. See docs/PET-Android.md.
+[versions]
+agp = "9.0.1"
+kover = "0.9.8"
+junit = "4.13.2"
+compileSdk = "35"
+minSdk = "24"
+
+[plugins]
+android-library = { id = "com.android.library", version.ref = "agp" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+
+[libraries]
+junit = { module = "junit:junit", version.ref = "junit" }
