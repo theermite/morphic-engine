@@ -45,9 +45,17 @@ dependencies {
 // (skipped automatically by `publishToMavenLocal`, the CI dry-run). The real publish
 // is gated on the maintainer's Central Portal account + signing secrets — see
 // android/PUBLISHING.md. License is Apache-2.0 (android/ subtree override, not repo AGPL).
+// Sign only when a key is present (release workflow sets ORG_GRADLE_PROJECT_signingInMemoryKey).
+// The CI dry-run (publishToMavenLocal) has no key — signing it would fail with
+// "no configured signatory", so it is skipped there. Maven Central still gets
+// signed artifacts because the release workflow provides the key.
+val signingKeyPresent = project.hasProperty("signingInMemoryKey")
+
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    if (signingKeyPresent) {
+        signAllPublications()
+    }
 
     coordinates("com.theermite.morphic", "morphic", "0.1.0")
 
