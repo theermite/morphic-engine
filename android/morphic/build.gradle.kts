@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kover)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -36,4 +37,45 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+}
+
+// Maven Central publishing (A-6). vanniktech auto-detects the Android library and
+// publishes the `release` variant with sources + javadoc jars. `publishToMavenCentral`
+// targets the Central Portal; `signAllPublications` is required for a real release
+// (skipped automatically by `publishToMavenLocal`, the CI dry-run). The real publish
+// is gated on the maintainer's Central Portal account + signing secrets — see
+// android/PUBLISHING.md. License is Apache-2.0 (android/ subtree override, not repo AGPL).
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    coordinates("com.theermite.morphic", "morphic", "0.1.0")
+
+    pom {
+        name.set("morphic-android")
+        description.set(
+            "Framework-agnostic morphic adaptation engine for Android: sensory " +
+                "preference adaptation + sensoriel-before-identity onboarding (Dignity).",
+        )
+        inceptionYear.set("2026")
+        url.set("https://github.com/theermite/morphic-engine")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("theermite")
+                name.set("The Ermite")
+                url.set("https://github.com/theermite")
+            }
+        }
+        scm {
+            url.set("https://github.com/theermite/morphic-engine")
+            connection.set("scm:git:git://github.com/theermite/morphic-engine.git")
+            developerConnection.set("scm:git:ssh://git@github.com/theermite/morphic-engine.git")
+        }
+    }
 }

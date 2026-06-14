@@ -21,11 +21,19 @@ kotlin = "2.2.10"
 composeBom = "2026.03.01"
 compileSdk = "36"
 minSdk = "24"
+# Maven Central publishing (A-6). vanniktech 0.36.0 (2026-01-13) supports AGP 9.0.0
+# + Gradle 9 and the new Central Portal. Verified 2026-06-14 via the plugin CHANGELOG.
+mavenPublish = "0.36.0"
+# Sample app only (A-6). activity-compose 1.13.0 (2026-03-11, latest stable) supplies
+# ComponentActivity + setContent. Verified 2026-06-14 via developer.android.com.
+activityCompose = "1.13.0"
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
+android-application = { id = "com.android.application", version.ref = "agp" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 
 [libraries]
 junit = { module = "junit:junit", version.ref = "junit" }
@@ -37,3 +45,5 @@ androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+# Sample app only.
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }

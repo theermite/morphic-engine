@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "morphic-android"
 include(":morphic")
+include(":sample")

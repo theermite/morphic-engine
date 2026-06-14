@@ -1,0 +1,45 @@
+name: release-android
+
+# Publishes the morphic-android library to Maven Central (Central Portal).
+# INERT until the maintainer adds the secrets below — it fails cleanly if run
+# without them. Setup checklist: android/PUBLISHING.md.
+on:
+  push:
+    tags:
+      - 'morphic-android-v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate Gradle wrapper
+        run: gradle wrapper --gradle-version 9.1.0
+
+      # vanniktech reads these ORG_GRADLE_PROJECT_* env vars for Central Portal
+      # auth + in-memory GPG signing. `publishAndReleaseToMavenCentral` uploads
+      # and releases in one step (no web-UI interaction).
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew :morphic:publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace
