@@ -12,14 +12,28 @@ junit = "4.13.2"
 # is pinned to that same 1.9.0 below to avoid version skew.
 datastore = "1.2.1"
 coroutines = "1.9.0"
-compileSdk = "35"
+# Compose (A-4). Kotlin 2.2.10 = the KGP AGP 9.0.1 bundles built-in; the Compose
+# compiler plugin MUST match it. compose-bom 2026.03.01 pins compose-ui 1.10.6 +
+# material3 1.4.0 — the last BOM compatible with AGP 9.0.x (2026.04.01+ is Compose
+# 1.11, which requires AGP 9.2 + compileSdk 37). Verified 2026-06-14 (dl.google.com
+# POM). compileSdk bumped 35 → 36: Compose 1.10.x targets Android 16 (API 36).
+kotlin = "2.2.10"
+composeBom = "2026.03.01"
+compileSdk = "36"
 minSdk = "24"
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [libraries]
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+# Compose — versions managed by the BOM (no version on the individual modules).
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
