@@ -44,3 +44,8 @@ jobs:
 
       - name: Coverage report (Kover)
         run: ./gradlew :morphic:koverXmlReport --stacktrace
+
+      # Enforce the floors (Sensitive 90% module, Critical 95% onboarding logic).
+      # Fails the build below threshold — coverage becomes a gate, not a claim.
+      - name: Coverage verify (Kover)
+        run: ./gradlew :morphic:koverVerify --stacktrace
