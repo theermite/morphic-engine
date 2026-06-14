@@ -45,6 +45,16 @@ jobs:
       - name: Coverage report (Kover)
         run: ./gradlew :morphic:koverXmlReport :morphic:koverHtmlReport --stacktrace
 
+      # Publish dry-run (A-6): assemble the AAR + POM + sources/javadoc jars into
+      # the local Maven repo. Proves the artifact is well-formed BEFORE any real
+      # release (wasm-pack lesson). No signing needed for a local publish.
+      - name: Publish dry-run (local)
+        run: ./gradlew :morphic:publishToMavenLocal --stacktrace
+
+      # Build the sample app: proves the public drop-in API compiles in a real app.
+      - name: Build sample app
+        run: ./gradlew :sample:assembleDebug --stacktrace
+
       # Surface coverage as a downloadable artifact so the Critical 95% floor on
       # the onboarding logic (A-5) is auditable per run (PET-Android §8 décision
       # #4, option A). Kover 0.9.x cannot express a per-package verify gate, so
