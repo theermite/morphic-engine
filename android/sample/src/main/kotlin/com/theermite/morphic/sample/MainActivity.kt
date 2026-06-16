@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,15 +31,20 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val morphicState = remember { MorphicState() }
-            MorphicProvider(state = morphicState) {
-                SampleFlow(morphicState)
+            // Live preview: each resolved onboarding choice bumps `revision`, which
+            // recomposes this scope so MorphicProvider re-resolves and the chosen
+            // axis (e.g. dark theme) applies on the spot — Dignity §a.
+            var revision by remember { mutableIntStateOf(0) }
+            val themedState = remember(revision) { morphicState }
+            MorphicProvider(state = themedState) {
+                SampleFlow(morphicState, onStepResolved = { revision++ })
             }
         }
     }
 }
 
 @Composable
-private fun SampleFlow(morphicState: MorphicState) {
+private fun SampleFlow(morphicState: MorphicState, onStepResolved: () -> Unit) {
     val onboarding = remember { MorphicOnboarding(morphicState) }
     var onboarded by remember { mutableStateOf(false) }
 
@@ -50,6 +56,7 @@ private fun SampleFlow(morphicState: MorphicState) {
             onboarding = onboarding,
             steps = SAMPLE_STEPS,
             onComplete = { onboarded = true },
+            onStepResolved = { onStepResolved() },
         )
     }
 }

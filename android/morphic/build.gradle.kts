@@ -57,7 +57,7 @@ mavenPublishing {
         signAllPublications()
     }
 
-    coordinates("com.theermite.morphic", "morphic", "0.1.0")
+    coordinates("com.theermite.morphic", "morphic", "0.1.1")
 
     pom {
         name.set("morphic-android")

@@ -66,6 +66,11 @@ private val TOUCH_TARGET_MIN = 48.dp
  *
  * @param steps host-supplied copy for theme/motion/density (order independent —
  *   matched to the live step by [OnboardingStepUi.step]).
+ * @param onStepResolved invoked right after each step is resolved (chosen or
+ *   skipped), once the choice has been written into MorphicState. A host can use
+ *   it to recompose its MorphicProvider so the just-applied axis previews live
+ *   (Dignity §a: adaptation as the first proof of respect). Defaults to a no-op
+ *   — backward compatible.
  */
 @Composable
 public fun MorphicOnboardingScreen(
@@ -73,6 +78,7 @@ public fun MorphicOnboardingScreen(
     steps: List<OnboardingStepUi>,
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
+    onStepResolved: (OnboardingStep) -> Unit = {},
 ) {
     var current by remember { mutableStateOf(onboarding.start().currentStep) }
 
@@ -93,6 +99,7 @@ public fun MorphicOnboardingScreen(
             Button(
                 onClick = {
                     onboarding.completeStep(step, choice.value)
+                    onStepResolved(step)
                     current = onboarding.getState().currentStep
                 },
                 modifier = Modifier
@@ -107,6 +114,7 @@ public fun MorphicOnboardingScreen(
         OutlinedButton(
             onClick = {
                 onboarding.skipStep(step)
+                onStepResolved(step)
                 current = onboarding.getState().currentStep
             },
             modifier = Modifier
