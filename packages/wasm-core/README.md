@@ -1,26 +1,23 @@
 # @theermite/morphic-wasm-core
 
-Rust → WebAssembly critical paths for the Morphic Adaptation Engine.
+Chemins critiques Rust → WebAssembly pour le Morphic Adaptation Engine.
 
-**Status**: B-018 (live). NaCl box primitives shipped.
-CDC ref: F-017 (Tri-layer Rust→WASM critical).
+**Version** : `2.0.0-alpha.0` (non publié sur npm — consommé en interne par le moteur)  
+**Statut** : Livré. Primitives NaCl box opérationnelles.
 
-## What it provides
+## Ce que ce package fournit
 
-NaCl-compatible authenticated encryption (Curve25519 + XSalsa20 + Poly1305)
-via the audited [`crypto_box`](https://crates.io/crates/crypto_box) crate
-(RustCrypto, pure Rust). Output is byte-identical to `tweetnacl.box`, so
-ciphertexts produced by either side are interchangeable.
+Chiffrement authentifié compatible NaCl (Curve25519 + XSalsa20 + Poly1305) via le crate [`crypto_box`](https://crates.io/crates/crypto_box) (RustCrypto, Rust pur, audité). Les ciphertexts produits sont byte-identiques à `tweetnacl.box` — les deux côtés sont interopérables.
 
-Exported API (TypeScript via `wasm-bindgen`):
+API exportée (TypeScript via `wasm-bindgen`) :
 
-| Function | Returns | Purpose |
-|----------|---------|---------|
-| `wasmGenerateKeypair()` | `WasmKeyPair` (publicKey + secretKey) | Curve25519 key pair via OsRng (Web Crypto in browser) |
-| `wasmGenerateNonce()` | `Uint8Array` (24 bytes) | Random XSalsa20 nonce |
-| `wasmRandomBytes(len)` | `Uint8Array` | CSPRNG bytes |
-| `wasmEncryptBox(plaintext, recipientPk, senderSk, nonce)` | `Uint8Array` | Authenticated ciphertext (plaintext + 16-byte Poly1305 tag) |
-| `wasmDecryptBox(ciphertext, nonce, senderPk, recipientSk)` | `Uint8Array` | Plaintext, or throws `JsError` on auth failure |
+| Fonction | Retourne | Rôle |
+|----------|----------|------|
+| `wasmGenerateKeypair()` | `WasmKeyPair` (publicKey + secretKey) | Paire Curve25519 via OsRng (Web Crypto en navigateur) |
+| `wasmGenerateNonce()` | `Uint8Array` (24 octets) | Nonce XSalsa20 aléatoire |
+| `wasmRandomBytes(len)` | `Uint8Array` | Octets CSPRNG |
+| `wasmEncryptBox(plaintext, recipientPk, senderSk, nonce)` | `Uint8Array` | Ciphertext authentifié (plaintext + tag Poly1305 16 octets) |
+| `wasmDecryptBox(ciphertext, nonce, senderPk, recipientSk)` | `Uint8Array` | Plaintext, ou `JsError` si l'authentification échoue |
 
 ## Build
 
@@ -29,48 +26,40 @@ pnpm --filter @theermite/morphic-wasm-core build           # target web
 pnpm --filter @theermite/morphic-wasm-core build:bundler   # target bundler (Vite/webpack)
 ```
 
-Output lands in `pkg/` (ESM + `.d.ts` + raw `.wasm`, ~58 KB). The bundle
-is loaded **lazily** by `packages/engine/src/wasm-bridge.ts` so projects
-that don't need WASM crypto pay 0 KB.
+La sortie se trouve dans `pkg/` (ESM + `.d.ts` + `.wasm` brut, ~58 KB). Le bundle est chargé **de façon paresseuse** par `packages/engine/src/wasm-bridge.ts` — les projets qui n'ont pas besoin du chiffrement WASM ne paient pas le coût en taille.
 
 ## Tests
 
 ```bash
-pnpm --filter @theermite/morphic-wasm-core test            # native cargo tests
+pnpm --filter @theermite/morphic-wasm-core test   # tests cargo natifs
 ```
 
-Runs 9 tests, including 4 property-based tests × 1024 cases (= 4096
-encrypt/decrypt round-trips) covering:
+9 tests au total :
 
-- Round-trip identity (`decrypt(encrypt(m)) == m`)
-- Bit-flip tamper detection (Poly1305 catches every alteration)
-- Wrong-nonce rejection
-- Wrong-key rejection (with a positive sanity check inside)
+- **4 tests property-based** × 1024 cas (= 4096 cycles encrypt/decrypt) couvrant : identité round-trip, détection de bit-flip (Poly1305), rejet de mauvais nonce, rejet de mauvaise clé
+- **5 fixtures déterministes** : longueurs clé/nonce, overhead du tag, plaintext vide, ciphertext tronqué
 
-Plus 5 deterministic fixtures (key/nonce lengths, tag overhead, empty
-plaintext, truncated ciphertext).
+## Assertions défensives (PET §5)
 
-## Why Rust → WASM (vs staying on tweetnacl-js)
+| Fonction | Assertions |
+|----------|------------|
+| `wasm_encrypt_box` / `wasm_decrypt_box` | longueurs de clé = 32 octets ; longueur de nonce = 24 octets |
+| `wasm_decrypt_box` | échecs d'authentification exposés en `Err` (pas de corruption silencieuse) |
+| `wasm_generate_keypair` | utilise `OsRng` (Web Crypto via feature `getrandom js` en navigateur) |
 
-- **Maintenance**: `tweetnacl-js` is unmaintained since 2020. `crypto_box`
-  is part of the actively-maintained RustCrypto ecosystem.
-- **Audit surface**: pure-Rust, no JS legacy. Smaller dependency tree.
-- **Performance**: WASM crypto ~2-5× faster than JS for sustained workloads
-  (large message batches, many keypairs).
-- **Determinism**: same binary across Node, Deno, browsers — no engine
-  variance on a critical path.
+Les vérifications de longueur sont centralisées dans un helper `validate_box_inputs` pour concentrer la surface d'audit.
 
-## Defensive assertions (PET §5)
+## Note sur wasm-opt
 
-| Function | Assertions |
-|----------|-----------|
-| `wasm_encrypt_box` / `wasm_decrypt_box` | key lengths = 32 bytes; nonce length = 24 bytes |
-| `wasm_decrypt_box` | authentication failures surface as `Err` (no silent corruption) |
-| `wasm_generate_keypair` | uses `OsRng` (browser Web Crypto via `getrandom` js feature) |
+`wasm-opt` est désactivé intentionnellement. La version bundlée est trop ancienne pour supporter les opérations `bulk-memory` émises par rustc depuis la version 1.82. Tous les navigateurs modernes (Chrome ≥ 75, Firefox ≥ 79, Safari ≥ 15) supportent `bulk-memory` nativement.
 
-Length checks pulled into a single `validate_box_inputs` helper to keep
-the audit trail concentrated.
+## Pourquoi Rust → WASM plutôt que tweetnacl-js
+
+- **Maintenance** : `tweetnacl-js` n'est plus maintenu depuis 2020. `crypto_box` fait partie de l'écosystème RustCrypto activement maintenu.
+- **Surface d'audit** : Rust pur, pas de legacy JS. Arbre de dépendances plus petit.
+- **Performance** : le chiffrement WASM est ~2–5× plus rapide que JS pour des charges soutenues.
+- **Déterminisme** : même binaire sur Node, Deno et navigateurs — pas de variance entre moteurs JS sur un chemin critique.
 
 ## License
 
-AGPL-3.0-or-later (matches the rest of the Morphic Engine).
+AGPL-3.0-or-later. Voir la racine du repo.

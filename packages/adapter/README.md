@@ -1,8 +1,9 @@
 # @theermite/morphic-adapter
 
-React adapter for the [Morphic Adaptation Engine](../engine).
+Adaptateur React pour le [Morphic Adaptation Engine](../engine).
 
-**Status**: B-021a — React adapter shipped. Vanilla, Astro, Web Components adapters deferred.
+**Version** : `2.0.0-beta.1`  
+**Statut** : Adaptateur React livré. Adaptateurs Vanilla, Astro et Web Components non implémentés.
 
 ## Install
 
@@ -10,11 +11,11 @@ React adapter for the [Morphic Adaptation Engine](../engine).
 pnpm add @theermite/morphic-adapter @theermite/morphic-engine react react-dom
 ```
 
-Peer deps: `react ^19`, `react-dom ^19`, `@theermite/morphic-engine` (workspace).
+Peer deps : `react ^19`, `react-dom ^19`, `@theermite/morphic-engine ^2.0.0-beta.0`.
 
 ## Quick start (Next.js 16 App Router)
 
-Wrap your root layout (or a subtree) with `<MorphicProvider>`:
+Wrappez votre root layout (ou un sous-arbre) avec `<MorphicProvider>` :
 
 ```tsx
 // app/layout.tsx
@@ -31,13 +32,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-For zero-flash hydration, also inline the engine's head-read snippet in `<head>` (see
-`@theermite/morphic-engine` README). The provider is the fallback for client-only mounts and
-keeps hooks reactive.
+Pour éviter le flash de contenu non adapté (FOUC) à l'hydratation, injectez le snippet head-read du moteur dans `<head>` (voir README `@theermite/morphic-engine`). Le provider est le fallback pour les montages client-only et maintient la réactivité des hooks.
+
+## CSS
+
+Deux feuilles CSS optionnelles sont exposées :
+
+```ts
+import '@theermite/morphic-adapter/morphic.css';  // variables CSS de base
+import '@theermite/morphic-adapter/ui.css';        // styles du composant MorphicButton
+```
 
 ## Hooks
 
-### Per-axis — `[choice, setter]` tuple
+### Par axe — tuple `[choice, setter]`
 
 ```tsx
 'use client';
@@ -54,17 +62,15 @@ export function ThemeToggle() {
   const [theme, setTheme] = useMorphicTheme();
   return (
     <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-      Theme: {theme ?? 'auto'}
+      Theme : {theme ?? 'auto'}
     </button>
   );
 }
 ```
 
-`choice` is the user's persisted preference (may include `'auto'`) or `null` when
-none is stored. The setter proxies to the engine **and** triggers a re-render of
-all hook consumers via the provider's internal tick counter.
+`choice` est la préférence persistée de l'utilisateur (peut inclure `'auto'`) ou `null` si aucune n'est stockée. Le setter proxie vers le moteur **et** déclenche un re-render de tous les consommateurs de hooks via le compteur interne du provider.
 
-### Aggregate — `useMorphic()`
+### Agrégé — `useMorphic()`
 
 ```tsx
 import { useMorphic } from '@theermite/morphic-adapter';
@@ -75,22 +81,30 @@ export function MorphicDebug() {
 }
 ```
 
-Returns the read-only snapshot of all 6 axes (`theme`, `motion`, `contrast`,
-`density`, `fontSize`, `fontFamily`).
+Retourne le snapshot en lecture seule des 6 axes (`theme`, `motion`, `contrast`, `density`, `fontSize`, `fontFamily`).
 
-## Contract
+## Composant UI
 
-- All hooks throw a clear error when used outside `<MorphicProvider>`.
-- `<MorphicProvider>` is a transparent wrapper — it does not inject any DOM.
-- Provider runs `morphicInit()` once on first client mount (idempotent — safe on
-  remounts and on Strict Mode double-effects).
-- SSR-safe: the provider does not touch the DOM during render; engine getters
-  already guard `typeof document`.
+Le sous-package `./ui` expose `MorphicButton`, un bouton pré-stylé respectant les axes actifs du moteur :
 
-## Coverage
+```tsx
+import { MorphicButton } from '@theermite/morphic-adapter/ui';
+import '@theermite/morphic-adapter/ui.css';
 
-Standard risk — 80% floor. Current: 100% (14 tests, lines/branches/functions/statements all green).
+<MorphicButton axis="theme" />
+```
+
+## Contrat
+
+- Tous les hooks lèvent une erreur explicite s'ils sont utilisés hors `<MorphicProvider>`.
+- `<MorphicProvider>` est un wrapper transparent — il n'injecte aucun DOM.
+- Le provider exécute `morphicInit()` une seule fois au premier montage client (idempotent — sûr en cas de remontage et en Strict Mode double-effect).
+- SSR-safe : le provider ne touche pas le DOM pendant le rendu ; les getters du moteur gardent déjà `typeof document`.
+
+## Couverture
+
+Seuil minimum : 80 %. Couverture actuelle : **100 %** (14 tests — lignes, branches, fonctions, instructions).
 
 ## License
 
-AGPL-3.0-or-later. See repo root.
+AGPL-3.0-or-later. Voir la racine du repo.
