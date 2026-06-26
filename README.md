@@ -1,18 +1,18 @@
 # morphic-engine (適応)
 
-> Shinkofa Morphic Adaptation Module — moteur universel framework-agnostic.
+> Shinkofa Morphic Adaptation Module — framework-agnostic universal engine.
 
 The visible digital that adapts to who you are — not the other way around.
 
 ## Packages
 
-| Package | Rôle | Version | Statut |
+| Package | Role | Version | Status |
 |---------|------|---------|--------|
-| `@theermite/morphic-engine` | Moteur TypeScript framework-agnostic | `2.0.0-beta.6` | ✅ Livré |
-| `@theermite/morphic-adapter` | Adaptateur React (provider, hooks, UI) | `2.0.0-beta.1` | ✅ Livré |
-| `@theermite/morphic-wasm-core` | Chemins critiques Rust → WASM (NaCl box) | `2.0.0-alpha.0` | ✅ Livré, non publié sur npm |
+| `@theermite/morphic-engine` | Framework-agnostic TypeScript engine | `2.0.0-beta.6` | Shipped |
+| `@theermite/morphic-adapter` | React adapter (provider, hooks, UI) | `2.0.0-beta.1` | Shipped |
+| `@theermite/morphic-wasm-core` | Rust → WASM critical paths (NaCl box) | `2.0.0-alpha.0` | Shipped, not published to npm |
 
-## Quick start (développeur)
+## Quick start
 
 ```bash
 pnpm install
@@ -24,18 +24,18 @@ pnpm --filter @theermite/morphic-wasm-core test
 
 ## Architecture
 
-Le monorepo contient trois packages complémentaires.
+The monorepo contains three complementary packages.
 
-**`packages/engine`** — le cœur. 27 modules TypeScript couvrant cinq domaines : Sensory (thème, motion, contraste, densité, typographie, daltonisation), Cognitive (lecture guidée, focus, symboles WAI, palette de commandes), Motor (click-delay, dwell-click, filtre de tremblement), Energy (détection d'inactivité, Pomodoro, mode récupération), et Infrastructure (stockage IDB, sync, chiffrement E2E, tokens, bridge WASM).
+**`packages/engine`** — the core. 27 TypeScript modules covering five domains: Sensory (theme, motion, contrast, density, typography, daltonization), Cognitive (reading guide, reading focus, WAI symbols, command palette), Motor (click-delay, dwell-click, tremor filter), Energy (idle detection, Pomodoro, recovery mode), and Infrastructure (IDB storage, sync, E2E encryption, tokens, WASM bridge).
 
-**`packages/adapter`** — l'adaptateur React. `<MorphicProvider>`, six hooks par axe (`useMorphicTheme`, `useMorphicMotion`, `useMorphicContrast`, `useMorphicDensity`, `useMorphicFontSize`, `useMorphicFontFamily`), hook agrégé `useMorphic()`, et un sous-package `./ui` avec `MorphicButton` + feuilles CSS.
+**`packages/adapter`** — the React adapter. `<MorphicProvider>`, six per-axis hooks (`useMorphicTheme`, `useMorphicMotion`, `useMorphicContrast`, `useMorphicDensity`, `useMorphicFontSize`, `useMorphicFontFamily`), the aggregate `useMorphic()` hook, and a `./ui` subpackage with `MorphicButton` plus CSS stylesheets.
 
-**`packages/wasm-core`** — les chemins critiques en Rust compilé vers WebAssembly. Chiffrement NaCl box (Curve25519 + XSalsa20 + Poly1305), chargé de façon paresseuse par le bridge WASM du moteur.
+**`packages/wasm-core`** — critical paths in Rust compiled to WebAssembly. NaCl box encryption (Curve25519 + XSalsa20 + Poly1305), loaded lazily by the engine WASM bridge.
 
 ## Funding
 
-Dossier NLNet NGI0 Commons déposé en temps et en heure.
+NLNet NGI0 Commons application submitted on time.
 
 ## License
 
-AGPL-3.0-or-later. Voir `LICENSE`.
+AGPL-3.0-or-later. See `LICENSE`.
