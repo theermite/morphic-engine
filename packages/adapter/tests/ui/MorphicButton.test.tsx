@@ -20,6 +20,7 @@ import {
   getColorVisionCorrection,
   getReadingFocus,
   getReadingGuide,
+  isRecoveryActive,
 } from '@theermite/morphic-engine';
 import { describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../../src/index.js';
@@ -202,6 +203,27 @@ describe('MorphicButton — axes route through engine (single source of truth)',
       fireEvent.click(screen.getByRole('button', { name: 'Désactivée' }));
     });
     expect(getColorVisionCorrection()).toBeNull();
+  });
+
+  it('recovery mode "on" enters recovery through the engine', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Activer', exact: true }));
+    });
+    expect(isRecoveryActive()).toBe(true);
+  });
+
+  it('recovery mode "off" exits recovery through the engine', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Activer', exact: true }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Désactiver', exact: true }));
+    });
+    expect(isRecoveryActive()).toBe(false);
   });
 });
 

@@ -21,9 +21,12 @@ import {
   clearReadingGuide,
   disableWaiSymbols,
   enableWaiSymbols,
+  enterRecoveryMode,
+  exitRecoveryMode,
   getColorVisionCorrection,
   getReadingFocus,
   getReadingGuide,
+  isRecoveryActive,
   type ReadingBand,
   type ReadingFocusIntensity,
   setColorVisionCorrection,
@@ -91,8 +94,9 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   const [ruler, setRuler] = useState<boolean>(false);
   const [wai, setWai] = useState<WaiMode | null>(null);
   const [colorVision, setColorVisionState] = useState<ColorVisionCorrection | null>(null);
+  const [recovery, setRecovery] = useState<boolean>(false);
 
-  // Sync engine-only axes (reading focus/guide/color-vision) into local state on open.
+  // Sync engine-only axes (reading focus/guide/color-vision/recovery) into local state on open.
   useEffect(() => {
     if (!open) return;
     setRf(getReadingFocus());
@@ -100,6 +104,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     setBand(guide.band);
     setRuler(guide.ruler);
     setColorVisionState(getColorVisionCorrection());
+    setRecovery(isRecoveryActive());
   }, [open]);
 
   // Escape + outside click close the dialog.
@@ -156,6 +161,12 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     }
   }, []);
 
+  const handleRecovery = useCallback((on: boolean) => {
+    if (on) enterRecoveryMode();
+    else exitRecoveryMode();
+    setRecovery(on);
+  }, []);
+
   const handleReset = useCallback(() => {
     setTheme('auto');
     setFontFamily('system');
@@ -168,6 +179,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     handleRuler(false);
     handleWai(null);
     handleColorVision(null);
+    handleRecovery(false);
   }, [
     setTheme,
     setFontFamily,
@@ -177,6 +189,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     setContrast,
     handleRf,
     handleColorVision,
+    handleRecovery,
     handleBand,
     handleRuler,
     handleWai,
@@ -349,6 +362,21 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                     onClick={() => handleColorVision(v)}
                   />
                 ))}
+              </Row>
+            )}
+
+            {has('recoveryMode') && (
+              <Row label={t.rows.recoveryMode}>
+                <Chip
+                  label={t.recoveryMode.off}
+                  active={!recovery}
+                  onClick={() => handleRecovery(false)}
+                />
+                <Chip
+                  label={t.recoveryMode.on}
+                  active={recovery}
+                  onClick={() => handleRecovery(true)}
+                />
               </Row>
             )}
 
