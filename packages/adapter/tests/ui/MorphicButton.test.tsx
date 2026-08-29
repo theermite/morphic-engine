@@ -277,6 +277,37 @@ describe('MorphicButton — axes route through engine (single source of truth)',
     expect(getPomodoroState().phase).toBe('idle');
     expect(screen.getByRole('button', { name: 'Démarrer' })).toBeInTheDocument();
   });
+
+  it('defaults the duration inputs to 25/5 minutes and starts with those values', () => {
+    renderButton();
+    openModal();
+    expect(screen.getByLabelText('Session (min)')).toHaveValue(25);
+    expect(screen.getByLabelText('Pause (min)')).toHaveValue(5);
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(getPomodoroState().remainingMs).toBe(25 * 60_000);
+  });
+
+  it('starts a session using the durations entered before clicking Démarrer', () => {
+    renderButton();
+    openModal();
+    fireEvent.change(screen.getByLabelText('Session (min)'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Pause (min)'), { target: { value: '2' } });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(getPomodoroState().remainingMs).toBe(1 * 60_000);
+  });
+
+  it('hides the duration inputs once a session is running', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(screen.queryByLabelText('Session (min)')).not.toBeInTheDocument();
+  });
 });
 
 describe('MorphicButton — reset', () => {

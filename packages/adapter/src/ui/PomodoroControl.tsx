@@ -18,13 +18,15 @@ import {
   MORPHIC_POMODORO_EVENT_SESSION_COMPLETE,
   MORPHIC_POMODORO_EVENT_TICK,
   MORPHIC_POMODORO_EVENT_WORK_END,
+  MORPHIC_POMODORO_SHORT_BREAK_DEFAULT,
+  MORPHIC_POMODORO_WORK_DEFAULT,
   pausePomodoro,
   resumePomodoro,
   skipPhase,
   startPomodoro,
   stopPomodoro,
 } from '@theermite/morphic-engine';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Chip, Row } from './primitives.js';
 
 export interface PomodoroControlLabels {
@@ -34,6 +36,16 @@ export interface PomodoroControlLabels {
   resume: string;
   skip: string;
   stop: string;
+  workMinutes: string;
+  breakMinutes: string;
+}
+
+const MIN_MINUTES = 1;
+const MAX_MINUTES = 180;
+
+function clampMinutes(value: number): number {
+  if (!Number.isFinite(value)) return MIN_MINUTES;
+  return Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Math.round(value)));
 }
 
 const REFRESH_EVENTS = [
@@ -47,6 +59,10 @@ const REFRESH_EVENTS = [
 export function PomodoroControl(props: { labels: PomodoroControlLabels }): React.JSX.Element {
   const { labels: t } = props;
   const [state, setState] = useState(() => getPomodoroState());
+  const [workMinutes, setWorkMinutes] = useState(MORPHIC_POMODORO_WORK_DEFAULT / 60_000);
+  const [breakMinutes, setBreakMinutes] = useState(MORPHIC_POMODORO_SHORT_BREAK_DEFAULT / 60_000);
+  const workInputId = useId();
+  const breakInputId = useId();
 
   useEffect(() => {
     const refresh = () => setState(getPomodoroState());
@@ -64,7 +80,44 @@ export function PomodoroControl(props: { labels: PomodoroControlLabels }): React
 
   return (
     <Row label={t.label}>
-      {isIdle && <Chip label={t.start} active={false} onClick={() => setState(startPomodoro())} />}
+      {isIdle && (
+        <>
+          <label className="morphic-mb-duration-field" htmlFor={workInputId}>
+            {t.workMinutes}
+            <input
+              id={workInputId}
+              type="number"
+              min={MIN_MINUTES}
+              max={MAX_MINUTES}
+              value={workMinutes}
+              onChange={(e) => setWorkMinutes(clampMinutes(Number(e.target.value)))}
+            />
+          </label>
+          <label className="morphic-mb-duration-field" htmlFor={breakInputId}>
+            {t.breakMinutes}
+            <input
+              id={breakInputId}
+              type="number"
+              min={MIN_MINUTES}
+              max={MAX_MINUTES}
+              value={breakMinutes}
+              onChange={(e) => setBreakMinutes(clampMinutes(Number(e.target.value)))}
+            />
+          </label>
+          <Chip
+            label={t.start}
+            active={false}
+            onClick={() =>
+              setState(
+                startPomodoro({
+                  workMs: workMinutes * 60_000,
+                  shortBreakMs: breakMinutes * 60_000,
+                }),
+              )
+            }
+          />
+        </>
+      )}
       {!isIdle && !state.paused && (
         <Chip label={t.pause} active={false} onClick={() => setState(pausePomodoro())} />
       )}

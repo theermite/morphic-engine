@@ -95,7 +95,15 @@ export interface MorphicButtonLabels {
   wai: { off: string; before: string; after: string };
   colorVision: { off: string; protan: string; deutan: string; tritan: string };
   recoveryMode: { on: string; off: string };
-  pomodoro: { start: string; pause: string; resume: string; skip: string; stop: string };
+  pomodoro: {
+    start: string;
+    pause: string;
+    resume: string;
+    skip: string;
+    stop: string;
+    workMinutes: string;
+    breakMinutes: string;
+  };
   advancedToggle: { more: string; less: string };
 }
 
