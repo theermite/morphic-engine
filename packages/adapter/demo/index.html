@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr" data-morphic-theme="auto" data-morphic-motion="auto" data-morphic-density="comfortable" data-morphic-font-size="md" data-morphic-contrast="no-preference" data-morphic-font-family="system">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Morphic — Maquette bouton + inventaire complet</title>
+  <style>
+    :root {
+      --bg: #f1efe9;
+      --fg: #1a1a1a;
+      --surface: #f7f5f0;
+      --border: #ddd8cd;
+      --accent: #3b82f6;
+      --gap: calc(16px * var(--morphic-gap, 1));
+    }
+    [data-morphic-theme="dark"] { --bg: #0f0f10; --fg: #f5f5f5; --surface: #1a1a1c; --border: #2a2a2e; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.5;
+    }
+    header {
+      padding: var(--gap) calc(var(--gap) * 1.5);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--gap);
+      flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 1.3em; }
+    header p { margin: 4px 0 0; opacity: 0.7; font-size: 0.9em; max-width: 60ch; }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: calc(var(--gap) * 1.5);
+    }
+    h2 {
+      font-size: 1.1em;
+      margin: calc(var(--gap) * 2) 0 4px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    p.lede { opacity: 0.7; font-size: 0.9em; margin: 0 0 var(--gap); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7em;
+      font-weight: 600;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .badge.in-button { background: #22c55e; color: #06280f; }
+    .badge.absent { background: #f59e0b; color: #3d2600; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--gap);
+    }
+    section.axis {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: var(--gap);
+    }
+    section.axis h3 { margin: 0 0 6px; font-size: 1em; }
+    section.axis p { margin: 0 0 8px; font-size: 0.85em; opacity: 0.75; }
+    .controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    button, input[type="number"] {
+      font: inherit;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      cursor: pointer;
+    }
+    button:hover { background: var(--accent); color: #fff; }
+    button.active { background: var(--accent); color: #fff; font-weight: 600; }
+    input[type="number"] { width: 90px; cursor: text; }
+    .state {
+      font-family: ui-monospace, monospace;
+      font-size: 0.8em;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #button-mount {
+      position: relative;
+      min-height: 220px;
+      background: #d8dbe0; /* volontairement plus foncé que --surface : le bouton par
+        défaut (icône gris clair sur fond transparent) est presque invisible sur blanc —
+        voir la note au-dessus. Ceci ne cache pas le problème, ça le montre. */
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: var(--gap);
+      display: flex;
+      align-items: flex-start;
+    }
+    #button-mount::before {
+      content: "↓ le bouton (icône palette) est ici, en haut à gauche";
+      position: absolute;
+      top: 6px;
+      left: 60px;
+      font-size: 0.75em;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Morphic — Maquette : bouton réel + inventaire des 22 réglages</h1>
+      <p>
+        Outil de travail, pas du code livré. En haut : le vrai <code>&lt;MorphicButton&gt;</code>
+        tel qu'il s'installe aujourd'hui sur un site (9 réglages). En dessous : les 13 réglages
+        qui existent dans le moteur mais n'ont aucune interface — pour décider ensemble ce qui
+        doit entrer dans le bouton, et comment.
+      </p>
+    </div>
+  </header>
+  <main id="app"></main>
+  <script type="module">
+    import RefreshRuntime from "/@react-refresh";
+    RefreshRuntime.injectIntoGlobalHook(window);
+    window.$RefreshReg$ = () => {};
+    window.$RefreshSig$ = () => (type) => type;
+    window.__vite_plugin_react_preamble_installed__ = true;
+  </script>
+  <script type="module" src="./main.tsx"></script>
+</body>
+</html>
