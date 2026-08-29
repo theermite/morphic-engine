@@ -129,6 +129,14 @@ export {
   setFontFamily,
 } from './font-family.js';
 export {
+  HUMAN_DESIGN_PROFILES,
+  type HumanDesignHints,
+  HumanDesignHintsSchema,
+  type HumanDesignProfile,
+  isValidHumanDesignHints,
+  validateHumanDesignHints,
+} from './human-design-profile.js';
+export {
   __resetIdbStateForTests,
   clearPreferences,
   closeMorphicDB,
