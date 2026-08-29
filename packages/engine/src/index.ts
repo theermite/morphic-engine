@@ -224,6 +224,11 @@ export {
   validateProfileHints,
 } from './profile-hints.js';
 export {
+  type AxisSuggestion,
+  type SuggestibleAxis,
+  suggestAxesFromProfileHints,
+} from './profile-interpreter.js';
+export {
   applyReadingFocus,
   clearReadingFocus,
   getReadingFocus,
