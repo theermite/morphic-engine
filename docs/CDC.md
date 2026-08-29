@@ -119,6 +119,7 @@ Liste atomique. Phase 1 = module + démo The Ermite. Phase 2 = browser extension
 | F-033 | Axe énergétique — Recovery mode (low-stim profile) couplé Ki Shinkofa | En tant qu'user en signal de fatigue, je bascule en mode récupération (motion=reduced, density=spacious, cap=3, theme calm) | P0 | F-007, F-008, F-010, F-013 |
 | F-034 | Axe énergétique — Auto-pause idle (visibilitychange + idle ≥60s configurable) | En tant qu'user qui s'éloigne sans se déconnecter, le module suspend animations + sauvegarde | P1 | F-002, F-014 |
 | F-035 | Axe énergétique — Pomodoro engine (state machine + events, défaut 25/5) | En tant qu'user qui veut des cycles de travail/pause cadencés, le module fournit le moteur — l'hôte fournit l'UI (ex. FAB Shinkofa.com) | P1 | F-002, F-014 |
+| F-037 | Profil holistique — Profile Hints (schéma + validation) : traits optionnels dérivés d'instruments validés (HSP/ASRS/GAD-style, fournis par l'hôte, jamais calculés par le moteur) | En tant qu'hôte (ex. navigateur Shinkofa), je transmets un profil partiel de traits bandés (low/medium/high) au moteur sans jamais lui envoyer de score brut ni de donnée de naissance | P0 | F-002 |
 
 **Notes Phase 1.2** :
 
@@ -396,6 +397,7 @@ Chaque module classifié. Détermine coverage floor + gates appliqués.
 | `@theermite/morphic-engine/axes/kbd-shortcuts` (F-029) | **Standard** | 80% | Non | UI navigation, fallback OS toujours possible. |
 | `@theermite/morphic-engine/axes/motor` (F-030 click-delay + F-031 dwell + F-032 tremor) | **Critical** | 95% + mutation 75% | Oui | Accessibilité motrice — bug = utilisateur exclu. F-032 algorithmique (moyenne mobile) → PBT. |
 | `@theermite/morphic-engine/axes/energy` (F-033 recovery + F-034 idle + F-035 pomodoro) | **Critical** | 95% + mutation 75% | Oui | F-033 couplé Ki via API/events — contrat public stable. F-035 state machine timer — transitions exhaustives à tester. |
+| `@theermite/morphic-engine/profile-hints` (F-037 schéma profil holistique) | **Sensitive** | 90% | Non | Donnée personnelle la plus intime en amont (host classifie déjà Sensitive côté Shinkofa-Browser CDC). Bandes fermées, aucune donnée brute — schéma seul, pas encore d'application d'axe. |
 
 **Source de référence** : `.claude/rules/Quality.md` § Critical Paths + Refonte `Quality-Gates-Refonte.md`.
 

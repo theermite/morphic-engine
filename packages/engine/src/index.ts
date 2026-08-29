@@ -216,6 +216,14 @@ export {
   stopPomodoro,
 } from './pomodoro.js';
 export {
+  isValidProfileHints,
+  type ProfileHints,
+  ProfileHintsSchema,
+  SENSITIVITY_LEVELS,
+  type SensitivityLevel,
+  validateProfileHints,
+} from './profile-hints.js';
+export {
   applyReadingFocus,
   clearReadingFocus,
   getReadingFocus,

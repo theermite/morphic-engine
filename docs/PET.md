@@ -242,6 +242,19 @@ Format : une ligne par brick. **Mise à jour obligatoire à chaque brick.**
 | B-030d | Packaging : exports `./ui` + `./ui.css` + `./morphic.css`, copie CSS au build (`scripts/copy-assets.mjs`), bump adapter 2.0.0-beta.0→beta.1, `pnpm publish` Verdaccio (vérifié sans `workspace:`). | F-036 | 🟢 Done | — | react@19.2.7 (verifie 2026-06-12 via registry.npmjs.org) | 905d1ea | 2026-06-12 |
 | B-030e | Migration The-Ermite vers `@morphic/adapter/ui` : `MorphicThemeBridge` (clair/sombre suit le moteur), retrait `ermite-theme` parallèle, suppression bouton local, déployé + **smoke test live** (sepia fantôme prouvé mort : vieille clé `ermite-theme=sepia` ignorée ; sepia choisi persiste). The-Ermite commit `e842eee`. | F-036 | 🟢 Done | — | @morphic/adapter@2.0.0-beta.1 (publié cette session) | e842eee (The-Ermite) | 2026-06-12 |
 
+### Phase 1.8 — Profil holistique (interprétation, opt-in)
+
+> Bridge entre le profil holistique d'un hôte (Michi, navigateur Shinkofa) et les axes du moteur.
+> Ordre décidé avec Jay 2026-08-29 : accessibilité cognitive/sensorielle (instruments validés type
+> HSP/ASRS/GAD, fournis par l'hôte) avant la couche design humain (langage de résonance opt-in, jamais
+> un mécanisme qui décide seul — voir `Shinkofa-Browser/docs/Archetypes-Modeles-Interaction.md`).
+
+| ID | Brick | CDC ref | Statut | Coverage cible | Veille requise | Commit | Date |
+|----|-------|---------|--------|----------------|----------------|--------|------|
+| B-031 | Profile Hints — schéma + validation (`sensorySensitivity`/`attentionPattern`/`emotionalLoad`, bandes `low/medium/high`). `validateProfileHints` (TypeError sur non-objet, RangeError sur clé/valeur invalide) + `isValidProfileHints` (garde booléenne, ne throw jamais). Zod `.strict()` — objet fermé, aucune clé inconnue tolérée. Aucune application d'axe : ce brick pose la structure d'entrée uniquement. 23 tests dont 2 PBT fast-check (round-trip combinaisons valides, rejet systématique clé inconnue). | F-037 | 🟢 Done | **Sensitive 90%** (atteint 100% stmts/branches/funcs/lines) | zod@4.4.3 (déjà vérifié B-005) | _à compléter au push_ | 2026-08-29 |
+| B-032 | Interpréteur — Profile Hints → suggestions d'axes (jamais d'application automatique, toujours une suggestion affichable avec sa raison) | F-037 | ⬜ Pending | **Critical 95%** | — | — | — |
+| B-033 | Interpréteur design humain (profil = 2 lignes combinées, priorité sur le type — hypothèse de travail `Archetypes-Modeles-Interaction.md` §2) — couche opt-in distincte de B-032 | F-037 ext. | ⬜ Pending | **Sensitive 90%** | Human Design — types/autorités/lignes vérifiés 2026-08-29 via thehumandesignsystem.com, jovianarchive.com | — | — |
+
 **Statuts possibles** : ⬜ Pending · 🟡 In progress · 🔵 Tests written (red) · 🟢 Done · 🔴 Blocked · ⚫ Skipped
 
 **Coverage** : valeur cible selon CDC §7 Risk Classification. Vérifiée AVANT clôture brick. Mutation score vérifié hebdo et avant release.
