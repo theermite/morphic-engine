@@ -21,7 +21,8 @@ export type MorphicAxisKey =
   | 'readingGuide'
   | 'waiSymbols'
   | 'colorVision'
-  | 'recoveryMode';
+  | 'recoveryMode'
+  | 'pomodoro';
 
 /** All axes, in display order. Used as the default `axes` value. */
 export const ALL_AXES: readonly MorphicAxisKey[] = [
@@ -36,6 +37,7 @@ export const ALL_AXES: readonly MorphicAxisKey[] = [
   'waiSymbols',
   'colorVision',
   'recoveryMode',
+  'pomodoro',
 ] as const;
 
 /**
@@ -54,6 +56,7 @@ export const DEFAULT_VISIBLE_AXES: readonly MorphicAxisKey[] = [
   'readingGuide',
   'colorVision',
   'recoveryMode',
+  'pomodoro',
 ] as const;
 
 /** Every user-facing string. Override any subset via the `labels` prop. */
@@ -78,6 +81,7 @@ export interface MorphicButtonLabels {
     wai: string;
     colorVision: string;
     recoveryMode: string;
+    pomodoro: string;
   };
   fontFamily: { system: string; serif: string; atkinson: string; dyslexic: string };
   fontSize: { sm: string; md: string; lg: string; xl: string };
@@ -91,6 +95,7 @@ export interface MorphicButtonLabels {
   wai: { off: string; before: string; after: string };
   colorVision: { off: string; protan: string; deutan: string; tritan: string };
   recoveryMode: { on: string; off: string };
+  pomodoro: { start: string; pause: string; resume: string; skip: string; stop: string };
   advancedToggle: { more: string; less: string };
 }
 

@@ -44,6 +44,7 @@ import {
 } from '../useMorphic.js';
 import { CloseIcon, PaletteIcon, ResetIcon } from './icons.js';
 import { mergeLabels } from './labels.js';
+import { PomodoroControl } from './PomodoroControl.js';
 import { computePlacement, type ModalPlacement } from './placement.js';
 import { Chip, Row, SectionTitle } from './primitives.js';
 import {
@@ -378,6 +379,10 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                   onClick={() => handleRecovery(true)}
                 />
               </Row>
+            )}
+
+            {has('pomodoro') && (
+              <PomodoroControl labels={{ label: t.rows.pomodoro, ...t.pomodoro }} />
             )}
 
             {foldedAxesPresent && (

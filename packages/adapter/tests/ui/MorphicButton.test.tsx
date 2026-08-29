@@ -17,14 +17,20 @@
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
+  __resetPomodoroStateForTests,
   getColorVisionCorrection,
+  getPomodoroState,
   getReadingFocus,
   getReadingGuide,
   isRecoveryActive,
 } from '@theermite/morphic-engine';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../../src/index.js';
 import { MorphicButton } from '../../src/ui/index.js';
+
+afterEach(() => {
+  __resetPomodoroStateForTests();
+});
 
 function renderButton(props?: Parameters<typeof MorphicButton>[0]) {
   return render(
@@ -224,6 +230,52 @@ describe('MorphicButton — axes route through engine (single source of truth)',
       fireEvent.click(screen.getByRole('button', { name: 'Désactiver', exact: true }));
     });
     expect(isRecoveryActive()).toBe(false);
+  });
+
+  it('shows only "Démarrer" while pomodoro is idle', () => {
+    renderButton();
+    openModal();
+    expect(screen.getByRole('button', { name: 'Démarrer' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pause' })).not.toBeInTheDocument();
+  });
+
+  it('starting pomodoro through the button reaches work phase in the engine', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(getPomodoroState().phase).toBe('work');
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
+  });
+
+  it('pause then resume through the button round-trips the paused flag', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
+    });
+    expect(getPomodoroState().paused).toBe(true);
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reprendre' }));
+    });
+    expect(getPomodoroState().paused).toBe(false);
+  });
+
+  it('stop through the button returns to idle', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Arrêter' }));
+    });
+    expect(getPomodoroState().phase).toBe('idle');
+    expect(screen.getByRole('button', { name: 'Démarrer' })).toBeInTheDocument();
   });
 });
 

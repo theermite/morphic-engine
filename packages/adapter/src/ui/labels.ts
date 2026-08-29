@@ -30,6 +30,7 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
     wai: 'Symboles WAI',
     colorVision: 'Correction daltonisme',
     recoveryMode: 'Mode récupération',
+    pomodoro: 'Cycle Pomodoro',
   },
   fontFamily: { system: 'Système', serif: 'Serif', atkinson: 'Atkinson', dyslexic: 'OpenDyslexic' },
   fontSize: { sm: 'S', md: 'M', lg: 'L', xl: 'XL' },
@@ -54,6 +55,13 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
     tritan: 'Tritanopie',
   },
   recoveryMode: { on: 'Activer', off: 'Désactiver' },
+  pomodoro: {
+    start: 'Démarrer',
+    pause: 'Pause',
+    resume: 'Reprendre',
+    skip: 'Passer',
+    stop: 'Arrêter',
+  },
   advancedToggle: { more: "Plus d'adaptations", less: "Moins d'adaptations" },
 };
 
