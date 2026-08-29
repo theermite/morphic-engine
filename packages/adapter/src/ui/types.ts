@@ -34,6 +34,22 @@ export const ALL_AXES: readonly MorphicAxisKey[] = [
   'waiSymbols',
 ] as const;
 
+/**
+ * Axes shown without needing to expand anything (Jay 2026-08-29 — a fixed
+ * baseline so every site that drops in the button shows the same defaults,
+ * instead of each integration picking its own subset). Any axis in `axes`
+ * but NOT in this list renders behind the "Plus d'adaptations" fold.
+ */
+export const DEFAULT_VISIBLE_AXES: readonly MorphicAxisKey[] = [
+  'theme',
+  'fontFamily',
+  'fontSize',
+  'motion',
+  'density',
+  'readingFocus',
+  'readingGuide',
+] as const;
+
 /** Every user-facing string. Override any subset via the `labels` prop. */
 export interface MorphicButtonLabels {
   triggerAria: string;
@@ -65,6 +81,7 @@ export interface MorphicButtonLabels {
   readingGuide: { off: string; line: string; mask: string };
   readingRuler: { off: string; on: string };
   wai: { off: string; before: string; after: string };
+  advancedToggle: { more: string; less: string };
 }
 
 /** A deep-partial of {@link MorphicButtonLabels} (one level of nesting). */

@@ -122,6 +122,20 @@
   overflow-y: auto;
 }
 
+.morphic-mb-advanced-toggle {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--morphic-ui-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .morphic-mb-section {
   margin: 4px 0 0;
   font-size: 0.66rem;

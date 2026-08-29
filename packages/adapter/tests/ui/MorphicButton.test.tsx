@@ -133,6 +133,7 @@ describe('MorphicButton — axes route through engine (single source of truth)',
   it('contrast sets data-morphic-contrast', () => {
     renderButton();
     openModal();
+    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Élevé' }));
     });
@@ -170,6 +171,7 @@ describe('MorphicButton — axes route through engine (single source of truth)',
   it('WAI symbols toggle does not throw and marks the chip active', () => {
     renderButton();
     openModal();
+    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
     const before = screen.getByRole('button', { name: 'Avant' });
     act(() => {
       fireEvent.click(before);
@@ -294,5 +296,45 @@ describe('MorphicButton — modal placement (viewport collision)', () => {
     renderButton();
     openModal();
     expect(screen.getByRole('dialog')).toHaveClass('morphic-mb-modal--below');
+  });
+});
+
+describe('MorphicButton — default-visible vs "plus d\'adaptations" fold', () => {
+  it('shows the core axes without needing to expand anything', () => {
+    renderButton();
+    openModal();
+    expect(screen.getByRole('button', { name: 'Sombre' })).toBeInTheDocument(); // theme
+    expect(screen.getByRole('button', { name: 'OpenDyslexic' })).toBeInTheDocument(); // fontFamily
+    expect(screen.getByRole('button', { name: 'Léger' })).toBeInTheDocument(); // readingFocus
+  });
+
+  it('hides contrast and WAI symbols behind the fold by default', () => {
+    renderButton();
+    openModal();
+    expect(screen.queryByRole('button', { name: 'Élevé' })).not.toBeInTheDocument(); // contrast
+    expect(screen.queryByRole('button', { name: 'Avant' })).not.toBeInTheDocument(); // wai
+  });
+
+  it('reveals the folded axes on toggle, and can hide them again', () => {
+    renderButton();
+    openModal();
+    const toggle = screen.getByRole('button', { name: "Plus d'adaptations" });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: 'Élevé' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: "Moins d'adaptations" })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: "Moins d'adaptations" }));
+    expect(screen.queryByRole('button', { name: 'Élevé' })).not.toBeInTheDocument();
+  });
+
+  it('does not render the toggle at all when every folded axis is excluded via `axes`', () => {
+    renderButton({ axes: ['theme', 'motion'] });
+    openModal();
+    expect(screen.queryByRole('button', { name: /plus d'adaptations/i })).not.toBeInTheDocument();
   });
 });

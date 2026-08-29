@@ -35,7 +35,12 @@ import {
   useMorphicTheme,
 } from '../useMorphic.js';
 import { mergeLabels } from './labels.js';
-import { ALL_AXES, type MorphicAxisKey, type MorphicButtonProps } from './types.js';
+import {
+  ALL_AXES,
+  DEFAULT_VISIBLE_AXES,
+  type MorphicAxisKey,
+  type MorphicButtonProps,
+} from './types.js';
 import { defaultWaiResolver } from './wai-emoji.js';
 
 type WaiMode = 'before' | 'after';
@@ -141,8 +146,13 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   const { labels: labelOverrides, axes = ALL_AXES, waiResolver = defaultWaiResolver } = props;
   const t = useMemo(() => mergeLabels(labelOverrides), [labelOverrides]);
   const has = useCallback((a: MorphicAxisKey) => axes.includes(a), [axes]);
+  const foldedAxesPresent = useMemo(
+    () => axes.some((a) => !DEFAULT_VISIBLE_AXES.includes(a)),
+    [axes],
+  );
 
   const [open, setOpen] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [placement, setPlacement] = useState<ModalPlacement>({
@@ -310,7 +320,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
               </Row>
             )}
 
-            {(has('theme') || has('motion') || has('density') || has('contrast')) && (
+            {(has('theme') || has('motion') || has('density')) && (
               <SectionTitle>{t.sections.display}</SectionTitle>
             )}
             {has('theme') && (
@@ -349,23 +359,6 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                 ))}
               </Row>
             )}
-            {has('contrast') && (
-              <Row label={t.rows.contrast}>
-                {(['no-preference', 'more', 'less'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={
-                      v === 'no-preference'
-                        ? t.contrast.noPreference
-                        : t.contrast[v as 'more' | 'less']
-                    }
-                    active={contrast === v}
-                    onClick={() => setContrast(v)}
-                  />
-                ))}
-              </Row>
-            )}
-
             {(has('readingFocus') || has('readingGuide')) && (
               <SectionTitle>{t.sections.reading}</SectionTitle>
             )}
@@ -414,7 +407,35 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
               </Row>
             )}
 
-            {has('waiSymbols') && (
+            {foldedAxesPresent && (
+              <button
+                type="button"
+                className="morphic-mb-advanced-toggle"
+                aria-expanded={showAdvanced}
+                onClick={() => setShowAdvanced((p) => !p)}
+              >
+                {showAdvanced ? t.advancedToggle.less : t.advancedToggle.more}
+              </button>
+            )}
+
+            {showAdvanced && has('contrast') && (
+              <Row label={t.rows.contrast}>
+                {(['no-preference', 'more', 'less'] as const).map((v) => (
+                  <Chip
+                    key={v}
+                    label={
+                      v === 'no-preference'
+                        ? t.contrast.noPreference
+                        : t.contrast[v as 'more' | 'less']
+                    }
+                    active={contrast === v}
+                    onClick={() => setContrast(v)}
+                  />
+                ))}
+              </Row>
+            )}
+
+            {showAdvanced && has('waiSymbols') && (
               <>
                 <SectionTitle>{t.sections.visual}</SectionTitle>
                 <Row label={t.rows.wai}>

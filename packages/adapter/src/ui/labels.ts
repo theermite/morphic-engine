@@ -45,6 +45,7 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
   readingGuide: { off: 'Off', line: 'Ligne', mask: 'Masque' },
   readingRuler: { off: 'Off', on: 'On' },
   wai: { off: 'Off', before: 'Avant', after: 'Après' },
+  advancedToggle: { more: "Plus d'adaptations", less: "Moins d'adaptations" },
 };
 
 /**
