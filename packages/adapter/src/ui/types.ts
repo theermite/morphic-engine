@@ -19,7 +19,8 @@ export type MorphicAxisKey =
   | 'contrast'
   | 'readingFocus'
   | 'readingGuide'
-  | 'waiSymbols';
+  | 'waiSymbols'
+  | 'colorVision';
 
 /** All axes, in display order. Used as the default `axes` value. */
 export const ALL_AXES: readonly MorphicAxisKey[] = [
@@ -32,6 +33,7 @@ export const ALL_AXES: readonly MorphicAxisKey[] = [
   'readingFocus',
   'readingGuide',
   'waiSymbols',
+  'colorVision',
 ] as const;
 
 /**
@@ -48,6 +50,7 @@ export const DEFAULT_VISIBLE_AXES: readonly MorphicAxisKey[] = [
   'density',
   'readingFocus',
   'readingGuide',
+  'colorVision',
 ] as const;
 
 /** Every user-facing string. Override any subset via the `labels` prop. */
@@ -70,6 +73,7 @@ export interface MorphicButtonLabels {
     readingGuide: string;
     readingRuler: string;
     wai: string;
+    colorVision: string;
   };
   fontFamily: { system: string; serif: string; atkinson: string; dyslexic: string };
   fontSize: { sm: string; md: string; lg: string; xl: string };
@@ -81,6 +85,7 @@ export interface MorphicButtonLabels {
   readingGuide: { off: string; line: string; mask: string };
   readingRuler: { off: string; on: string };
   wai: { off: string; before: string; after: string };
+  colorVision: { off: string; protan: string; deutan: string; tritan: string };
   advancedToggle: { more: string; less: string };
 }
 

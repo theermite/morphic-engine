@@ -16,7 +16,11 @@
  */
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { getReadingFocus, getReadingGuide } from '@theermite/morphic-engine';
+import {
+  getColorVisionCorrection,
+  getReadingFocus,
+  getReadingGuide,
+} from '@theermite/morphic-engine';
 import { describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../../src/index.js';
 import { MorphicButton } from '../../src/ui/index.js';
@@ -177,6 +181,27 @@ describe('MorphicButton — axes route through engine (single source of truth)',
       fireEvent.click(before);
     });
     expect(before).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('color vision correction sets type + severity through the engine, without opening any fold', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Deutéranopie' }));
+    });
+    expect(getColorVisionCorrection()).toEqual({ type: 'deutan', severity: 1 });
+  });
+
+  it('color vision "off" clears the correction', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Protanopie' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Désactivée' }));
+    });
+    expect(getColorVisionCorrection()).toBeNull();
   });
 });
 

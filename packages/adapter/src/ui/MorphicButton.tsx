@@ -14,14 +14,19 @@
  */
 
 import {
+  type ColorVisionCorrection,
+  type ColorVisionType,
+  clearColorVisionCorrection,
   clearReadingFocus,
   clearReadingGuide,
   disableWaiSymbols,
   enableWaiSymbols,
+  getColorVisionCorrection,
   getReadingFocus,
   getReadingGuide,
   type ReadingBand,
   type ReadingFocusIntensity,
+  setColorVisionCorrection,
   setReadingFocus,
   setReadingGuide,
 } from '@theermite/morphic-engine';
@@ -34,7 +39,10 @@ import {
   useMorphicMotion,
   useMorphicTheme,
 } from '../useMorphic.js';
+import { CloseIcon, PaletteIcon, ResetIcon } from './icons.js';
 import { mergeLabels } from './labels.js';
+import { computePlacement, type ModalPlacement } from './placement.js';
+import { Chip, Row, SectionTitle } from './primitives.js';
 import {
   ALL_AXES,
   DEFAULT_VISIBLE_AXES,
@@ -44,101 +52,6 @@ import {
 import { defaultWaiResolver } from './wai-emoji.js';
 
 type WaiMode = 'before' | 'after';
-
-// --- Viewport-collision placement (B-030f) -----------------------------
-//
-// The modal used to always anchor right+below the trigger via CSS alone.
-// Near a screen edge that pushes most of it off-screen (Jay 2026-08-29,
-// screenshot showing the panel clipped). Flips side/edge only when the
-// default placement would not fit, measured against the trigger's own
-// bounding rect — never worse than the previous default.
-
-const MODAL_GAP_PX = 8;
-const MODAL_MAX_WIDTH_PX = 520;
-const MODAL_MAX_HEIGHT_RATIO = 0.78;
-
-type ModalPlacement = { horizontal: 'left' | 'right'; vertical: 'above' | 'below' };
-
-function computePlacement(trigger: HTMLElement): ModalPlacement {
-  const rect = trigger.getBoundingClientRect();
-  const modalWidth = Math.min(MODAL_MAX_WIDTH_PX, window.innerWidth - 16);
-  const modalMaxHeight = window.innerHeight * MODAL_MAX_HEIGHT_RATIO;
-
-  const horizontal: ModalPlacement['horizontal'] =
-    rect.right - modalWidth < MODAL_GAP_PX ? 'left' : 'right';
-
-  const spaceBelow = window.innerHeight - rect.bottom;
-  const spaceAbove = rect.top;
-  const vertical: ModalPlacement['vertical'] =
-    spaceBelow < modalMaxHeight + MODAL_GAP_PX && spaceAbove >= modalMaxHeight + MODAL_GAP_PX
-      ? 'above'
-      : 'below';
-
-  return { horizontal, vertical };
-}
-
-// --- Inline icons (no icon-library dependency) -----------------------------
-
-function PaletteIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-      <circle cx="8.5" cy="9.5" r="1.4" fill="currentColor" />
-      <circle cx="12" cy="7.5" r="1.4" fill="currentColor" />
-      <circle cx="15.5" cy="9.5" r="1.4" fill="currentColor" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ResetIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 4v5h5M20 20v-5h-5M19 9a8 8 0 0 0-14-3M5 15a8 8 0 0 0 14 3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-// --- Presentational primitives ---------------------------------------------
-
-function Chip(props: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      className={`morphic-mb-chip${props.active ? ' is-active' : ''}`}
-      aria-pressed={props.active}
-      onClick={props.onClick}
-    >
-      {props.label}
-    </button>
-  );
-}
-
-function Row(props: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="morphic-mb-row">
-      <span className="morphic-mb-row-label">{props.label}</span>
-      <div className="morphic-mb-chips">{props.children}</div>
-    </div>
-  );
-}
-
-function SectionTitle(props: { children: React.ReactNode }) {
-  return <p className="morphic-mb-section">{props.children}</p>;
-}
 
 // --- Component --------------------------------------------------------------
 
@@ -177,14 +90,16 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   const [band, setBand] = useState<ReadingBand | null>(null);
   const [ruler, setRuler] = useState<boolean>(false);
   const [wai, setWai] = useState<WaiMode | null>(null);
+  const [colorVision, setColorVisionState] = useState<ColorVisionCorrection | null>(null);
 
-  // Sync engine-only axes (reading focus/guide) into local state on open.
+  // Sync engine-only axes (reading focus/guide/color-vision) into local state on open.
   useEffect(() => {
     if (!open) return;
     setRf(getReadingFocus());
     const guide = getReadingGuide();
     setBand(guide.band);
     setRuler(guide.ruler);
+    setColorVisionState(getColorVisionCorrection());
   }, [open]);
 
   // Escape + outside click close the dialog.
@@ -231,6 +146,16 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     [waiResolver],
   );
 
+  const handleColorVision = useCallback((v: ColorVisionType | null) => {
+    if (v === null) {
+      clearColorVisionCorrection();
+      setColorVisionState(null);
+    } else {
+      const next = setColorVisionCorrection(v);
+      setColorVisionState(next);
+    }
+  }, []);
+
   const handleReset = useCallback(() => {
     setTheme('auto');
     setFontFamily('system');
@@ -242,6 +167,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     handleBand(null);
     handleRuler(false);
     handleWai(null);
+    handleColorVision(null);
   }, [
     setTheme,
     setFontFamily,
@@ -250,6 +176,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     setDensity,
     setContrast,
     handleRf,
+    handleColorVision,
     handleBand,
     handleRuler,
     handleWai,
@@ -404,6 +331,24 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                   onClick={() => handleRuler(false)}
                 />
                 <Chip label={t.readingRuler.on} active={ruler} onClick={() => handleRuler(true)} />
+              </Row>
+            )}
+
+            {has('colorVision') && (
+              <Row label={t.rows.colorVision}>
+                <Chip
+                  label={t.colorVision.off}
+                  active={colorVision === null}
+                  onClick={() => handleColorVision(null)}
+                />
+                {(['protan', 'deutan', 'tritan'] as const).map((v) => (
+                  <Chip
+                    key={v}
+                    label={t.colorVision[v]}
+                    active={colorVision?.type === v}
+                    onClick={() => handleColorVision(v)}
+                  />
+                ))}
               </Row>
             )}
 

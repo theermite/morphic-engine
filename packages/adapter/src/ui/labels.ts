@@ -28,6 +28,7 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
     readingGuide: 'Bande',
     readingRuler: 'Règle',
     wai: 'Symboles WAI',
+    colorVision: 'Correction daltonisme',
   },
   fontFamily: { system: 'Système', serif: 'Serif', atkinson: 'Atkinson', dyslexic: 'OpenDyslexic' },
   fontSize: { sm: 'S', md: 'M', lg: 'L', xl: 'XL' },
@@ -45,6 +46,12 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
   readingGuide: { off: 'Off', line: 'Ligne', mask: 'Masque' },
   readingRuler: { off: 'Off', on: 'On' },
   wai: { off: 'Off', before: 'Avant', after: 'Après' },
+  colorVision: {
+    off: 'Désactivée',
+    protan: 'Protanopie',
+    deutan: 'Deutéranopie',
+    tritan: 'Tritanopie',
+  },
   advancedToggle: { more: "Plus d'adaptations", less: "Moins d'adaptations" },
 };
 
