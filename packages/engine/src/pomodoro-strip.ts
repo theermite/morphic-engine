@@ -49,11 +49,19 @@ export const MORPHIC_POMODORO_STRIP_BREATHE_MS = 4_000 as const;
 
 export type PomodoroStripPosition = 'top' | 'bottom';
 
-/** Fraction of the phase (0..1) at which the fill reaches `midColor`. */
-export const POMODORO_STRIP_DEFAULT_MID_STOP = 0.75 as const;
+/**
+ * Fraction of the phase (0..1) at which the fill first reaches `midColor`.
+ * Deliberately early (Jay 2026-08-30: "le bleu doit être plus visible" — a
+ * gradient that only leaves grey near the end reads as "no progress" for
+ * most of the phase).
+ */
+export const POMODORO_STRIP_DEFAULT_RAMP_UP_STOP = 0.35 as const;
+
+/** Fraction (0..1) at which the fill starts leaving `midColor` toward `endColor`. */
+export const POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP = 0.85 as const;
 
 export const POMODORO_STRIP_START_COLOR = '#d1d5db' as const; // pale grey
-export const POMODORO_STRIP_MID_COLOR = '#60a5fa' as const; // light blue
+export const POMODORO_STRIP_MID_COLOR = '#3b82f6' as const; // vivid blue
 export const POMODORO_STRIP_END_COLOR = '#fb923c' as const; // orange
 export const POMODORO_STRIP_COMPLETE_COLOR = '#22c55e' as const; // breathing green
 
@@ -65,8 +73,10 @@ export interface PomodoroStripOptions {
   readonly midColor?: string;
   readonly endColor?: string;
   readonly completeColor?: string;
-  /** Fraction (0..1) of the phase at which the fill reaches `midColor`. Default 0.75. */
-  readonly midStop?: number;
+  /** Fraction (0..1) at which the fill first reaches `midColor`. Default 0.35. */
+  readonly rampUpStop?: number;
+  /** Fraction (0..1) at which the fill starts leaving `midColor`. Default 0.85. */
+  readonly rampDownStop?: number;
 }
 
 export interface PomodoroStripState {
@@ -87,7 +97,8 @@ interface ActiveStrip {
   midColor: string;
   endColor: string;
   completeColor: string;
-  midStop: number;
+  rampUpStop: number;
+  rampDownStop: number;
 }
 
 let active: ActiveStrip | null = null;
@@ -112,26 +123,31 @@ function mixRgb(a: Rgb, b: Rgb, t: number): string {
 
 /**
  * Computes the fill colour for a given elapsed fraction of a phase.
- * Two-segment gradient: `startColor` -> `midColor` up to `midStop`, then
- * `midColor` -> `endColor` for the remainder. `elapsed` is clamped to [0, 1].
+ * Three-segment gradient: `startColor` -> `midColor` up to `rampUpStop`,
+ * a plateau exactly at `midColor` until `rampDownStop`, then `midColor` ->
+ * `endColor` for the remainder. `elapsed` is clamped to [0, 1].
  */
 export function computePomodoroStripFillColor(
   elapsed: number,
   startColor: string,
   midColor: string,
   endColor: string,
-  midStop: number,
+  rampUpStop: number,
+  rampDownStop: number,
 ): string {
   const t = Math.max(0, Math.min(1, elapsed));
   const start = parseHexColor(startColor);
   const mid = parseHexColor(midColor);
   const end = parseHexColor(endColor);
 
-  if (t <= midStop) {
-    const local = midStop <= 0 ? 1 : t / midStop;
+  if (t <= rampUpStop) {
+    const local = rampUpStop <= 0 ? 1 : t / rampUpStop;
     return mixRgb(start, mid, local);
   }
-  const local = midStop >= 1 ? 0 : (t - midStop) / (1 - midStop);
+  if (t <= rampDownStop) {
+    return `rgb(${mid[0]}, ${mid[1]}, ${mid[2]})`;
+  }
+  const local = rampDownStop >= 1 ? 0 : (t - rampDownStop) / (1 - rampDownStop);
   return mixRgb(mid, end, local);
 }
 
@@ -220,7 +236,8 @@ function applyState(strip: ActiveStrip): void {
     strip.startColor,
     strip.midColor,
     strip.endColor,
-    strip.midStop,
+    strip.rampUpStop,
+    strip.rampDownStop,
   );
 }
 
@@ -269,7 +286,8 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
   const midColor = options.midColor ?? POMODORO_STRIP_MID_COLOR;
   const endColor = options.endColor ?? POMODORO_STRIP_END_COLOR;
   const completeColor = options.completeColor ?? POMODORO_STRIP_COMPLETE_COLOR;
-  const midStop = options.midStop ?? POMODORO_STRIP_DEFAULT_MID_STOP;
+  const rampUpStop = options.rampUpStop ?? POMODORO_STRIP_DEFAULT_RAMP_UP_STOP;
+  const rampDownStop = options.rampDownStop ?? POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP;
 
   const root = document.createElement('div');
   root.setAttribute(MORPHIC_POMODORO_STRIP_MARKER, getPomodoroState().phase);
@@ -312,7 +330,8 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
     midColor,
     endColor,
     completeColor,
-    midStop,
+    rampUpStop,
+    rampDownStop,
   };
 
   active = strip;
