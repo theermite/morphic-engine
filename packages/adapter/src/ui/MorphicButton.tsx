@@ -25,7 +25,7 @@ import {
   setReadingFocus,
   setReadingGuide,
 } from '@theermite/morphic-engine';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useMorphicContrast,
   useMorphicDensity,
@@ -39,6 +39,38 @@ import { ALL_AXES, type MorphicAxisKey, type MorphicButtonProps } from './types.
 import { defaultWaiResolver } from './wai-emoji.js';
 
 type WaiMode = 'before' | 'after';
+
+// --- Viewport-collision placement (B-030f) -----------------------------
+//
+// The modal used to always anchor right+below the trigger via CSS alone.
+// Near a screen edge that pushes most of it off-screen (Jay 2026-08-29,
+// screenshot showing the panel clipped). Flips side/edge only when the
+// default placement would not fit, measured against the trigger's own
+// bounding rect — never worse than the previous default.
+
+const MODAL_GAP_PX = 8;
+const MODAL_MAX_WIDTH_PX = 520;
+const MODAL_MAX_HEIGHT_RATIO = 0.78;
+
+type ModalPlacement = { horizontal: 'left' | 'right'; vertical: 'above' | 'below' };
+
+function computePlacement(trigger: HTMLElement): ModalPlacement {
+  const rect = trigger.getBoundingClientRect();
+  const modalWidth = Math.min(MODAL_MAX_WIDTH_PX, window.innerWidth - 16);
+  const modalMaxHeight = window.innerHeight * MODAL_MAX_HEIGHT_RATIO;
+
+  const horizontal: ModalPlacement['horizontal'] =
+    rect.right - modalWidth < MODAL_GAP_PX ? 'left' : 'right';
+
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const vertical: ModalPlacement['vertical'] =
+    spaceBelow < modalMaxHeight + MODAL_GAP_PX && spaceAbove >= modalMaxHeight + MODAL_GAP_PX
+      ? 'above'
+      : 'below';
+
+  return { horizontal, vertical };
+}
 
 // --- Inline icons (no icon-library dependency) -----------------------------
 
@@ -112,6 +144,17 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
 
   const [open, setOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [placement, setPlacement] = useState<ModalPlacement>({
+    horizontal: 'right',
+    vertical: 'below',
+  });
+
+  // Measure before paint so the modal never flashes at the wrong edge then jumps.
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    setPlacement(computePlacement(triggerRef.current));
+  }, [open]);
 
   const [theme, setTheme] = useMorphicTheme();
   const [fontFamily, setFontFamily] = useMorphicFontFamily();
@@ -209,6 +252,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     >
       <button
         type="button"
+        ref={triggerRef}
         className="morphic-mb-trigger"
         aria-label={t.triggerAria}
         aria-haspopup="dialog"
@@ -219,7 +263,12 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
       </button>
 
       {open && (
-        <div className="morphic-mb-modal" ref={modalRef} role="dialog" aria-label={t.title}>
+        <div
+          className={`morphic-mb-modal morphic-mb-modal--${placement.horizontal} morphic-mb-modal--${placement.vertical}`}
+          ref={modalRef}
+          role="dialog"
+          aria-label={t.title}
+        >
           <div className="morphic-mb-head">
             <span className="morphic-mb-title">{t.title}</span>
             <button

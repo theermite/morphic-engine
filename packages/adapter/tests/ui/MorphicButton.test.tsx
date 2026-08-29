@@ -229,3 +229,70 @@ describe('MorphicButton — customization props', () => {
     expect(screen.queryByRole('button', { name: 'OpenDyslexic' })).not.toBeInTheDocument();
   });
 });
+
+describe('MorphicButton — modal placement (viewport collision)', () => {
+  function mockTriggerRect(rect: Partial<DOMRect>): void {
+    const full: DOMRect = {
+      x: 0,
+      y: 0,
+      width: 44,
+      height: 44,
+      top: 0,
+      left: 0,
+      right: 44,
+      bottom: 44,
+      toJSON: () => ({}),
+      ...rect,
+    };
+    HTMLElement.prototype.getBoundingClientRect = () => full;
+  }
+
+  function setViewport(width: number, height: number): void {
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      writable: true,
+      configurable: true,
+      value: height,
+    });
+  }
+
+  it('anchors right + below when there is room on all sides (default)', () => {
+    setViewport(1200, 900);
+    mockTriggerRect({ left: 600, right: 644, top: 100, bottom: 144 });
+    renderButton();
+    openModal();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveClass('morphic-mb-modal--right');
+    expect(dialog).toHaveClass('morphic-mb-modal--below');
+  });
+
+  it('flips to left-anchored when the trigger sits near the left edge', () => {
+    setViewport(1200, 900);
+    // right edge at 60px: 60 - 520 (modal width) < 8 → not enough room to extend leftward from the right edge.
+    mockTriggerRect({ left: 16, right: 60, top: 100, bottom: 144 });
+    renderButton();
+    openModal();
+    expect(screen.getByRole('dialog')).toHaveClass('morphic-mb-modal--left');
+  });
+
+  it('flips to above-anchored when the trigger sits near the bottom edge', () => {
+    setViewport(1200, 400);
+    // bottom at 380 in an 400px-tall viewport: only 20px below, not enough for the modal.
+    mockTriggerRect({ left: 600, right: 644, top: 336, bottom: 380 });
+    renderButton();
+    openModal();
+    expect(screen.getByRole('dialog')).toHaveClass('morphic-mb-modal--above');
+  });
+
+  it('stays below when there is not enough room above either (never worse than the default)', () => {
+    setViewport(1200, 300);
+    mockTriggerRect({ left: 600, right: 644, top: 10, bottom: 54 });
+    renderButton();
+    openModal();
+    expect(screen.getByRole('dialog')).toHaveClass('morphic-mb-modal--below');
+  });
+});

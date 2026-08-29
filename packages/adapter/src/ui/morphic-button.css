@@ -56,8 +56,6 @@
 
 .morphic-mb-modal {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
   z-index: 1000;
   width: min(520px, calc(100vw - 16px));
   max-height: 78vh;
@@ -69,6 +67,21 @@
   background: var(--morphic-ui-surface);
   color: var(--morphic-ui-text);
   box-shadow: var(--morphic-ui-shadow);
+}
+
+/* Placement (B-030f) — computed at open time from the trigger's position
+   relative to the viewport, so the panel never opens off-screen near an edge. */
+.morphic-mb-modal--below {
+  top: calc(100% + 8px);
+}
+.morphic-mb-modal--above {
+  bottom: calc(100% + 8px);
+}
+.morphic-mb-modal--right {
+  right: 0;
+}
+.morphic-mb-modal--left {
+  left: 0;
 }
 
 .morphic-mb-head {
