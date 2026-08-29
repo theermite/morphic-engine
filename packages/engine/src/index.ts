@@ -224,6 +224,19 @@ export {
   stopPomodoro,
 } from './pomodoro.js';
 export {
+  disablePomodoroStrip,
+  enablePomodoroStrip,
+  getPomodoroStripState,
+  MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT,
+  MORPHIC_POMODORO_STRIP_DEFAULT_Z_INDEX,
+  MORPHIC_POMODORO_STRIP_MARKER,
+  MORPHIC_POMODORO_STRIP_POLL_MS,
+  POMODORO_STRIP_DEFAULT_COLORS,
+  type PomodoroStripOptions,
+  type PomodoroStripPosition,
+  type PomodoroStripState,
+} from './pomodoro-strip.js';
+export {
   isValidProfileHints,
   type ProfileHints,
   ProfileHintsSchema,
