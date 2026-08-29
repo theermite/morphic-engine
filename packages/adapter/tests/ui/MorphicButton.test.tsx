@@ -303,6 +303,22 @@ describe('MorphicButton — reset', () => {
     expect(getReadingFocus()).toBeNull();
     expect(getReadingGuide()).toEqual({ band: null, ruler: false });
   });
+
+  it('stops a running pomodoro (Jay 2026-08-29: "réinitialiser" = repartir à zéro)', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(getPomodoroState().phase).toBe('work');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /réinitialiser/i }));
+    });
+
+    expect(getPomodoroState().phase).toBe('idle');
+    expect(screen.getByRole('button', { name: 'Démarrer' })).toBeInTheDocument();
+  });
 });
 
 describe('MorphicButton — fresh visitor (empty storage)', () => {
@@ -395,6 +411,29 @@ describe('MorphicButton — modal placement (viewport collision)', () => {
     renderButton();
     openModal();
     expect(screen.getByRole('dialog')).toHaveClass('morphic-mb-modal--below');
+  });
+});
+
+describe("MorphicButton — default row order matches Jay's list (2026-08-29)", () => {
+  it('renders the always-visible rows in the exact requested sequence', () => {
+    renderButton();
+    openModal();
+    const labels = Array.from(document.querySelectorAll('.morphic-mb-row-label')).map(
+      (el) => el.textContent,
+    );
+    expect(labels).toEqual([
+      'Thème',
+      'Police',
+      'Taille',
+      'Animation',
+      'Densité',
+      'Focus texte',
+      'Bande',
+      'Règle',
+      'Correction daltonisme',
+      'Mode récupération',
+      'Cycle Pomodoro',
+    ]);
   });
 });
 

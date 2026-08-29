@@ -32,6 +32,7 @@ import {
   setColorVisionCorrection,
   setReadingFocus,
   setReadingGuide,
+  stopPomodoro,
 } from '@theermite/morphic-engine';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -70,6 +71,9 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
 
   const [open, setOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // Bumped on reset to force <PomodoroControl> to remount and re-read idle
+  // state — stopPomodoro() doesn't dispatch an event the control listens for.
+  const [pomodoroResetKey, setPomodoroResetKey] = useState(0);
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [placement, setPlacement] = useState<ModalPlacement>({
@@ -181,6 +185,8 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     handleWai(null);
     handleColorVision(null);
     handleRecovery(false);
+    stopPomodoro();
+    setPomodoroResetKey((k) => k + 1);
   }, [
     setTheme,
     setFontFamily,
@@ -233,8 +239,22 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
           </div>
 
           <div className="morphic-mb-body">
-            {(has('fontFamily') || has('fontSize')) && (
-              <SectionTitle>{t.sections.text}</SectionTitle>
+            {(has('theme') ||
+              has('fontFamily') ||
+              has('fontSize') ||
+              has('motion') ||
+              has('density')) && <SectionTitle>{t.sections.display}</SectionTitle>}
+            {has('theme') && (
+              <Row label={t.rows.theme}>
+                {(['dark', 'light', 'auto', 'sepia', 'high-contrast'] as const).map((v) => (
+                  <Chip
+                    key={v}
+                    label={v === 'high-contrast' ? t.theme.highContrast : t.theme[v]}
+                    active={theme === v}
+                    onClick={() => setTheme(v)}
+                  />
+                ))}
+              </Row>
             )}
             {has('fontFamily') && (
               <Row label={t.rows.font}>
@@ -256,22 +276,6 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                     label={t.fontSize[v]}
                     active={fontSize === v}
                     onClick={() => setFontSize(v)}
-                  />
-                ))}
-              </Row>
-            )}
-
-            {(has('theme') || has('motion') || has('density')) && (
-              <SectionTitle>{t.sections.display}</SectionTitle>
-            )}
-            {has('theme') && (
-              <Row label={t.rows.theme}>
-                {(['dark', 'light', 'auto', 'sepia', 'high-contrast'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={v === 'high-contrast' ? t.theme.highContrast : t.theme[v]}
-                    active={theme === v}
-                    onClick={() => setTheme(v)}
                   />
                 ))}
               </Row>
@@ -382,7 +386,10 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
             )}
 
             {has('pomodoro') && (
-              <PomodoroControl labels={{ label: t.rows.pomodoro, ...t.pomodoro }} />
+              <PomodoroControl
+                key={pomodoroResetKey}
+                labels={{ label: t.rows.pomodoro, ...t.pomodoro }}
+              />
             )}
 
             {foldedAxesPresent && (
