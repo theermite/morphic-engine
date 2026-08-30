@@ -17,7 +17,7 @@
  * trait alone) — a holistic profile is a weighting, not a box (Kakusei
  * principle, confirmed 2026-08-23 in the same document).
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import type { ProfileHints } from './profile-hints.js';

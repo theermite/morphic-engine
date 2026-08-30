@@ -6,7 +6,7 @@
  * the user's holistic profile.
  *
  * Specification: docs/CDC.md + docs/PET.md.
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 export const VERSION = '2.0.0-beta.5' as const;

@@ -17,7 +17,7 @@
  *
  * Scope of this brick: schema + validation only.
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import { z } from 'zod';

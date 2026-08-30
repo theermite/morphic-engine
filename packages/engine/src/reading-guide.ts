@@ -29,7 +29,7 @@
  * is set (the user activated the tool and moves it intentionally) — only the
  * easing transition is stripped (per WCAG 2.3.3 Understanding).
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';

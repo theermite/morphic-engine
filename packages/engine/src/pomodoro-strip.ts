@@ -24,7 +24,7 @@
  * Scope: a visual companion to an already-running pomodoro session. No
  * new persisted preference — pomodoro.ts already owns session persistence.
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import { getPomodoroState, type PomodoroPhase } from './pomodoro.js';

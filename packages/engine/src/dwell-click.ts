@@ -21,7 +21,7 @@
  * SSR safety:
  *  - All DOM access guarded by `typeof document`.
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';

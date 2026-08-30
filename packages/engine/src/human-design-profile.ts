@@ -21,7 +21,7 @@
  * A "profile" combines two of the six Human Design lines (conscious +
  * unconscious). Only 12 combinations exist — not all 36 pairs are valid.
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import { z } from 'zod';

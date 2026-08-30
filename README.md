@@ -39,3 +39,12 @@ NLNet NGI0 Commons application submitted on time.
 ## License
 
 AGPL-3.0-or-later. See `LICENSE`.
+
+**Exception — `packages/engine`** is dual licensed since 2026-08-30: you may use
+it under **AGPL-3.0-or-later OR MPL-2.0**, at your option. See
+`packages/engine/LICENSE`.
+
+The MPL was added so the engine can be embedded in the Shinkofa browser, a
+Firefox derivative and therefore MPL-2.0 throughout — a browser cannot ship AGPL
+code without pulling the whole product under the AGPL. `packages/adapter` and
+`packages/wasm-core` remain AGPL-3.0-or-later only.

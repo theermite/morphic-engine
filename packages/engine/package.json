@@ -2,7 +2,7 @@
   "name": "@theermite/morphic-engine",
   "version": "2.0.0-beta.7",
   "description": "Shinkofa Morphic Adaptation Engine — framework-agnostic core",
-  "license": "AGPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later OR MPL-2.0",
   "author": "Jean-Pierre Gonçalves (The Ermite)",
   "homepage": "https://github.com/theermite/morphic-engine#readme",
   "repository": {
@@ -38,7 +38,9 @@
     "dist",
     "src",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "LICENSE.AGPL-3.0-or-later",
+    "LICENSE.MPL-2.0"
   ],
   "publishConfig": {
     "access": "public",

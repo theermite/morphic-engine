@@ -24,7 +24,7 @@
  *  - All DOM access is guarded; SSR call paths return a minimal state object
  *    without registering listeners or custom elements.
  *
- * License: AGPL-3.0-or-later.
+ * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
