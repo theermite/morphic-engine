@@ -41,8 +41,13 @@ export const MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT = 4 as const;
 /** Default z-index. */
 export const MORPHIC_POMODORO_STRIP_DEFAULT_Z_INDEX = 9997 as const;
 
-/** Poll interval in ms — matches pomodoro.ts's own tick cadence. */
-export const MORPHIC_POMODORO_STRIP_POLL_MS = 1_000 as const;
+/**
+ * Poll interval in ms. Shorter than pomodoro.ts's own 1s tick cadence
+ * (Jay 2026-08-30: "il y a toujours un petit temps de décalage avant que
+ * le liseré n'apparaisse" — a 1s poll meant up to ~1.2s of visible lag
+ * after clicking start, on top of the 200ms opacity fade).
+ */
+export const MORPHIC_POMODORO_STRIP_POLL_MS = 250 as const;
 
 /** How long the completion pulse breathes before the new phase's fill takes over. */
 export const MORPHIC_POMODORO_STRIP_BREATHE_MS = 4_000 as const;

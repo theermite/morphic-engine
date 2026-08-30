@@ -359,6 +359,69 @@ function EnergyCards() {
 }
 
 // ---------------------------------------------------------------------------
+// Pomodoro strip colour tuner — live experimentation, demo-only.
+// Not a shipped feature: enablePomodoroStrip() already accepts these colours
+// as options for any real host to set once; this card just makes trying
+// different shades fast without a new commit each time.
+// ---------------------------------------------------------------------------
+
+function PomodoroStripTuner() {
+  const [startColor, setStartColor] = useState('#d1d5db');
+  const [midColor, setMidColor] = useState('#3b82f6');
+  const [endColor, setEndColor] = useState('#fb923c');
+
+  function applyColors(next: { startColor?: string; midColor?: string; endColor?: string }) {
+    enablePomodoroStrip({ startColor, midColor, endColor, ...next });
+  }
+
+  return (
+    <MissingAxisCard
+      title="Couleurs du bandeau pomodoro"
+      note="Outil de test seulement — enablePomodoroStrip() accepte déjà ces couleurs en option pour un vrai site. Change une couleur pendant un cycle actif pour voir tout de suite."
+    >
+      <div className="controls">
+        <label className="morphic-mb-duration-field" htmlFor="strip-start">
+          Piste
+          <input
+            id="strip-start"
+            type="color"
+            value={startColor}
+            onChange={(e) => {
+              setStartColor(e.target.value);
+              applyColors({ startColor: e.target.value });
+            }}
+          />
+        </label>
+        <label className="morphic-mb-duration-field" htmlFor="strip-mid">
+          Remplissage
+          <input
+            id="strip-mid"
+            type="color"
+            value={midColor}
+            onChange={(e) => {
+              setMidColor(e.target.value);
+              applyColors({ midColor: e.target.value });
+            }}
+          />
+        </label>
+        <label className="morphic-mb-duration-field" htmlFor="strip-end">
+          Fin de phase
+          <input
+            id="strip-end"
+            type="color"
+            value={endColor}
+            onChange={(e) => {
+              setEndColor(e.target.value);
+              applyColors({ endColor: e.target.value });
+            }}
+          />
+        </label>
+      </div>
+    </MissingAxisCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Root
 // ---------------------------------------------------------------------------
 
@@ -395,6 +458,7 @@ function App() {
         <CommandPaletteCard />
         <MotorCards />
         <EnergyCards />
+        <PomodoroStripTuner />
       </div>
     </MorphicProvider>
   );
