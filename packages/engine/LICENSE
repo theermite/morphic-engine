@@ -25,8 +25,14 @@ The MPL was added on 2026-08-30 so the engine can be embedded in the Shinkofa
 browser, which is a Firefox derivative and therefore MPL-2.0 throughout. A
 browser cannot ship AGPL code without pulling the whole product under the AGPL.
 
-The copyright holder is the sole author of this package, which has no runtime
-dependencies, and is free to offer it under both.
+The copyright holder is the sole author of the code in this package and is free
+to offer it under both.
+
+This package does have runtime dependencies (fuse.js, idb, tweetnacl,
+y-indexeddb, yjs, zod, and a peer dependency on effect). They are separate
+works, each under its own permissive licence — Apache-2.0, ISC, Unlicense or
+MIT — and none of them constrains the licence offered here. The pomodoro modules
+(`./pomodoro`, `./pomodoro-strip`) import none of them.
 
 The other packages in this repository (`adapter`, `wasm-core`) remain
 AGPL-3.0-or-later only.
