@@ -7,6 +7,12 @@
 export { DEFAULT_LABELS } from './labels.js';
 export { MorphicButton } from './MorphicButton.js';
 export {
+  DEFAULT_SUGGESTIONS_LABELS,
+  MorphicSuggestions,
+  type MorphicSuggestionsLabels,
+  type MorphicSuggestionsProps,
+} from './MorphicSuggestions.js';
+export {
   ALL_AXES,
   type MorphicAxisKey,
   type MorphicButtonLabels,
