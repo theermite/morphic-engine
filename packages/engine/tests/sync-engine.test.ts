@@ -400,6 +400,22 @@ describe('PBT — fast-check', () => {
     );
   });
 
+  it('should_retrieve_a_preference_stored_under_the_key_proto (found by independent review 2026-08-30)', async () => {
+    __resetSyncStateForTests();
+    await deleteYjsDb();
+
+    await createSyncEngine({ docName: `proto-guard-${Date.now()}` });
+    setSyncedPreference('__proto__', 'poisoned-value');
+    const prefs = getSyncedPreferences();
+
+    // A plain `{}` would silently reassign its prototype instead of storing
+    // this — Object.keys must see a real own property, and the value must
+    // read back exactly as written.
+    expect(Object.keys(prefs)).toContain('__proto__');
+    expect(prefs['__proto__']).toBe('poisoned-value');
+    destroySyncEngine();
+  });
+
   it('should_reject_non_string_values', async () => {
     await fc.assert(
       fc.asyncProperty(

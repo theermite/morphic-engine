@@ -77,21 +77,42 @@ export const HumanDesignHintsSchema = z
   })
   .strict();
 
+const ALLOWED_KEYS = ['profile'];
+
 // ---------------------------------------------------------------------------
 // Validation — pure
 // ---------------------------------------------------------------------------
+
+/**
+ * Explicit own-key allowlist check, run BEFORE Zod. `.strict()` alone is not
+ * enough: a `__proto__` own key (created via a computed/string key, e.g.
+ * `{ ...x, ['__proto__']: y }`) is silently dropped by Zod's key iteration
+ * instead of being flagged — same defect class found in profile-hints.ts by
+ * an independent review 2026-08-30. `Object.keys` sees the real own
+ * property Zod misses.
+ */
+function assertKnownKeys(input: Record<string, unknown>, context: string): void {
+  for (const key of Object.keys(input)) {
+    if (!ALLOWED_KEYS.includes(key)) {
+      throw new RangeError(`${context}: unrecognised key "${key}"`);
+    }
+  }
+}
 
 /**
  * Parses and validates a candidate Human Design hints object.
  *
  * @throws {TypeError} If `input` is not a plain object.
  * @throws {RangeError} If `profile` is present but not one of the 12
- *   valid combinations, or an unrecognised key is present.
+ *   valid combinations, or an unrecognised key is present (including
+ *   `__proto__`, checked explicitly — see {@link assertKnownKeys}).
  */
 export function validateHumanDesignHints(input: unknown): HumanDesignHints {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     throw new TypeError(`human-design-profile: input must be a plain object, got ${typeof input}`);
   }
+
+  assertKnownKeys(input as Record<string, unknown>, 'human-design-profile');
 
   const result = HumanDesignHintsSchema.safeParse(input);
   if (!result.success) {
@@ -106,6 +127,10 @@ export function validateHumanDesignHints(input: unknown): HumanDesignHints {
  * Never throws — safe boolean guard (mirrors `isValidProfileHints`).
  */
 export function isValidHumanDesignHints(input: unknown): input is HumanDesignHints {
-  if (typeof input !== 'object' || input === null || Array.isArray(input)) return false;
-  return HumanDesignHintsSchema.safeParse(input).success;
+  try {
+    validateHumanDesignHints(input);
+    return true;
+  } catch {
+    return false;
+  }
 }

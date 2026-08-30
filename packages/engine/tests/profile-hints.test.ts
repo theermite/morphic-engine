@@ -88,6 +88,16 @@ describe('profile-hints / validateProfileHints — defensive assertions', () => 
       RangeError,
     );
   });
+
+  it('should reject a computed "__proto__" key instead of silently dropping it (found by independent review 2026-08-30)', () => {
+    // A computed/string key bypasses the object-literal __proto__ special
+    // case and creates a REAL own property — Zod's .strict() alone drops it
+    // silently instead of flagging it. Object.keys must see it.
+    const polluted = { ...{ sensorySensitivity: 'low' as const }, ['__proto__']: { evil: true } };
+    expect(Object.keys(polluted)).toContain('__proto__');
+    expect(() => validateProfileHints(polluted)).toThrow(RangeError);
+    expect(isValidProfileHints(polluted)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------

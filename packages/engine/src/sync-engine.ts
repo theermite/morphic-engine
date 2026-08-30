@@ -216,7 +216,15 @@ export function setSyncedPreference(key: string, value: string): void {
 export function getSyncedPreferences(): Record<string, string> {
   assertActive();
 
-  const result: Record<string, string> = {};
+  // Object.create(null) — a plain `{}` has no own "__proto__" property; the
+  // key is instead intercepted by Object.prototype's inherited __proto__
+  // accessor setter, silently reassigning the object's prototype instead of
+  // storing the value (found by independent review 2026-08-30, same defect
+  // class as profile-hints.ts/human-design-profile.ts's key check, but here
+  // it strikes on WRITE via bracket assignment, not on Zod's key iteration).
+  // A null-prototype object has no such setter, so the assignment below is
+  // always a real own-property set regardless of the key name.
+  const result: Record<string, string> = Object.create(null);
   for (const [key, value] of ymap.entries()) {
     if (typeof value === 'string') {
       result[key as string] = value;

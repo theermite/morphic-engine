@@ -60,16 +60,37 @@ export const ProfileHintsSchema = z
   })
   .strict();
 
+const ALLOWED_KEYS = ['sensorySensitivity', 'attentionPattern', 'emotionalLoad'];
+
 // ---------------------------------------------------------------------------
 // Validation — pure
 // ---------------------------------------------------------------------------
+
+/**
+ * Explicit own-key allowlist check, run BEFORE Zod. `.strict()` alone is not
+ * enough: a `__proto__` own key (created via a computed/string key, e.g.
+ * `{ ...x, ['__proto__']: y }`) is silently dropped by Zod's key iteration
+ * instead of being flagged — found by an independent review 2026-08-30
+ * (fast-check counterexample `["__proto__"]`), confirmed in isolation:
+ * `z.object({}).strict().safeParse({['__proto__']: 1})` returns `success:
+ * true, data: {}` instead of an error. `Object.keys` sees the real own
+ * property Zod misses.
+ */
+function assertKnownKeys(input: Record<string, unknown>, context: string): void {
+  for (const key of Object.keys(input)) {
+    if (!ALLOWED_KEYS.includes(key)) {
+      throw new RangeError(`${context}: unrecognised key "${key}"`);
+    }
+  }
+}
 
 /**
  * Parses and validates a candidate profile hints object.
  *
  * Defensive assertion #1: rejects anything that isn't a plain object
  * (null, array, primitive) with a {@link TypeError}.
- * Defensive assertion #2: rejects an unknown key or an out-of-enum
+ * Defensive assertion #2: rejects an unknown key (including `__proto__`,
+ * checked explicitly — see {@link assertKnownKeys}) or an out-of-enum
  * value with a {@link RangeError} (closed-shape guard).
  *
  * @throws {TypeError} If `input` is not a plain object.
@@ -80,6 +101,8 @@ export function validateProfileHints(input: unknown): ProfileHints {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     throw new TypeError(`profile-hints: input must be a plain object, got ${typeof input}`);
   }
+
+  assertKnownKeys(input as Record<string, unknown>, 'profile-hints');
 
   const result = ProfileHintsSchema.safeParse(input);
   if (!result.success) {
@@ -94,6 +117,10 @@ export function validateProfileHints(input: unknown): ProfileHints {
  * Never throws — safe boolean guard (mirrors `validateClickDelay`).
  */
 export function isValidProfileHints(input: unknown): input is ProfileHints {
-  if (typeof input !== 'object' || input === null || Array.isArray(input)) return false;
-  return ProfileHintsSchema.safeParse(input).success;
+  try {
+    validateProfileHints(input);
+    return true;
+  } catch {
+    return false;
+  }
 }

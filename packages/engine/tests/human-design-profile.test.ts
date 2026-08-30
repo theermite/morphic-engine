@@ -82,6 +82,13 @@ describe('human-design-profile / validateHumanDesignHints — defensive assertio
   it('should throw RangeError on an unrecognised key (closed-shape guard)', () => {
     expect(() => validateHumanDesignHints({ type: 'Projector' })).toThrow(RangeError);
   });
+
+  it('should reject a computed "__proto__" key instead of silently dropping it (found by independent review 2026-08-30)', () => {
+    const polluted = { ...{ profile: '1/3' as const }, ['__proto__']: { evil: true } };
+    expect(Object.keys(polluted)).toContain('__proto__');
+    expect(() => validateHumanDesignHints(polluted)).toThrow(RangeError);
+    expect(isValidHumanDesignHints(polluted)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
