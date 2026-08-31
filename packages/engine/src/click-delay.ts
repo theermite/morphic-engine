@@ -22,6 +22,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasLocalStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -82,7 +83,7 @@ export function validateClickDelay(delay: number): boolean {
 // ---------------------------------------------------------------------------
 
 function readStorageObject(): Record<string, unknown> {
-  if (typeof localStorage === 'undefined') return {};
+  if (!hasLocalStorage()) return {};
   try {
     const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
     if (!raw) return {};
@@ -97,7 +98,7 @@ function readStorageObject(): Record<string, unknown> {
 }
 
 function writeStorageObject(obj: Record<string, unknown>): void {
-  if (typeof localStorage === 'undefined') return;
+  if (!hasLocalStorage()) return;
   try {
     localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
   } catch {

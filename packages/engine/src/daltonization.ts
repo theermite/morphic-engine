@@ -37,6 +37,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasLocalStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -426,7 +427,7 @@ function injectFilterDom(type: Exclude<ColorVisionType, 'none'>, severity: numbe
 // ---------------------------------------------------------------------------
 
 function readStorageObject(): Record<string, unknown> {
-  if (typeof localStorage === 'undefined') return {};
+  if (!hasLocalStorage()) return {};
   let raw: string | null;
   try {
     raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
@@ -447,7 +448,7 @@ function readStorageObject(): Record<string, unknown> {
 }
 
 function writeStorageObject(obj: Record<string, unknown>): void {
-  if (typeof localStorage === 'undefined') return;
+  if (!hasLocalStorage()) return;
   try {
     localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
   } catch {

@@ -21,6 +21,7 @@
 
 import { type IDBPDatabase, openDB } from 'idb';
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasIndexedDB } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -126,6 +127,13 @@ export async function persistPreferences(prefs: Record<string, unknown>): Promis
     );
   }
 
+  // A host that refuses IndexedDB is a host without it: the write is a
+  // no-op, and the localStorage cache below still carries the value.
+  if (!hasIndexedDB()) {
+    writeToLocalStorage(prefs);
+    return;
+  }
+
   // Write to IndexedDB
   const db = await openMorphicDB();
   await db.put(MORPHIC_IDB_STORE_NAME, prefs, MORPHIC_IDB_PREFS_KEY);
@@ -144,6 +152,9 @@ export async function persistPreferences(prefs: Record<string, unknown>): Promis
  * Returns null if no preferences are stored (not undefined, not throw).
  */
 export async function loadPreferences(): Promise<Record<string, unknown> | null> {
+  // Nothing stored, rather than a rejected promise thrown at the caller.
+  if (!hasIndexedDB()) return null;
+
   const db = await openMorphicDB();
   const result = await db.get(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
 
@@ -162,8 +173,12 @@ export async function loadPreferences(): Promise<Record<string, unknown> | null>
  * Clear all preferences from IndexedDB and localStorage.
  */
 export async function clearPreferences(): Promise<void> {
-  const db = await openMorphicDB();
-  await db.delete(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
+  // Without IndexedDB there is nothing to delete there -- but the
+  // localStorage cache below must still be cleared, or 'clear' would lie.
+  if (hasIndexedDB()) {
+    const db = await openMorphicDB();
+    await db.delete(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
+  }
 
   // Clear localStorage cache
   try {

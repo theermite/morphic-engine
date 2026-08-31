@@ -28,6 +28,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasLocalStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -143,7 +144,7 @@ function validateOptions(options: IdleDetectionOptions): void {
 // ---------------------------------------------------------------------------
 
 function readStorageState(): Partial<IdleDetectionState> | null {
-  if (typeof localStorage === 'undefined') return null;
+  if (!hasLocalStorage()) return null;
   let raw: string | null;
   try {
     raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
@@ -177,7 +178,7 @@ function readStorageState(): Partial<IdleDetectionState> | null {
 }
 
 function writeStorageState(state: IdleDetectionState | null): void {
-  if (typeof localStorage === 'undefined') return;
+  if (!hasLocalStorage()) return;
   try {
     let existing: Record<string, unknown> = {};
     try {
