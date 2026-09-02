@@ -21,7 +21,7 @@
 
 import { type IDBPDatabase, openDB } from 'idb';
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { hasIndexedDB } from './storage-access.js';
+import { hasIndexedDB, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -173,19 +173,27 @@ export async function loadPreferences(): Promise<Record<string, unknown> | null>
  * Clear all preferences from IndexedDB and localStorage.
  */
 export async function clearPreferences(): Promise<void> {
-  // Without IndexedDB there is nothing to delete there -- but the
-  // localStorage cache below must still be cleared, or 'clear' would lie.
+  // Erasure is the one path where "the host refuses storage" must NOT be
+  // treated like every other. Elsewhere a refusal means "act as if there is no
+  // storage", and that is safe. Here the two cases are opposite:
+  //
+  //   - no IndexedDB at all -> nothing was ever written there, nothing to
+  //     erase, and reporting success is the truth;
+  //   - IndexedDB present but the open or the delete fails -> the data may
+  //     still be on disk, and a silent success is the one lie this function
+  //     must never tell. Someone asked for their data to be gone.
+  //
+  // `hasIndexedDB()` only answers the first question. It says nothing about an
+  // open that rejects -- private browsing, a spent quota -- which is why the
+  // failure is deliberately allowed to propagate here rather than swallowed by
+  // a wrapper. The caller wraps it in a typed StorageError (effects/storage.ts).
   if (hasIndexedDB()) {
     const db = await openMorphicDB();
     await db.delete(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
   }
 
-  // Clear localStorage cache
-  try {
-    localStorage.removeItem(MORPHIC_STORAGE_KEY);
-  } catch {
-    // SSR or disabled — ignore
-  }
+  // The cache goes too, or 'clear' would lie by another door.
+  safeStorage.remove(MORPHIC_STORAGE_KEY);
 }
 
 // ---------------------------------------------------------------------------
@@ -212,7 +220,7 @@ export async function migrateFromLocalStorage(): Promise<boolean> {
   // Read from localStorage
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return false;
   }
@@ -235,7 +243,19 @@ export async function migrateFromLocalStorage(): Promise<boolean> {
 
   // Migrate to IDB (write-through will also update localStorage)
   await persistPreferences(parsed);
-  return true;
+
+  // "Migrated" has to mean the data really is in IndexedDB now.
+  //
+  // Returning `true` unconditionally made this lie in the one case that
+  // matters: `persistPreferences` falls back to the localStorage cache when
+  // IndexedDB refuses, and writes nothing at all when both refuse. The caller
+  // was told the one-time migration had happened, the data had not moved, and
+  // the "one-time" ran again on every single call -- forever, on the hosts
+  // least able to afford it.
+  //
+  // On a host with no IndexedDB there is nothing to migrate TO, and `false` is
+  // the honest answer rather than a retry disguised as a success.
+  return (await loadPreferences()) !== null;
 }
 
 // ---------------------------------------------------------------------------
@@ -264,7 +284,7 @@ export async function getStorageStatus(): Promise<StorageStatus> {
   } catch {
     // IDB unavailable — check localStorage
     try {
-      localStorage.getItem(MORPHIC_STORAGE_KEY);
+      safeStorage.get(MORPHIC_STORAGE_KEY);
       return { available: true, type: 'localstorage-only', persisted: false };
     } catch {
       return { available: false, type: 'none', persisted: false };
@@ -290,7 +310,7 @@ export function __resetIdbStateForTests(): void {
 
 function writeToLocalStorage(prefs: Record<string, unknown>): void {
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(prefs));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(prefs));
   } catch {
     // Quota exceeded or disabled — silent fallback.
     // The IDB write already succeeded; localStorage is just cache.

@@ -38,7 +38,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { hasLocalStorage } from './storage-access.js';
+import { hasLocalStorage, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -117,7 +117,7 @@ function readRoot(): Record<string, unknown> {
   if (!hasLocalStorage()) return {};
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return {};
   }
@@ -134,7 +134,7 @@ function readRoot(): Record<string, unknown> {
 function writeRoot(root: Record<string, unknown>): void {
   if (!hasLocalStorage()) return;
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(root));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(root));
   } catch {
     // localStorage unavailable (private mode, quota) — in-memory wins.
   }

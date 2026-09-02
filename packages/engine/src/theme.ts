@@ -22,6 +22,7 @@
 
 import { MORPHIC_STORAGE_KEY, VALID_THEMES } from './init.js';
 import { getTarget } from './target.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -90,7 +91,7 @@ export function setTheme(theme: ThemeChoice): ResolvedTheme {
   try {
     let existing: Record<string, unknown> = {};
     try {
-      const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+      const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
       if (raw !== null) {
         const parsed: unknown = JSON.parse(raw);
         if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -102,7 +103,7 @@ export function setTheme(theme: ThemeChoice): ResolvedTheme {
       existing = {};
     }
     existing.theme = theme;
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
   } catch {
     // localStorage unavailable (private mode, quota) — DOM update still wins.
   }
@@ -127,7 +128,7 @@ export function setTheme(theme: ThemeChoice): ResolvedTheme {
 export function getTheme(): ThemeChoice | null {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }

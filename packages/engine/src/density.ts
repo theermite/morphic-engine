@@ -21,6 +21,7 @@
 import { MORPHIC_STORAGE_KEY } from './init.js';
 import { getTarget } from './target.js';
 import { DENSITIES } from './tokens.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,7 +87,7 @@ export function setDensity(density: DensityChoice): ResolvedDensity {
   try {
     let existing: Record<string, unknown> = {};
     try {
-      const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+      const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
       if (raw !== null) {
         const parsed: unknown = JSON.parse(raw);
         if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -97,7 +98,7 @@ export function setDensity(density: DensityChoice): ResolvedDensity {
       existing = {};
     }
     existing.density = density;
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
   } catch {
     // localStorage unavailable — DOM update still wins.
   }
@@ -116,7 +117,7 @@ export function setDensity(density: DensityChoice): ResolvedDensity {
 export function getDensity(): DensityChoice | null {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }

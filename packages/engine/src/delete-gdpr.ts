@@ -37,6 +37,7 @@
 import { deleteDB } from 'idb';
 import { closeMorphicDB, MORPHIC_DB_NAME, persistPreferences } from './idb-storage.js';
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -85,7 +86,7 @@ export function __setDeleteGdprUndoWindowForTests(windowMs: number): void {
 
 function readLocalStorageRaw(): string | null {
   try {
-    return localStorage.getItem(MORPHIC_STORAGE_KEY);
+    return safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -93,7 +94,7 @@ function readLocalStorageRaw(): string | null {
 
 function clearLocalStorageKey(): void {
   try {
-    localStorage.removeItem(MORPHIC_STORAGE_KEY);
+    safeStorage.remove(MORPHIC_STORAGE_KEY);
   } catch {
     // Storage disabled / sealed — treat as "already absent".
   }
@@ -191,7 +192,7 @@ export async function undoLastDelete(): Promise<boolean> {
 
   if (localStorageRaw !== null) {
     try {
-      localStorage.setItem(MORPHIC_STORAGE_KEY, localStorageRaw);
+      safeStorage.set(MORPHIC_STORAGE_KEY, localStorageRaw);
     } catch {
       // Storage disabled — silently degrade; IDB still attempted below.
     }

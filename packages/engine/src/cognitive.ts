@@ -25,6 +25,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -93,7 +94,7 @@ export function setDecisionPointsCap(cap: number): void {
   try {
     let existing: Record<string, unknown> = {};
     try {
-      const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+      const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
       if (raw !== null) {
         const parsed: unknown = JSON.parse(raw);
         if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -104,7 +105,7 @@ export function setDecisionPointsCap(cap: number): void {
       existing = {};
     }
     existing.decisionPointsCap = cap;
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
   } catch {
     // localStorage unavailable — in-memory cap still wins.
   }
@@ -127,7 +128,7 @@ export function getDecisionPointsCap(): number {
 
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return MORPHIC_DECISION_POINTS_CAP_DEFAULT;
   }

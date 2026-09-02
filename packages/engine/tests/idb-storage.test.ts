@@ -525,3 +525,69 @@ describe('PBT — round-trip persist/load', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// What the two independent reviews of 2026-08-31 named, and nothing covered
+// ---------------------------------------------------------------------------
+
+describe('a one-time migration that reports honestly', () => {
+  it('answers false when there is no IndexedDB to migrate TO', async () => {
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ theme: 'dark' }));
+
+    // A host that exposes the property and throws when it is read: a privileged
+    // window, a sandboxed frame, an enterprise policy. `typeof` is not enough
+    // to see it -- that was the original defect of this whole family.
+    const real = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+    Object.defineProperty(globalThis, 'indexedDB', {
+      configurable: true,
+      get() {
+        throw new Error('NS_ERROR_NOT_AVAILABLE');
+      },
+    });
+
+    try {
+      // It used to answer `true` here without moving anything -- so the caller
+      // believed the one-time migration was done, and ran it again on every
+      // single call, forever, on the hosts least able to afford it.
+      await expect(migrateFromLocalStorage()).resolves.toBe(false);
+    } finally {
+      if (real) Object.defineProperty(globalThis, 'indexedDB', real);
+      else Reflect.deleteProperty(globalThis, 'indexedDB');
+    }
+  });
+
+  it('answers true only once the data really is in IndexedDB', async () => {
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ theme: 'dark' }));
+
+    await expect(migrateFromLocalStorage()).resolves.toBe(true);
+    await expect(loadPreferences()).resolves.toEqual({ theme: 'dark' });
+
+    // And it does not claim a second migration: the destination already holds
+    // the data, so there is nothing left to move.
+    await expect(migrateFromLocalStorage()).resolves.toBe(false);
+  });
+});
+
+describe('an erasure that never claims more than it did', () => {
+  it('succeeds when there is no IndexedDB, because nothing was ever there', async () => {
+    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify({ theme: 'dark' }));
+
+    const real = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+    Object.defineProperty(globalThis, 'indexedDB', {
+      configurable: true,
+      get() {
+        throw new Error('NS_ERROR_NOT_AVAILABLE');
+      },
+    });
+
+    try {
+      // No storage means nothing to erase there: reporting success is the truth.
+      await expect(clearPreferences()).resolves.toBeUndefined();
+      // The cache must go all the same, or 'clear' lies by another door.
+      expect(localStorage.getItem(MORPHIC_STORAGE_KEY)).toBeNull();
+    } finally {
+      if (real) Object.defineProperty(globalThis, 'indexedDB', real);
+      else Reflect.deleteProperty(globalThis, 'indexedDB');
+    }
+  });
+});

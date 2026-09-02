@@ -29,6 +29,7 @@
 
 import { MORPHIC_STORAGE_KEY, VALID_MOTIONS } from './init.js';
 import { getTarget } from './target.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,7 +106,7 @@ export function setMotion(motion: MotionChoice): ResolvedMotion {
   try {
     let existing: Record<string, unknown> = {};
     try {
-      const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+      const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
       if (raw !== null) {
         const parsed: unknown = JSON.parse(raw);
         if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -116,7 +117,7 @@ export function setMotion(motion: MotionChoice): ResolvedMotion {
       existing = {};
     }
     existing.motion = motion;
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
   } catch {
     // localStorage unavailable (private mode, quota) — DOM update still wins.
   }
@@ -137,7 +138,7 @@ export function setMotion(motion: MotionChoice): ResolvedMotion {
 export function getMotion(): MotionChoice | null {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }

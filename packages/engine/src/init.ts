@@ -1,3 +1,4 @@
+import { safeStorage } from './storage-access.js';
 /**
  * `morphicInit()` — Synchronous head-read for zero-flash adaptation.
  *
@@ -112,7 +113,7 @@ export function readPrefs(): MorphicPrefs | null {
   // iframe sandbox, SSR). Wrap in try/catch, never throw.
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }

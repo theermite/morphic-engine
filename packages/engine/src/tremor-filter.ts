@@ -21,7 +21,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { hasLocalStorage } from './storage-access.js';
+import { hasLocalStorage, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -119,7 +119,7 @@ export function movingAverage(samples: readonly { x: number; y: number }[]): Fil
 function readStorageObject(): Record<string, unknown> {
   if (!hasLocalStorage()) return {};
   try {
-    const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
     if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
@@ -134,7 +134,7 @@ function readStorageObject(): Record<string, unknown> {
 function writeStorageObject(obj: Record<string, unknown>): void {
   if (!hasLocalStorage()) return;
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
   } catch {
     // Storage full or disabled — silent.
   }

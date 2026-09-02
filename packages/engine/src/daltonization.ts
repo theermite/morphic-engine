@@ -37,7 +37,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { hasLocalStorage } from './storage-access.js';
+import { hasLocalStorage, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -430,7 +430,7 @@ function readStorageObject(): Record<string, unknown> {
   if (!hasLocalStorage()) return {};
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return {};
   }
@@ -450,7 +450,7 @@ function readStorageObject(): Record<string, unknown> {
 function writeStorageObject(obj: Record<string, unknown>): void {
   if (!hasLocalStorage()) return;
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
   } catch {
     // Storage unavailable — DOM update wins.
   }

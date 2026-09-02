@@ -37,6 +37,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -155,7 +156,7 @@ export function applyReadingFocus(text: string, ratio: number): string {
 
 function readStorageObject(): Record<string, unknown> {
   try {
-    const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
     if (raw === null) return {};
     const parsed: unknown = JSON.parse(raw);
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -169,7 +170,7 @@ function readStorageObject(): Record<string, unknown> {
 
 function writeStorageObject(obj: Record<string, unknown>): void {
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
   } catch {
     // localStorage unavailable (private mode, quota) — DOM update wins.
   }
