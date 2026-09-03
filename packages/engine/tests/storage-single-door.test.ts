@@ -142,11 +142,13 @@ describe('the guard is proven on every way back in', () => {
   const baits = readdirSync(baitDir).filter((entry) => entry.endsWith('.ts'));
 
   it('every known way back in still has its bait file', () => {
-    // Five forms, each one a version of this guard let through before.
+    // Seven forms. Six a version of this guard let through; the seventh is the
+    // production bug itself, kept as a bait so no future relaxation reaches it.
+    // A ratchet: this number goes up, never down.
     expect(
       baits.length,
       'a bait was deleted; the guard stops proving itself',
-    ).toBeGreaterThanOrEqual(5);
+    ).toBeGreaterThanOrEqual(7);
   });
 
   it('the bracket bait still uses brackets', () => {

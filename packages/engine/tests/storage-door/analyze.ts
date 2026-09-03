@@ -141,6 +141,31 @@ function isDeclarationName(node: ts.Identifier): boolean {
 }
 
 /**
+ * True when this name sits in a TYPE, and so reaches nothing.
+ *
+ * `type S = typeof localStorage` is erased at compile time, exactly like an
+ * `import type`. It reads like the defect and is not one -- the same
+ * distinction, one syntax further on.
+ *
+ * The difference that decides: `typeof localStorage` in a TYPE is a question
+ * asked of the compiler. The same words in an EXPRESSION evaluate the getter,
+ * and a host that refuses storage throws right there. That second form is the
+ * production bug this whole door was built for, so it stays flagged.
+ *
+ * Found by the review of 2026-09-03, and it matters more than a false alarm
+ * usually would: this check blocks a commit, so flagging legitimate work is
+ * how a guard gets switched off.
+ */
+function isInsideAType(node: ts.Node): boolean {
+  let current: ts.Node | undefined = node.parent;
+  while (current && !ts.isSourceFile(current)) {
+    if (ts.isTypeNode(current)) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+/**
  * A key written as text, in `something['localStorage']`.
  *
  * Found by the review of 2026-09-03, and executed rather than argued: the check
@@ -193,6 +218,7 @@ export function globalReaches(
     if (!ts.isIdentifier(node)) return;
     if (!names.includes(node.text)) return;
     if (isDeclarationName(node)) return;
+    if (isInsideAType(node)) return; // erased at compile time, reaches nothing
     record(node);
   });
   return found;
