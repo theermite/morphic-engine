@@ -19,8 +19,9 @@
  *   5. openMorphicDB: schema versioned via onupgradeneeded
  */
 
-import { type IDBPDatabase, openDB } from 'idb';
+import type { IDBPDatabase } from 'idb';
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasIndexedDB, hasLocalStorage, openDatabase, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -76,15 +77,18 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Creates the object store on first open (onupgradeneeded).
  * Returns the same instance on subsequent calls (singleton).
  */
-export async function openMorphicDB(): Promise<IDBPDatabase> {
+export async function openMorphicDB(): Promise<IDBPDatabase | null> {
   if (dbInstance) return dbInstance;
 
-  dbInstance = await openDB(MORPHIC_DB_NAME, MORPHIC_DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(MORPHIC_IDB_STORE_NAME)) {
-        db.createObjectStore(MORPHIC_IDB_STORE_NAME);
-      }
-    },
+  // The open goes through the gatekeeper: `openDB` reaches `indexedDB.open()`
+  // internally, and a host can expose the property yet refuse the open --
+  // private browsing, a spent quota, an enterprise policy aimed at the store
+  // rather than the API. `null` here means "no storage", never an exception
+  // thrown at whoever called a public function.
+  dbInstance = await openDatabase(MORPHIC_DB_NAME, MORPHIC_DB_VERSION, (db) => {
+    if (!db.objectStoreNames.contains(MORPHIC_IDB_STORE_NAME)) {
+      db.createObjectStore(MORPHIC_IDB_STORE_NAME);
+    }
   });
 
   return dbInstance;
@@ -126,9 +130,22 @@ export async function persistPreferences(prefs: Record<string, unknown>): Promis
     );
   }
 
-  // Write to IndexedDB
+  // A host that refuses IndexedDB is a host without it: the write is a
+  // no-op, and the localStorage cache below still carries the value.
+  if (!hasIndexedDB()) {
+    writeToLocalStorage(prefs);
+    return;
+  }
+
+  // A database that refuses to OPEN is the same "no" as one that is not there:
+  // the write becomes a no-op and the localStorage cache below still carries
+  // the value. `hasIndexedDB()` above answers whether the property is readable,
+  // never whether a store will open -- that gap is what the review of
+  // 2026-09-03 reproduced with a quota error.
   const db = await openMorphicDB();
-  await db.put(MORPHIC_IDB_STORE_NAME, prefs, MORPHIC_IDB_PREFS_KEY);
+  if (db) {
+    await db.put(MORPHIC_IDB_STORE_NAME, prefs, MORPHIC_IDB_PREFS_KEY);
+  }
 
   // Write-through to localStorage (sync cache for zero-flash B-004)
   writeToLocalStorage(prefs);
@@ -144,8 +161,13 @@ export async function persistPreferences(prefs: Record<string, unknown>): Promis
  * Returns null if no preferences are stored (not undefined, not throw).
  */
 export async function loadPreferences(): Promise<Record<string, unknown> | null> {
+  // Nothing stored, rather than a rejected promise thrown at the caller.
+  if (!hasIndexedDB()) return null;
+
+  // Same rule as the write: a store that will not open holds nothing we can
+  // read, and reading is best-effort. The caller falls back to the cache.
   const db = await openMorphicDB();
-  const result = await db.get(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
+  const result = db ? await db.get(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY) : undefined;
 
   if (result === undefined || !isPlainObject(result)) {
     return null;
@@ -162,15 +184,37 @@ export async function loadPreferences(): Promise<Record<string, unknown> | null>
  * Clear all preferences from IndexedDB and localStorage.
  */
 export async function clearPreferences(): Promise<void> {
-  const db = await openMorphicDB();
-  await db.delete(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
-
-  // Clear localStorage cache
-  try {
-    localStorage.removeItem(MORPHIC_STORAGE_KEY);
-  } catch {
-    // SSR or disabled — ignore
+  // Erasure is the one path where "the host refuses storage" must NOT be
+  // treated like every other. Elsewhere a refusal means "act as if there is no
+  // storage", and that is safe. Here the two cases are opposite:
+  //
+  //   - no IndexedDB at all -> nothing was ever written there, nothing to
+  //     erase, and reporting success is the truth;
+  //   - IndexedDB present but the open or the delete fails -> the data may
+  //     still be on disk, and a silent success is the one lie this function
+  //     must never tell. Someone asked for their data to be gone.
+  //
+  // `hasIndexedDB()` only answers the first question. It says nothing about an
+  // open that rejects -- private browsing, a spent quota -- which is why the
+  // failure is deliberately allowed to propagate here rather than swallowed by
+  // a wrapper. The caller wraps it in a typed StorageError (effects/storage.ts).
+  if (hasIndexedDB()) {
+    const db = await openMorphicDB();
+    if (!db) {
+      // The property is readable and the store still refuses to open. The data
+      // may be on disk and we cannot reach it: an erasure that cannot prove
+      // itself must say so, never resolve quietly. Someone asked for their
+      // data to be gone.
+      throw new Error(
+        'clearPreferences: IndexedDB is present but would not open; ' +
+          'the stored preferences could not be reached, and may remain on disk',
+      );
+    }
+    await db.delete(MORPHIC_IDB_STORE_NAME, MORPHIC_IDB_PREFS_KEY);
   }
+
+  // The cache goes too, or 'clear' would lie by another door.
+  safeStorage.remove(MORPHIC_STORAGE_KEY);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +241,7 @@ export async function migrateFromLocalStorage(): Promise<boolean> {
   // Read from localStorage
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return false;
   }
@@ -220,7 +264,19 @@ export async function migrateFromLocalStorage(): Promise<boolean> {
 
   // Migrate to IDB (write-through will also update localStorage)
   await persistPreferences(parsed);
-  return true;
+
+  // "Migrated" has to mean the data really is in IndexedDB now.
+  //
+  // Returning `true` unconditionally made this lie in the one case that
+  // matters: `persistPreferences` falls back to the localStorage cache when
+  // IndexedDB refuses, and writes nothing at all when both refuse. The caller
+  // was told the one-time migration had happened, the data had not moved, and
+  // the "one-time" ran again on every single call -- forever, on the hosts
+  // least able to afford it.
+  //
+  // On a host with no IndexedDB there is nothing to migrate TO, and `false` is
+  // the honest answer rather than a retry disguised as a success.
+  return (await loadPreferences()) !== null;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,19 +298,24 @@ export async function getStorageStatus(): Promise<StorageStatus> {
     // Not available — leave as false
   }
 
-  // Try to open IDB
-  try {
-    await openMorphicDB();
+  // This function used to read the truth from an EXCEPTION: it called the open
+  // inside a `try` and treated a throw as "no IndexedDB". Once the open started
+  // answering `null` instead of throwing, the catch stopped running and the
+  // status claimed 'indexeddb' on a host where no store would open. The
+  // existing test caught it, which is exactly what it was written for.
+  const db = await openMorphicDB();
+  if (db) {
     return { available: true, type: 'indexeddb', persisted };
-  } catch {
-    // IDB unavailable — check localStorage
-    try {
-      localStorage.getItem(MORPHIC_STORAGE_KEY);
-      return { available: true, type: 'localstorage-only', persisted: false };
-    } catch {
-      return { available: false, type: 'none', persisted: false };
-    }
   }
+
+  // No store, so what is left is the synchronous cache -- if the host gives us
+  // that much. `safeStorage` never throws, so the answer is a question asked of
+  // the gatekeeper rather than an exception waited for.
+  if (hasLocalStorage()) {
+    return { available: true, type: 'localstorage-only', persisted: false };
+  }
+
+  return { available: false, type: 'none', persisted: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -275,7 +336,7 @@ export function __resetIdbStateForTests(): void {
 
 function writeToLocalStorage(prefs: Record<string, unknown>): void {
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(prefs));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(prefs));
   } catch {
     // Quota exceeded or disabled — silent fallback.
     // The IDB write already succeeded; localStorage is just cache.

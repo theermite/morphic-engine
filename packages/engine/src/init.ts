@@ -1,3 +1,4 @@
+import { safeStorage } from './storage-access.js';
 /**
  * `morphicInit()` — Synchronous head-read for zero-flash adaptation.
  *
@@ -112,7 +113,7 @@ export function readPrefs(): MorphicPrefs | null {
   // iframe sandbox, SSR). Wrap in try/catch, never throw.
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -176,8 +177,14 @@ function readMediaContrast(): Contrast {
 export function morphicInit(): void {
   // SSR guard — silent no-op when DOM globals are absent.
   if (typeof document === 'undefined') return;
-  if (typeof localStorage === 'undefined') return;
 
+  // No storage guard here, deliberately (independent review, 2026-08-31).
+  // `readPrefs()` already wraps its own read and answers `null`, and every
+  // branch below falls back to a media query. A guard on storage returned
+  // early instead, so on a host that refuses storage — a privileged window, a
+  // sandboxed iframe, an enterprise policy — the engine set NO attribute at
+  // all: no contrast, no reduced motion, no font size. The people who need the
+  // adaptation most were the ones who received none of it.
   const prefs = readPrefs();
   const root = document.documentElement;
 

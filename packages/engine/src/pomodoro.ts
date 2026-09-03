@@ -43,6 +43,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasLocalStorage, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -196,10 +197,10 @@ function now(): number {
 // ---------------------------------------------------------------------------
 
 function readRoot(): Record<string, unknown> {
-  if (typeof localStorage === 'undefined') return {};
+  if (!hasLocalStorage()) return {};
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return {};
   }
@@ -214,7 +215,7 @@ function readRoot(): Record<string, unknown> {
 }
 
 function writeStorageState(state: PomodoroState | null): void {
-  if (typeof localStorage === 'undefined') return;
+  if (!hasLocalStorage()) return;
   try {
     const existing = readRoot();
     if (state === null) {
@@ -227,7 +228,7 @@ function writeStorageState(state: PomodoroState | null): void {
         paused: state.paused,
       };
     }
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
   } catch {
     // In-memory wins
   }

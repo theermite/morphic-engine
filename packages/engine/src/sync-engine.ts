@@ -20,6 +20,8 @@
  *   5. all mutators: engine must be active (not idle or destroyed)
  */
 
+import { openSyncPersistence } from './storage-access.js';
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -108,7 +110,7 @@ export async function createSyncEngine(options?: SyncEngineOptions): Promise<Syn
   const docName = options?.docName ?? 'morphic-prefs';
 
   // Lazy-load Yjs and y-indexeddb (0 KB if never called)
-  const [Y, { IndexeddbPersistence }] = await Promise.all([import('yjs'), import('y-indexeddb')]);
+  const Y = await import('yjs');
 
   // Capture applyUpdate for later use in applySyncUpdate()
   applyUpdateFn = Y.applyUpdate;
@@ -117,11 +119,18 @@ export async function createSyncEngine(options?: SyncEngineOptions): Promise<Syn
   ydoc = new Y.Doc();
   ymap = ydoc.getMap('prefs');
 
-  // Persist Y.Doc to IndexedDB
-  idbProvider = new IndexeddbPersistence(MORPHIC_SYNC_DB_NAME, ydoc);
-
-  // Wait for IDB data to be loaded into Y.Doc
-  await idbProvider.whenSynced;
+  // Persist Y.Doc to IndexedDB -- when the host allows it.
+  //
+  // This constructor opens a database, and `whenSynced` rejects when the open
+  // fails: a privileged window, a sandboxed frame, private browsing, a spent
+  // quota. Unguarded, both took down a public function of this engine, and two
+  // rounds of site-by-site fixes had left exactly this call untouched because
+  // nobody had visited it.
+  //
+  // A host that refuses storage still gets a working sync engine -- in memory.
+  // It simply does not remember across reloads, which is a smaller loss than
+  // the whole feature throwing.
+  idbProvider = await openSyncPersistence(MORPHIC_SYNC_DB_NAME, ydoc);
 
   currentStatus = 'active';
   currentDocName = docName;

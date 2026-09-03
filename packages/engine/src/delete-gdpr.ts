@@ -34,9 +34,9 @@
  *      window returns false even if the timer has not fired.
  */
 
-import { deleteDB } from 'idb';
 import { closeMorphicDB, MORPHIC_DB_NAME, persistPreferences } from './idb-storage.js';
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { deleteDatabase, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -85,7 +85,7 @@ export function __setDeleteGdprUndoWindowForTests(windowMs: number): void {
 
 function readLocalStorageRaw(): string | null {
   try {
-    return localStorage.getItem(MORPHIC_STORAGE_KEY);
+    return safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -93,7 +93,7 @@ function readLocalStorageRaw(): string | null {
 
 function clearLocalStorageKey(): void {
   try {
-    localStorage.removeItem(MORPHIC_STORAGE_KEY);
+    safeStorage.remove(MORPHIC_STORAGE_KEY);
   } catch {
     // Storage disabled / sealed — treat as "already absent".
   }
@@ -111,11 +111,7 @@ async function readIdbPrefs(): Promise<Record<string, unknown> | null> {
 async function deleteIdbDatabase(): Promise<void> {
   try {
     closeMorphicDB();
-    await deleteDB(MORPHIC_DB_NAME, {
-      blocked() {
-        // Another connection still open — caller retries next session.
-      },
-    });
+    await deleteDatabase(MORPHIC_DB_NAME);
   } catch {
     // IDB unavailable (SSR, Safari private) or transient error — already-absent
     // outcome is acceptable for a delete.
@@ -191,7 +187,7 @@ export async function undoLastDelete(): Promise<boolean> {
 
   if (localStorageRaw !== null) {
     try {
-      localStorage.setItem(MORPHIC_STORAGE_KEY, localStorageRaw);
+      safeStorage.set(MORPHIC_STORAGE_KEY, localStorageRaw);
     } catch {
       // Storage disabled — silently degrade; IDB still attempted below.
     }

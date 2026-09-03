@@ -33,6 +33,7 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
+import { hasLocalStorage, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -136,9 +137,9 @@ function assertUnitInterval(value: number | undefined, label: string): void {
 // ---------------------------------------------------------------------------
 
 function readStorageObject(): Record<string, unknown> {
-  if (typeof localStorage === 'undefined') return {};
+  if (!hasLocalStorage()) return {};
   try {
-    const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
     if (raw === null) return {};
     const parsed: unknown = JSON.parse(raw);
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -151,9 +152,9 @@ function readStorageObject(): Record<string, unknown> {
 }
 
 function writeStorageObject(obj: Record<string, unknown>): void {
-  if (typeof localStorage === 'undefined') return;
+  if (!hasLocalStorage()) return;
   try {
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(obj));
   } catch {
     // Quota / private mode — DOM remains the source of truth for this session.
   }

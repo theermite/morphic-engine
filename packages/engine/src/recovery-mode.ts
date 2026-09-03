@@ -43,6 +43,7 @@ import { type DensityChoice, getDensity, setDensity } from './density.js';
 import { MORPHIC_STORAGE_KEY } from './init.js';
 import { getMotion, type MotionChoice, setMotion } from './motion.js';
 import { getTheme, setTheme, type ThemeChoice } from './theme.js';
+import { safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -181,7 +182,7 @@ function validatePartialProfile(partial: Record<string, unknown>): void {
 function readStorageState(): RecoveryModeState | null {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+    raw = safeStorage.get(MORPHIC_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -216,7 +217,7 @@ function writeStorageState(state: RecoveryModeState | null): void {
   try {
     let existing: Record<string, unknown> = {};
     try {
-      const raw = localStorage.getItem(MORPHIC_STORAGE_KEY);
+      const raw = safeStorage.get(MORPHIC_STORAGE_KEY);
       if (raw !== null) {
         const parsed: unknown = JSON.parse(raw);
         if (isPlainObject(parsed)) existing = parsed;
@@ -229,7 +230,7 @@ function writeStorageState(state: RecoveryModeState | null): void {
     } else {
       existing[MORPHIC_RECOVERY_MARKER] = state;
     }
-    localStorage.setItem(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
+    safeStorage.set(MORPHIC_STORAGE_KEY, JSON.stringify(existing));
   } catch {
     // localStorage unavailable (private mode, quota) — in-memory wins.
   }
