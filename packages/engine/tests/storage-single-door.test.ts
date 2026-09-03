@@ -149,6 +149,16 @@ describe('the guard is proven on every way back in', () => {
     ).toBeGreaterThanOrEqual(5);
   });
 
+  it('the bracket bait still uses brackets', () => {
+    // The linter offers to rewrite this into a dot access. The bait would stay
+    // flagged -- as the form that was already covered -- and stop proving the
+    // one it exists for. Same erosion as the formatter, different tool.
+    const source = readFileSync(join(baitDir, 'bracket-access.ts'), 'utf8');
+    expect(source, 'the bracket access was rewritten; that bait proves nothing now').toContain(
+      "['localStorage']",
+    );
+  });
+
   it('the multi-line bait still spans several lines', () => {
     // The formatter joins that import back onto one line if it is allowed to,
     // and the bait would still be flagged -- as a single-line import, the one

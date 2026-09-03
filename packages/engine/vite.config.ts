@@ -13,6 +13,10 @@ export default defineConfig({
     testTimeout: 10_000,
     hookTimeout: 10_000,
     include: ['tests/**/*.test.ts'],
+    // Watches the storage lock itself for the whole suite, whatever spelling a
+    // module uses to reach it. Reading the source cannot see a name assembled
+    // at runtime; this can. See tests/storage-door/runtime-trap.ts.
+    setupFiles: ['./tests/storage-door/runtime-trap.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary', 'json'],

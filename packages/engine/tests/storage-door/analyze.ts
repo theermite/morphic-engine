@@ -141,10 +141,37 @@ function isDeclarationName(node: ts.Identifier): boolean {
 }
 
 /**
+ * A key written as text, in `something['localStorage']`.
+ *
+ * Found by the review of 2026-09-03, and executed rather than argued: the check
+ * below used to visit identifiers only, so writing the name as a STRING slipped
+ * past it while reaching exactly the same store at runtime. `obj.localStorage`
+ * and `obj['localStorage']` are the same gesture spelled two ways.
+ *
+ * A plain string elsewhere stays innocent -- `'localStorage:theme'` as a
+ * storage key is a word, not a door. What makes this one a door is its
+ * POSITION: the key of a member access.
+ */
+function isComputedKey(node: ts.Node, names: readonly string[]): boolean {
+  if (!ts.isElementAccessExpression(node)) return false;
+  const key = node.argumentExpression;
+  if (ts.isStringLiteral(key) || ts.isNoSubstitutionTemplateLiteral(key)) {
+    return names.includes(key.text);
+  }
+  return false;
+}
+
+/**
  * Every place this file references one of `names` as a VALUE.
  *
- * `window.localStorage` counts: a member access on any object still reaches
- * the store. A string `'localStorage'` does not: it is a key, not a door.
+ * `window.localStorage` counts, and so does `window['localStorage']`: a member
+ * access on any object still reaches the store, however the key is spelled. A
+ * string used as anything else does not -- it is a word, not a door.
+ *
+ * The honest limit, worth knowing before trusting a green: reading source can
+ * always be defeated by a name assembled at runtime (`obj[a + b]`). Nothing
+ * that reads text can see through that, which is why a trap watches the lock
+ * itself while the suite runs -- see `tests/storage-door/runtime-trap.ts`.
  */
 export function globalReaches(
   source: string,
@@ -153,13 +180,20 @@ export function globalReaches(
 ): Reach[] {
   const file = parse(fileName, source);
   const found: Reach[] = [];
-  walk(file, (node) => {
-    if (!ts.isIdentifier(node)) return;
-    if (!names.includes(node.text)) return;
-    if (isDeclarationName(node)) return;
+  const record = (node: ts.Node): void => {
     const { line } = file.getLineAndCharacterOfPosition(node.getStart(file));
     const text = source.split(/\r?\n/)[line]?.trim() ?? '';
     found.push({ line: line + 1, text: text.slice(0, 90) });
+  };
+  walk(file, (node) => {
+    if (isComputedKey(node, names)) {
+      record(node);
+      return;
+    }
+    if (!ts.isIdentifier(node)) return;
+    if (!names.includes(node.text)) return;
+    if (isDeclarationName(node)) return;
+    record(node);
   });
   return found;
 }
