@@ -34,10 +34,9 @@
  *      window returns false even if the timer has not fired.
  */
 
-import { deleteDB } from 'idb';
 import { closeMorphicDB, MORPHIC_DB_NAME, persistPreferences } from './idb-storage.js';
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { safeStorage } from './storage-access.js';
+import { deleteDatabase, safeStorage } from './storage-access.js';
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -112,11 +111,7 @@ async function readIdbPrefs(): Promise<Record<string, unknown> | null> {
 async function deleteIdbDatabase(): Promise<void> {
   try {
     closeMorphicDB();
-    await deleteDB(MORPHIC_DB_NAME, {
-      blocked() {
-        // Another connection still open — caller retries next session.
-      },
-    });
+    await deleteDatabase(MORPHIC_DB_NAME);
   } catch {
     // IDB unavailable (SSR, Safari private) or transient error — already-absent
     // outcome is acceptable for a delete.

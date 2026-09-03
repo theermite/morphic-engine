@@ -26,37 +26,50 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(import.meta.dirname, '..', 'src');
 
-/** The one module allowed to touch a storage global. */
+/** The one module allowed to touch storage. */
 const GATEKEEPER = 'storage-access.ts';
 
 /**
- * Globals no module may name at all. A module never needs them: everything it
- * can do with them, the gatekeeper does without ever throwing.
+ * Globals no module may reach. This list is closed by nature: the web platform
+ * has these, and a module never needs them -- everything it can do with them,
+ * the gatekeeper does without ever throwing.
  */
-const FORBIDDEN = ['localStorage', 'indexedDB', 'IndexeddbPersistence', 'openDB'];
+const FORBIDDEN_GLOBALS = ['localStorage', 'indexedDB'];
 
 /**
- * `IndexeddbPersistence` opens its database inside its own constructor, so
- * using it IS reaching for storage -- that is how `sync-engine.ts` kept
- * throwing after two rounds of fixes.
+ * The libraries that reach storage are NOT listed here, and that is the point.
  *
- * It sits in the forbidden list rather than in a softer one because the open
- * now lives in the gatekeeper (`openSyncPersistence`). A first attempt kept it
- * separate and merely asked whether the module mentioned the wrapper: removing
- * the import left the mention behind in the call, and the guard stayed green on
- * code that was broken again. Moving the open is what made the rule provable.
+ * Three rounds of review found three entrances, and each fix added one more
+ * name to a hand-written list: `IndexeddbPersistence`, then `openDB`, then
+ * `deleteDB` -- the last two from the SAME library, missed twice in a single
+ * commit. The guard even carried, in its own comment, the rule it was breaking:
+ * a list is always a list to extend, so it is not a guard.
  *
- * `openDB` was added on 2026-09-03, after a third independent review found the
- * door had a SECOND entrance. `openDB` (from `idb`) calls `indexedDB.open()`
- * internally, so it reaches storage under a name this list did not know -- and
- * the guard stayed green while writing a preference still threw, on exactly the
- * host this whole refactor exists for.
+ * So the list is derived instead. Whatever the gatekeeper imports at RUNTIME is
+ * by definition a way to reach storage -- that is the only reason it would be
+ * in there. No other module may import those packages at runtime.
  *
- * The lesson is not "the list was short". It is that the reasoning applied to
- * one library was never applied to the other: a rule enforced on one of two
- * doors is not a rule. Any library that opens a store is named here, and its
- * call lives in the gatekeeper.
+ * A `import type` is fine anywhere: a type reaches nothing. It disappears at
+ * compile time, which is exactly the difference that matters.
+ *
+ * What this buys: a fourth entrance, from a library nobody has thought of yet,
+ * fails the moment the gatekeeper starts using it -- without anyone having to
+ * remember to update a list.
  */
+function storageLibraries(gatekeeperSource: string): string[] {
+  const packages = new Set<string>();
+  for (const line of gatekeeperSource.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('import')) continue;
+    if (trimmed.startsWith('import type')) continue; // a type reaches nothing
+    const from = trimmed.match(/from\s+'([^']+)'/);
+    if (!from) continue;
+    const specifier = from[1];
+    if (specifier.startsWith('.')) continue; // our own modules, not a library
+    packages.add(specifier);
+  }
+  return [...packages];
+}
 
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
@@ -75,7 +88,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 /** Lines naming a forbidden global, comments excluded. */
-function offendingLines(source: string, names: string[] = FORBIDDEN): string[] {
+function offendingLines(source: string, names: string[] = FORBIDDEN_GLOBALS): string[] {
   const found: string[] = [];
   let inBlockComment = false;
   source.split(/\r?\n/).forEach((line, i) => {
@@ -108,7 +121,9 @@ function offendingLines(source: string, names: string[] = FORBIDDEN): string[] {
 }
 
 describe('storage access has a single door', () => {
-  it('no module outside the gatekeeper names a storage global', () => {
+  const gatekeeper = readFileSync(join(SRC, GATEKEEPER), 'utf8');
+
+  it('no module outside the gatekeeper reaches a storage global', () => {
     const offenders: string[] = [];
     for (const file of sourceFiles(SRC)) {
       const hits = offendingLines(readFileSync(file, 'utf8'));
@@ -124,11 +139,39 @@ describe('storage access has a single door', () => {
     ).toEqual([]);
   });
 
+  it('no module outside the gatekeeper imports a storage library at runtime', () => {
+    const libraries = storageLibraries(gatekeeper);
+    expect(
+      libraries.length,
+      'the gatekeeper imports no library at runtime, so this guard would check ' +
+        'nothing -- read it before trusting a green',
+    ).toBeGreaterThan(0);
+
+    const offenders: string[] = [];
+    for (const file of sourceFiles(SRC)) {
+      const source = readFileSync(file, 'utf8');
+      for (const line of source.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('import')) continue;
+        if (trimmed.startsWith('import type')) continue; // a type reaches nothing
+        const from = trimmed.match(/from\s+'([^']+)'/);
+        if (!from || !libraries.includes(from[1])) continue;
+        offenders.push(`${file.replace(SRC, '.')}: ${trimmed.slice(0, 80)}`);
+      }
+    }
+
+    expect(
+      offenders,
+      `a module imports a storage library (${libraries.join(', ')}) at runtime. ` +
+        'Whatever that library exports reaches the same store, under whatever ' +
+        'name -- which is how three entrances were found in three reviews.',
+    ).toEqual([]);
+  });
+
   it('the sweep actually reads the modules it claims to check', () => {
     // A guard that scans nothing passes. The previous sweep filtered its input
-    // and silently dropped 52 functions out of 133; this one states its own
-    // reach so an empty scan fails loudly instead of reporting success.
-    const files = sourceFiles(SRC);
-    expect(files.length).toBeGreaterThan(10);
+    // and silently dropped 52 functions out of 133; this one states its reach
+    // so an empty scan fails loudly instead of reporting success.
+    expect(sourceFiles(SRC).length).toBeGreaterThan(10);
   });
 });

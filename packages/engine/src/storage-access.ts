@@ -1,4 +1,4 @@
-import { type IDBPDatabase, openDB } from 'idb';
+import { deleteDB, type IDBPDatabase, openDB } from 'idb';
 
 /**
  * Reaching `localStorage` on a host that may not let you.
@@ -185,4 +185,27 @@ export async function openDatabase(
       },
     });
   }, null);
+}
+
+/**
+ * Deletes a database, and answers whether it is really gone.
+ *
+ * The third entrance the door had left open, found by review on 2026-09-03 in
+ * the very commit that claimed to have closed the family. `deleteDB` (from
+ * `idb`) calls `indexedDB.deleteDatabase()` internally -- the same shape as
+ * `openDB`, in the GDPR erasure path of all places.
+ *
+ * It was harmless only because its caller happened to wrap it in a local
+ * `try`/`catch`. That is the author of one file being careful, not a property
+ * of the engine. The door has to hold it.
+ */
+export async function deleteDatabase(name: string): Promise<boolean> {
+  return withIndexedDB(async () => {
+    await deleteDB(name, {
+      blocked() {
+        // Another connection is still open: the caller retries next session.
+      },
+    });
+    return true;
+  }, false);
 }
