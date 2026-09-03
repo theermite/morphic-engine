@@ -46,8 +46,20 @@ import { globalReaches, runtimeLibraries, runtimeModuleSpecifiers } from './stor
 const SRC = join(import.meta.dirname, '..', 'src');
 const DOOR_TESTS = join(import.meta.dirname, 'storage-door');
 
-/** The one module allowed to touch storage. */
-const GATEKEEPER = 'storage-access.ts';
+/**
+ * The modules allowed to touch storage. Two, since 2026-09-03.
+ *
+ * There was one, and it became a crossroads: 23 modules imported it while only
+ * 3 open a database, so every consumer carried `idb` and `y-indexeddb`. The
+ * Shinkofa browser's build refused the package for it, and no test could see
+ * that -- a bundler had to say no.
+ *
+ * Splitting the door does not weaken the rule. What it forbids is unchanged:
+ * no module reaches a storage global or a storage library by itself. There are
+ * simply two gatekeepers, and both are checked the same way -- the libraries
+ * are derived from BOTH, so neither can quietly grow a new entrance.
+ */
+const GATEKEEPERS = ['storage-access.ts', 'storage-database.ts'];
 
 /**
  * Globals no module may reach. This list is closed by nature: the web platform
@@ -66,7 +78,7 @@ function sourceFiles(dir: string): string[] {
     }
     if (!entry.endsWith('.ts')) continue;
     if (entry.endsWith('.test.ts')) continue; // a test may name what it forbids
-    if (entry === GATEKEEPER) continue;
+    if (GATEKEEPERS.includes(entry)) continue;
     out.push(full);
   }
   return out;
@@ -81,8 +93,12 @@ function sourceFiles(dir: string): string[] {
  * gatekeeper starts using it, without anyone remembering to update anything.
  */
 function storageLibraries(): string[] {
-  const gatekeeper = readFileSync(join(SRC, GATEKEEPER), 'utf8');
-  return runtimeLibraries(gatekeeper, GATEKEEPER);
+  const found = new Set<string>();
+  for (const gatekeeper of GATEKEEPERS) {
+    const source = readFileSync(join(SRC, gatekeeper), 'utf8');
+    for (const library of runtimeLibraries(source, gatekeeper)) found.add(library);
+  }
+  return [...found];
 }
 
 describe('storage access has a single door', () => {
@@ -107,7 +123,7 @@ describe('storage access has a single door', () => {
     const libraries = storageLibraries();
     expect(
       libraries.length,
-      'the gatekeeper reaches no library at runtime, so this guard would check ' +
+      'no gatekeeper reaches a library at runtime, so this guard would check ' +
         'nothing -- read it before trusting a green',
     ).toBeGreaterThan(0);
 

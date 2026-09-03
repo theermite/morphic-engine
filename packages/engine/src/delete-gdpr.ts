@@ -36,7 +36,8 @@
 
 import { closeMorphicDB, MORPHIC_DB_NAME, persistPreferences } from './idb-storage.js';
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { deleteDatabase, safeStorage } from './storage-access.js';
+import { safeStorage } from './storage-access.js';
+import { deleteDatabase } from './storage-database.js';
 
 // ---------------------------------------------------------------------------
 // Public constants

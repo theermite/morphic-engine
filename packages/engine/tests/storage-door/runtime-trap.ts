@@ -55,8 +55,8 @@ import { afterEach } from 'vitest';
 /** The globals whose lock is watched. */
 const WATCHED = ['localStorage', 'indexedDB'] as const;
 
-/** The one module allowed to reach them. */
-const DOOR = '/src/storage-access.ts';
+/** The modules allowed to reach them. Two since the split of 2026-09-03. */
+const DOORS = ['/src/storage-access.ts', '/src/storage-database.ts'];
 
 /** Where code that must never reach them lives. */
 const OWNED = ['/src/', '/tests/storage-door/bypass/'];
@@ -83,7 +83,7 @@ export function firstOffendingFrame(stack: string): string | null {
     if (frame.includes('/tests/storage-door/runtime-trap.ts')) continue; // ourselves
     // The first frame that names a file is the one that reached, full stop.
     if (frame.includes('/node_modules/')) return null; // a library's own doing
-    if (frame.includes(DOOR)) return null; // the door, doing its job
+    if (DOORS.some((door) => frame.includes(door))) return null; // a door, doing its job
     if (OWNED.some((area) => frame.includes(area))) return raw.trim();
     return null; // a test, naming what it forbids
   }

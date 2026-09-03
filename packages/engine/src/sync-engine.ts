@@ -20,7 +20,7 @@
  *   5. all mutators: engine must be active (not idle or destroyed)
  */
 
-import { openSyncPersistence } from './storage-access.js';
+import { openSyncPersistence } from './storage-database.js';
 
 // ---------------------------------------------------------------------------
 // Constants

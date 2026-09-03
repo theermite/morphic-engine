@@ -21,7 +21,8 @@
 
 import type { IDBPDatabase } from 'idb';
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { hasIndexedDB, hasLocalStorage, openDatabase, safeStorage } from './storage-access.js';
+import { hasLocalStorage, safeStorage } from './storage-access.js';
+import { hasIndexedDB, openDatabase } from './storage-database.js';
 
 // ---------------------------------------------------------------------------
 // Constants
