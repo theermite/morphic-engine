@@ -125,22 +125,30 @@ describe('Storage.persistPreferences — typed failure', () => {
   });
 });
 
-describe('Storage.loadPreferences — typed failure', () => {
-  it('converts a thrown core error into StorageError(load)', async () => {
-    // Inject a failure by stubbing indexedDB.open to throw.
+/**
+ * Contract changed on 2026-09-03, deliberately.
+ *
+ * These two used to require that a store refusing to OPEN surfaced as a typed
+ * StorageError. That is the opposite of what this engine is for: a host that
+ * refuses storage -- privileged window, sandboxed frame, private browsing,
+ * enterprise policy -- is exactly the host where the person must still receive
+ * their adaptation. Reading is best-effort, and "nothing readable" is an
+ * answer, not an error.
+ *
+ * `clearPreferences` deliberately keeps the old contract, and its test below
+ * still passes: an erasure that cannot prove itself must say so. Someone asked
+ * for their data to be gone.
+ */
+describe('Storage.loadPreferences — a store that will not open', () => {
+  it('answers "nothing stored" instead of failing', async () => {
     const openSpy = vi.spyOn(indexedDB, 'open').mockImplementation(() => {
       throw new Error('idb refused');
     });
 
     const exit = await Effect.runPromiseExit(Storage.loadPreferences());
-    expect(Exit.isFailure(exit)).toBe(true);
-    if (Exit.isFailure(exit)) {
-      const failure = Cause.failureOption(exit.cause);
-      expect(failure._tag).toBe('Some');
-      if (failure._tag === 'Some') {
-        expect(failure.value).toBeInstanceOf(StorageError);
-        expect((failure.value as StorageError).operation).toBe('load');
-      }
+    expect(Exit.isSuccess(exit)).toBe(true);
+    if (Exit.isSuccess(exit)) {
+      expect(exit.value).toBeNull();
     }
     openSpy.mockRestore();
   });
@@ -167,20 +175,18 @@ describe('Storage.clearPreferences — typed failure', () => {
 });
 
 describe('Storage.migrateFromLocalStorage — typed failure', () => {
-  it('converts a thrown core error into StorageError(migrate)', async () => {
+  it('answers "nothing migrated" instead of failing', async () => {
     const openSpy = vi.spyOn(indexedDB, 'open').mockImplementation(() => {
       throw new Error('idb refused');
     });
 
     const exit = await Effect.runPromiseExit(Storage.migrateFromLocalStorage());
-    expect(Exit.isFailure(exit)).toBe(true);
-    if (Exit.isFailure(exit)) {
-      const failure = Cause.failureOption(exit.cause);
-      expect(failure._tag).toBe('Some');
-      if (failure._tag === 'Some') {
-        expect(failure.value).toBeInstanceOf(StorageError);
-        expect((failure.value as StorageError).operation).toBe('migrate');
-      }
+    expect(Exit.isSuccess(exit)).toBe(true);
+    if (Exit.isSuccess(exit)) {
+      // `false` is the honest answer: there was no store to migrate TO, so
+      // nothing moved. Claiming `true` is what made the one-time migration run
+      // on every call, forever.
+      expect(exit.value).toBe(false);
     }
     openSpy.mockRestore();
   });

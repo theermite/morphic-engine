@@ -1,3 +1,5 @@
+import { type IDBPDatabase, openDB } from 'idb';
+
 /**
  * Reaching `localStorage` on a host that may not let you.
  *
@@ -155,5 +157,32 @@ export async function openSyncPersistence(
     const provider = new IndexeddbPersistence(dbName, doc as any);
     await provider.whenSynced;
     return provider as unknown as { destroy(): void };
+  }, null);
+}
+
+/**
+ * Opens the engine's IndexedDB database, or answers `null` when the host says no.
+ *
+ * This is the second door that had been left open, and the review of
+ * 2026-09-03 found it. The CRDT open had been moved in here precisely because
+ * a library that opens a database IS reaching for storage -- and then the very
+ * same shape was left outside: `openDB()` from `idb`, which calls
+ * `indexedDB.open()` internally under a name the guard did not recognise.
+ *
+ * The rule only becomes provable when every library that opens a store is named
+ * in this one file. Applying it once and not twice is how a family survives a
+ * change of approach.
+ */
+export async function openDatabase(
+  name: string,
+  version: number,
+  upgrade: (db: IDBPDatabase) => void,
+): Promise<IDBPDatabase | null> {
+  return withIndexedDB(async () => {
+    return await openDB(name, version, {
+      upgrade(db) {
+        upgrade(db as unknown as IDBPDatabase);
+      },
+    });
   }, null);
 }

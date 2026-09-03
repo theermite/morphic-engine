@@ -33,7 +33,7 @@ const GATEKEEPER = 'storage-access.ts';
  * Globals no module may name at all. A module never needs them: everything it
  * can do with them, the gatekeeper does without ever throwing.
  */
-const FORBIDDEN = ['localStorage', 'indexedDB', 'IndexeddbPersistence'];
+const FORBIDDEN = ['localStorage', 'indexedDB', 'IndexeddbPersistence', 'openDB'];
 
 /**
  * `IndexeddbPersistence` opens its database inside its own constructor, so
@@ -45,6 +45,17 @@ const FORBIDDEN = ['localStorage', 'indexedDB', 'IndexeddbPersistence'];
  * separate and merely asked whether the module mentioned the wrapper: removing
  * the import left the mention behind in the call, and the guard stayed green on
  * code that was broken again. Moving the open is what made the rule provable.
+ *
+ * `openDB` was added on 2026-09-03, after a third independent review found the
+ * door had a SECOND entrance. `openDB` (from `idb`) calls `indexedDB.open()`
+ * internally, so it reaches storage under a name this list did not know -- and
+ * the guard stayed green while writing a preference still threw, on exactly the
+ * host this whole refactor exists for.
+ *
+ * The lesson is not "the list was short". It is that the reasoning applied to
+ * one library was never applied to the other: a rule enforced on one of two
+ * doors is not a rule. Any library that opens a store is named here, and its
+ * call lives in the gatekeeper.
  */
 
 function sourceFiles(dir: string): string[] {
