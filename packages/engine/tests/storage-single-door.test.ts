@@ -3,19 +3,37 @@
  *
  * License: AGPL-3.0-or-later OR MPL-2.0 (see packages/engine/LICENSE).
  *
- * Two independent reviews rejected this same family in a row (2026-08-31). Each
- * fix closed the site that was reported and left the family open somewhere the
- * author had not been. The second review named the reason: a guard written site
- * by site can only close the sites its author thought of.
+ * `storage-access.ts` is the ONLY module allowed to reach a storage global or a
+ * library that opens a store. Everything else goes through it. This test is
+ * what makes that real.
  *
- * So the approach changed. `storage-access.ts` is the ONLY module allowed to
- * name a storage global. Everything else goes through it. This test is what
- * makes that real -- the previous safety net was a sweep that skipped 52
- * functions out of 133 and let a reintroduced guard survive unnoticed.
+ * FOURTH ROUND, AND THE MECHANISM CHANGED RATHER THAN THE PATTERN.
  *
- * It reads the source rather than the behaviour on purpose: the defect is a
- * REFERENCE to a global, and a reference is visible in the text long before it
- * is reachable at runtime. The runtime behaviour is covered separately.
+ * Three independent reviews rejected this family in a row. The first two fixes
+ * lengthened a hand-written list of names; the third derived the list instead,
+ * and was still rejected -- because all three read the source LINE BY LINE, and
+ * a line is not a statement:
+ *
+ *   - an import spread over several lines has no line that both begins with
+ *     `import` and carries its `from`, so it matched nothing;
+ *   - a dynamic `await import('...')` begins with neither.
+ *
+ * That second hole was live, not hypothetical. The gatekeeper reaches
+ * `y-indexeddb` through a dynamic import, so the library that opens the CRDT
+ * database was ABSENT from the list the guard derived from it. Measured on
+ * 2026-09-03 against the previous version: of five ways back in, it caught one.
+ *
+ * So the guard now reads the STRUCTURE (`tests/storage-door/analyze.ts`, the
+ * TypeScript parser) instead of the text. A parser has no blind spot shaped
+ * like the syntax, because the shape is what it is built to read.
+ *
+ * AND IT PROVES ITSELF ON EVERY RUN. `tests/storage-door/bypass/` holds one
+ * file per way back in, each a form some version of this guard let through; the
+ * guard is required to flag every one of them. `tests/storage-door/clean/`
+ * holds the look-alikes it must leave alone -- a guard that flags legitimate
+ * work is a guard someone switches off, and it takes the real detection with
+ * it. A green run now means the detector was exercised, not merely that nobody
+ * offended.
  */
 
 // @vitest-environment node
@@ -23,8 +41,10 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { globalReaches, runtimeLibraries, runtimeModuleSpecifiers } from './storage-door/analyze';
 
 const SRC = join(import.meta.dirname, '..', 'src');
+const DOOR_TESTS = join(import.meta.dirname, 'storage-door');
 
 /** The one module allowed to touch storage. */
 const GATEKEEPER = 'storage-access.ts';
@@ -35,41 +55,6 @@ const GATEKEEPER = 'storage-access.ts';
  * the gatekeeper does without ever throwing.
  */
 const FORBIDDEN_GLOBALS = ['localStorage', 'indexedDB'];
-
-/**
- * The libraries that reach storage are NOT listed here, and that is the point.
- *
- * Three rounds of review found three entrances, and each fix added one more
- * name to a hand-written list: `IndexeddbPersistence`, then `openDB`, then
- * `deleteDB` -- the last two from the SAME library, missed twice in a single
- * commit. The guard even carried, in its own comment, the rule it was breaking:
- * a list is always a list to extend, so it is not a guard.
- *
- * So the list is derived instead. Whatever the gatekeeper imports at RUNTIME is
- * by definition a way to reach storage -- that is the only reason it would be
- * in there. No other module may import those packages at runtime.
- *
- * A `import type` is fine anywhere: a type reaches nothing. It disappears at
- * compile time, which is exactly the difference that matters.
- *
- * What this buys: a fourth entrance, from a library nobody has thought of yet,
- * fails the moment the gatekeeper starts using it -- without anyone having to
- * remember to update a list.
- */
-function storageLibraries(gatekeeperSource: string): string[] {
-  const packages = new Set<string>();
-  for (const line of gatekeeperSource.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith('import')) continue;
-    if (trimmed.startsWith('import type')) continue; // a type reaches nothing
-    const from = trimmed.match(/from\s+'([^']+)'/);
-    if (!from) continue;
-    const specifier = from[1];
-    if (specifier.startsWith('.')) continue; // our own modules, not a library
-    packages.add(specifier);
-  }
-  return [...packages];
-}
 
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
@@ -87,48 +72,27 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
-/** Lines naming a forbidden global, comments excluded. */
-function offendingLines(source: string, names: string[] = FORBIDDEN_GLOBALS): string[] {
-  const found: string[] = [];
-  let inBlockComment = false;
-  source.split(/\r?\n/).forEach((line, i) => {
-    const trimmed = line.trim();
-    if (inBlockComment) {
-      if (trimmed.includes('*/')) inBlockComment = false;
-      return;
-    }
-    if (trimmed.startsWith('/*')) {
-      if (!trimmed.includes('*/')) inBlockComment = true;
-      return;
-    }
-    if (trimmed.startsWith('*') || trimmed.startsWith('//')) return;
-    for (const name of names) {
-      // What is forbidden is REACHING storage, not naming it. A first version
-      // matched the bare word and flagged `localStorageRaw`, a variable holding
-      // a value already read -- a guard that gets in the way of legitimate work
-      // is a guard someone eventually switches off, and it takes the real
-      // detection with it (Kata, 2026-08-30).
-      //
-      // So the pattern is the ACCESS: a member, an index, or a CALL. The call
-      // matters because `new IndexeddbPersistence(` is followed by a
-      // parenthesis -- a first version of this line stopped at `.` and `[`, and
-      // reopening a database outside the door passed it without a word.
-      const reaches = new RegExp(`\\b${name}\\s*[.\\[(]|typeof\\s+${name}\\b`);
-      if (reaches.test(line)) found.push(`${i + 1}: ${trimmed.slice(0, 90)}`);
-    }
-  });
-  return found;
+/**
+ * The libraries that reach storage are NOT written down, and that is the point.
+ *
+ * Whatever the gatekeeper pulls in at runtime is by definition a way to reach
+ * storage -- that is the only reason it would be in there. So a fourth
+ * entrance, from a library nobody has thought of yet, fails the moment the
+ * gatekeeper starts using it, without anyone remembering to update anything.
+ */
+function storageLibraries(): string[] {
+  const gatekeeper = readFileSync(join(SRC, GATEKEEPER), 'utf8');
+  return runtimeLibraries(gatekeeper, GATEKEEPER);
 }
 
 describe('storage access has a single door', () => {
-  const gatekeeper = readFileSync(join(SRC, GATEKEEPER), 'utf8');
-
   it('no module outside the gatekeeper reaches a storage global', () => {
     const offenders: string[] = [];
     for (const file of sourceFiles(SRC)) {
-      const hits = offendingLines(readFileSync(file, 'utf8'));
-      if (hits.length > 0) {
-        offenders.push(`${file.replace(SRC, '.')} (${hits.length}): ${hits[0]}`);
+      const hits = globalReaches(readFileSync(file, 'utf8'), FORBIDDEN_GLOBALS, file);
+      const first = hits[0];
+      if (first) {
+        offenders.push(`${file.replace(SRC, '.')} (${hits.length}): ${first.line}: ${first.text}`);
       }
     }
 
@@ -140,38 +104,101 @@ describe('storage access has a single door', () => {
   });
 
   it('no module outside the gatekeeper imports a storage library at runtime', () => {
-    const libraries = storageLibraries(gatekeeper);
+    const libraries = storageLibraries();
     expect(
       libraries.length,
-      'the gatekeeper imports no library at runtime, so this guard would check ' +
+      'the gatekeeper reaches no library at runtime, so this guard would check ' +
         'nothing -- read it before trusting a green',
     ).toBeGreaterThan(0);
 
     const offenders: string[] = [];
     for (const file of sourceFiles(SRC)) {
-      const source = readFileSync(file, 'utf8');
-      for (const line of source.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('import')) continue;
-        if (trimmed.startsWith('import type')) continue; // a type reaches nothing
-        const from = trimmed.match(/from\s+'([^']+)'/);
-        if (!from || !libraries.includes(from[1])) continue;
-        offenders.push(`${file.replace(SRC, '.')}: ${trimmed.slice(0, 80)}`);
+      const specifiers = runtimeModuleSpecifiers(readFileSync(file, 'utf8'), file);
+      for (const specifier of specifiers) {
+        if (libraries.includes(specifier)) {
+          offenders.push(`${file.replace(SRC, '.')}: ${specifier}`);
+        }
       }
     }
 
     expect(
       offenders,
-      `a module imports a storage library (${libraries.join(', ')}) at runtime. ` +
-        'Whatever that library exports reaches the same store, under whatever ' +
+      `a module reaches a storage library (${libraries.join(', ')}) at runtime. ` +
+        'Whatever that library exports opens the same store, under whatever ' +
         'name -- which is how three entrances were found in three reviews.',
     ).toEqual([]);
   });
 
   it('the sweep actually reads the modules it claims to check', () => {
-    // A guard that scans nothing passes. The previous sweep filtered its input
+    // A guard that scans nothing passes. An earlier sweep filtered its input
     // and silently dropped 52 functions out of 133; this one states its reach
     // so an empty scan fails loudly instead of reporting success.
     expect(sourceFiles(SRC).length).toBeGreaterThan(10);
+  });
+});
+
+describe('the guard is proven on every way back in', () => {
+  const baitDir = join(DOOR_TESTS, 'bypass');
+  const baits = readdirSync(baitDir).filter((entry) => entry.endsWith('.ts'));
+
+  it('every known way back in still has its bait file', () => {
+    // Five forms, each one a version of this guard let through before.
+    expect(
+      baits.length,
+      'a bait was deleted; the guard stops proving itself',
+    ).toBeGreaterThanOrEqual(5);
+  });
+
+  it('the multi-line bait still spans several lines', () => {
+    // The formatter joins that import back onto one line if it is allowed to,
+    // and the bait would still be flagged -- as a single-line import, the one
+    // form that was never the problem. It would pass while testing nothing, so
+    // the shape itself is asserted rather than assumed.
+    const source = readFileSync(join(baitDir, 'multiline-import.ts'), 'utf8');
+    const opening = source.split(/\r?\n/).find((line) => line.trim().startsWith('import {'));
+    expect(opening, 'multiline-import.ts no longer opens an import block').toBeDefined();
+    expect(
+      opening,
+      'the import was joined onto one line; that bait now proves nothing',
+    ).not.toContain('from');
+  });
+
+  for (const bait of baits) {
+    it(`flags ${bait}`, () => {
+      const source = readFileSync(join(baitDir, bait), 'utf8');
+      const libraries = storageLibraries();
+      const reachesGlobal = globalReaches(source, FORBIDDEN_GLOBALS, bait).length > 0;
+      const reachesLibrary = runtimeModuleSpecifiers(source, bait).some((specifier) =>
+        libraries.includes(specifier),
+      );
+      expect(
+        reachesGlobal || reachesLibrary,
+        `${bait} is a known way back into storage; the guard must flag it`,
+      ).toBe(true);
+    });
+  }
+
+  it('leaves the look-alikes alone', () => {
+    // `localStorageRaw`, a type import, a string key, a comment. Each was
+    // flagged, or nearly flagged, by some version of the text guard.
+    const cleanDir = join(DOOR_TESTS, 'clean');
+    const libraries = storageLibraries();
+    const flagged: string[] = [];
+    for (const entry of readdirSync(cleanDir).filter((name) => name.endsWith('.ts'))) {
+      const source = readFileSync(join(cleanDir, entry), 'utf8');
+      const hits = globalReaches(source, FORBIDDEN_GLOBALS, entry);
+      const imports = runtimeModuleSpecifiers(source, entry).filter((specifier) =>
+        libraries.includes(specifier),
+      );
+      const first = hits[0];
+      if (first) flagged.push(`${entry}: global at line ${first.line}`);
+      if (imports.length > 0) flagged.push(`${entry}: runtime import of ${imports.join(', ')}`);
+    }
+
+    expect(
+      flagged,
+      'the guard flags legitimate code; a guard in the way is a guard someone ' +
+        'switches off, and it takes the real detection with it',
+    ).toEqual([]);
   });
 });
