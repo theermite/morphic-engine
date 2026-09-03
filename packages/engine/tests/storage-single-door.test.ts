@@ -41,7 +41,12 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { globalReaches, runtimeLibraries, runtimeModuleSpecifiers } from './storage-door/analyze';
+import {
+  globalReaches,
+  modulesToScan,
+  runtimeLibraries,
+  runtimeModuleSpecifiers,
+} from './storage-door/analyze';
 
 const SRC = join(import.meta.dirname, '..', 'src');
 const DOOR_TESTS = join(import.meta.dirname, 'storage-door');
@@ -68,20 +73,13 @@ const GATEKEEPERS = ['storage-access.ts', 'storage-database.ts'];
  */
 const FORBIDDEN_GLOBALS = ['localStorage', 'indexedDB'];
 
+const FILES = {
+  readdirSync: (path: string): string[] => readdirSync(path),
+  isDirectory: (path: string): boolean => statSync(path).isDirectory(),
+};
+
 function sourceFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      out.push(...sourceFiles(full));
-      continue;
-    }
-    if (!entry.endsWith('.ts')) continue;
-    if (entry.endsWith('.test.ts')) continue; // a test may name what it forbids
-    if (GATEKEEPERS.includes(entry)) continue;
-    out.push(full);
-  }
-  return out;
+  return modulesToScan(dir, GATEKEEPERS, FILES);
 }
 
 /**
@@ -205,6 +203,29 @@ describe('the guard is proven on every way back in', () => {
       ).toBe(true);
     });
   }
+
+  it('scans a decoy that wears a gatekeeper name one folder down', () => {
+    // The seventh review's finding, and the first one about WHAT the guard is
+    // handed rather than what it detects. The exclusion compared the file NAME,
+    // so `src/anything/storage-access.ts` was skipped at any depth -- a module
+    // hidden there reached localStorage with fourteen tests green.
+    //
+    // Every bait before this one proved the detector. A guard's input filter is
+    // as much the guard as its detector, so this one proves the filter.
+    const root = join(DOOR_TESTS, 'fake-src');
+    const normalise = (value: string): string => value.split('\\').join('/');
+    const prefix = `${normalise(root)}/`;
+    const scanned = modulesToScan(root, GATEKEEPERS, FILES).map((path) =>
+      normalise(path).slice(prefix.length),
+    );
+
+    expect(scanned, 'the decoy escaped the sweep').toContain('nested/storage-access.ts');
+    expect(scanned, 'an ordinary module was dropped').toContain('nested/ordinary.ts');
+    expect(scanned, 'the real gatekeeper was scanned as if it were a module').not.toContain(
+      'storage-access.ts',
+    );
+    expect(scanned, 'a test file was scanned').not.toContain('skipped.test.ts');
+  });
 
   it('leaves the look-alikes alone', () => {
     // `localStorageRaw`, a type import, a string key, a comment. Each was

@@ -223,3 +223,45 @@ export function globalReaches(
   });
   return found;
 }
+
+/**
+ * The modules a sweep must read, and the gatekeepers it must skip.
+ *
+ * WHY THIS LIVES HERE RATHER THAN INSIDE THE TEST (2026-09-03, seventh review).
+ *
+ * The exclusion used to compare the FILE NAME: `entry === 'storage-access.ts'`.
+ * So `src/anything/storage-access.ts` was skipped too, at any depth, and a
+ * module hidden there reached `localStorage` with fourteen tests still green.
+ * Proven by running it.
+ *
+ * Every bait until now proved the DETECTOR. None proved what the detector was
+ * handed -- and a guard's input filter is as much the guard as its detector.
+ * So the choice of files is a function you can test, with its own fixture tree,
+ * instead of a line buried in a test body.
+ *
+ * `gatekeepers` are paths relative to `root`, never bare names.
+ */
+export function modulesToScan(
+  root: string,
+  gatekeepers: readonly string[],
+  deps: { readdirSync: (p: string) => string[]; isDirectory: (p: string) => boolean },
+): string[] {
+  const skip = new Set(gatekeepers.map((path) => path.split('\\').join('/')));
+  const walkDir = (dir: string, prefix: string): string[] => {
+    const out: string[] = [];
+    for (const entry of deps.readdirSync(dir)) {
+      const full = `${dir}/${entry}`;
+      const relative = prefix === '' ? entry : `${prefix}/${entry}`;
+      if (deps.isDirectory(full)) {
+        out.push(...walkDir(full, relative));
+        continue;
+      }
+      if (!entry.endsWith('.ts')) continue;
+      if (entry.endsWith('.test.ts')) continue; // a test may name what it forbids
+      if (skip.has(relative)) continue; // a gatekeeper, identified by its PATH
+      out.push(full);
+    }
+    return out;
+  };
+  return walkDir(root, '');
+}
