@@ -21,12 +21,15 @@ import {
   MORPHIC_POMODORO_STRIP_FILL_MARKER,
   MORPHIC_POMODORO_STRIP_MARKER,
   MORPHIC_POMODORO_STRIP_POLL_MS,
+  POMODORO_STRIP_DARK_PALETTE,
   POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP,
   POMODORO_STRIP_DEFAULT_RAMP_UP_STOP,
   POMODORO_STRIP_END_COLOR,
+  POMODORO_STRIP_LIGHT_PALETTE,
   POMODORO_STRIP_MID_COLOR,
+  POMODORO_STRIP_MIN_CONTRAST,
   POMODORO_STRIP_START_COLOR,
-  POMODORO_STRIP_TRACK_COLOR,
+  pomodoroStripPalette,
   skipPhase,
   startPomodoro,
   stopPomodoro,
@@ -146,11 +149,14 @@ describe('pomodoro-strip / enablePomodoroStrip', () => {
     const f = fill();
     expect(t).not.toBeNull();
     expect(f).not.toBeNull();
-    expect(t?.style.background).toBe('rgba(127, 127, 127, 0.35)');
+    // Compared to the palette in force, never to a frozen string: pinning a
+    // literal is what made this test assert the defect twice in a row.
+    const inForce = pomodoroStripPalette();
+    expect(t?.style.background).toBe(inForce.track);
     expect(
       t?.style.background,
-      'the track is the fill colour again; the progress is invisible until the ramp separates them',
-    ).not.toBe('rgb(209, 213, 219)');
+      'the rail is the fill colour again; the progress is invisible until the ramp separates them',
+    ).not.toBe(inForce.start);
     expect(f?.style.width).toBe('0%');
   });
 
@@ -192,16 +198,20 @@ describe('pomodoro-strip / progressive fill as the phase elapses', () => {
     expect(fill()?.style.background).toBe(
       computePomodoroStripFillColor(
         0.5,
-        POMODORO_STRIP_START_COLOR,
-        POMODORO_STRIP_MID_COLOR,
-        POMODORO_STRIP_END_COLOR,
+        pomodoroStripPalette().start,
+        pomodoroStripPalette().mid,
+        pomodoroStripPalette().end,
         POMODORO_STRIP_DEFAULT_RAMP_UP_STOP,
         POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP,
       ),
     );
-    // Sanity: by the halfway point the fill should already be plainly blue,
-    // not a barely-tinted grey (Jay 2026-08-30: "le bleu doit être plus visible").
-    expect(fill()?.style.background).toBe('rgb(59, 130, 246)');
+    // Sanity: by the halfway point the fill is plainly the ramp's middle, not a
+    // barely-tinted start (Jay 2026-08-30: "le bleu doit être plus visible").
+    // Named through the palette so the check survives a change of background.
+    const mid = pomodoroStripPalette().mid;
+    expect(fill()?.style.background).toBe(
+      `rgb(${Number.parseInt(mid.slice(1, 3), 16)}, ${Number.parseInt(mid.slice(3, 5), 16)}, ${Number.parseInt(mid.slice(5, 7), 16)})`,
+    );
   });
 
   it('should shift toward orange near the end of the phase', () => {
@@ -215,15 +225,18 @@ describe('pomodoro-strip / progressive fill as the phase elapses', () => {
     expect(bg).toBe(
       computePomodoroStripFillColor(
         0.95,
-        POMODORO_STRIP_START_COLOR,
-        POMODORO_STRIP_MID_COLOR,
-        POMODORO_STRIP_END_COLOR,
+        pomodoroStripPalette().start,
+        pomodoroStripPalette().mid,
+        pomodoroStripPalette().end,
         POMODORO_STRIP_DEFAULT_RAMP_UP_STOP,
         POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP,
       ),
     );
-    // Sanity: at 95% the fill should have moved on from pure mid-blue.
-    expect(bg).not.toBe('rgb(59, 130, 246)');
+    // Sanity: at 95% the fill has moved on from the ramp's middle.
+    const midColour = pomodoroStripPalette().mid;
+    expect(bg).not.toBe(
+      `rgb(${Number.parseInt(midColour.slice(1, 3), 16)}, ${Number.parseInt(midColour.slice(3, 5), 16)}, ${Number.parseInt(midColour.slice(5, 7), 16)})`,
+    );
   });
 });
 
@@ -346,27 +359,126 @@ describe('pomodoro-strip / getPomodoroStripState', () => {
 });
 
 describe('the progress must be visible from the first second', () => {
-  // Jay, on the real browser, 2026-09-04: « la jauge de progression est
-  // quasiment invisible, c'est comme s'il y avait une opacite ». It was not
-  // opacity: the rail was painted with the very colour the fill starts from, so
-  // the advancing edge had nothing to advance over.
+  // TWO ROUNDS, AND THIS IS WHAT BOTH WERE MISSING.
   //
-  // 1437 green tests never saw it. Only someone looking at the screen did.
+  // Jay, on the real browser: « la jauge est quasiment invisible ». The rail was
+  // painted with the fill's own starting colour.
+  //
+  // The first fix made the rail a fixed mid grey. An independent review MEASURED
+  // it: on a light chrome that grey composites to rgb(210), and the pale start of
+  // the ramp is rgb(209, 213, 219). Contrast 1.03 : 1 -- the same defect, moved to
+  // a background nobody had tested.
+  //
+  // Both versions had tests. Both compared CONSTANTS: is the rail a different
+  // string than the fill, does it start with 'rgba('. A string comparison cannot
+  // see a contrast, so it agreed with each version in turn.
+  //
+  // These tests compute the ratio instead. A palette that stops being readable
+  // fails here, whatever it is spelled.
 
-  it('should_paint_the_rail_a_different_colour_than_the_fill_start', () => {
+  /** WCAG 2.2 relative luminance. */
+  function luminance([r, g, b]: readonly [number, number, number]): number {
+    const channel = (value: number): number => {
+      const c = value / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  }
+
+  /** WCAG 2.2 contrast ratio, 1:1 to 21:1. */
+  function contrastRatio(
+    a: readonly [number, number, number],
+    b: readonly [number, number, number],
+  ): number {
+    const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+    return (high + 0.05) / (low + 0.05);
+  }
+
+  function parseHex(value: string): [number, number, number] {
+    const hex = value.replace('#', '');
+    return [
+      Number.parseInt(hex.slice(0, 2), 16),
+      Number.parseInt(hex.slice(2, 4), 16),
+      Number.parseInt(hex.slice(4, 6), 16),
+    ];
+  }
+
+  /** `rgba(r, g, b, a)` laid over an opaque background. */
+  function composite(
+    rgba: string,
+    background: readonly [number, number, number],
+  ): [number, number, number] {
+    const parts = rgba
+      .replace(/^rgba?\(/, '')
+      .replace(/\)$/, '')
+      .split(',')
+      .map((piece) => Number.parseFloat(piece.trim()));
+    const [r, g, b, alpha = 1] = parts as [number, number, number, number?];
+    return [
+      Math.round(r * alpha + background[0] * (1 - alpha)),
+      Math.round(g * alpha + background[1] * (1 - alpha)),
+      Math.round(b * alpha + background[2] * (1 - alpha)),
+    ];
+  }
+
+  const WHITE: readonly [number, number, number] = [255, 255, 255];
+  const BLACK: readonly [number, number, number] = [0, 0, 0];
+
+  const palettes = [
+    { name: 'dark chrome', palette: POMODORO_STRIP_DARK_PALETTE, background: BLACK },
+    { name: 'light chrome', palette: POMODORO_STRIP_LIGHT_PALETTE, background: WHITE },
+  ];
+
+  for (const { name, palette, background } of palettes) {
+    it(`should_keep_every_ramp_colour_readable_against_its_rail_on_a_${name.split(' ')[0]}_chrome`, () => {
+      const rail = composite(palette.track, background);
+      for (const [phase, colour] of [
+        ['start', palette.start],
+        ['mid', palette.mid],
+        ['end', palette.end],
+      ] as const) {
+        const measured = contrastRatio(parseHex(colour), rail);
+        expect(
+          measured,
+          `on a ${name}, the ${phase} of the ramp sits at ${measured.toFixed(2)} : 1 ` +
+            `against its rail. Below ${POMODORO_STRIP_MIN_CONTRAST} : 1 the progress ` +
+            'stops being visible -- that is the defect this palette exists to close.',
+        ).toBeGreaterThanOrEqual(POMODORO_STRIP_MIN_CONTRAST);
+      }
+    });
+
+    it(`should_keep_the_rail_itself_visible_on_a_${name.split(' ')[0]}_chrome`, () => {
+      // A rail nobody can see is a fill with no reference: you cannot tell how
+      // far it has left to go.
+      const rail = composite(palette.track, background);
+      expect(
+        contrastRatio(rail, background),
+        `on a ${name}, the rail itself vanishes into the background`,
+      ).toBeGreaterThan(1.2);
+    });
+  }
+
+  it('should_refuse_the_two_palettes_that_were_already_shipped_broken', () => {
+    // The pair from the original defect, and the pair from the first fix. Both
+    // passed their own tests. Neither passes this one.
+    const originalRail = parseHex('#d1d5db'); // the rail WAS the fill start
     expect(
-      POMODORO_STRIP_TRACK_COLOR,
-      'the rail and the fill start from the same colour again; the progress ' +
-        'is invisible until the ramp separates them',
-    ).not.toBe(POMODORO_STRIP_START_COLOR);
+      contrastRatio(parseHex('#d1d5db'), originalRail),
+      'the original defect would pass this test, so this test proves nothing',
+    ).toBeLessThan(POMODORO_STRIP_MIN_CONTRAST);
+
+    const firstFixRailOnWhite = composite('rgba(127, 127, 127, 0.35)', WHITE);
+    expect(
+      contrastRatio(parseHex('#d1d5db'), firstFixRailOnWhite),
+      'the first fix would pass this test on a light chrome, so this test proves nothing',
+    ).toBeLessThan(POMODORO_STRIP_MIN_CONTRAST);
   });
 
-  it('should_keep_the_rail_visible_on_a_light_and_on_a_dark_chrome', () => {
-    // A mid grey at low alpha darkens a pale surface and lightens a dark one.
-    // A hex colour cannot do both, which is why this one is not hex.
+  it('should_answer_a_palette_for_whatever_background_the_window_is_on', () => {
+    const chosen = pomodoroStripPalette();
     expect(
-      POMODORO_STRIP_TRACK_COLOR.startsWith('rgba('),
-      'the rail became opaque; it then reads on one chrome and vanishes on the other',
-    ).toBe(true);
+      [POMODORO_STRIP_DARK_PALETTE, POMODORO_STRIP_LIGHT_PALETTE],
+      'the strip mounted a palette that is neither of the two measured ones',
+    ).toContainEqual(chosen);
   });
 });

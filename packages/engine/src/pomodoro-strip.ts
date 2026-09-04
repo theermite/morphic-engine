@@ -66,21 +66,64 @@ export const POMODORO_STRIP_DEFAULT_RAMP_UP_STOP = 0.35 as const;
 export const POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP = 0.85 as const;
 
 /**
- * The rail the fill runs along, and the reason it exists.
+ * The rail, and the ramp that runs along it -- one palette per background.
  *
- * The rail used to be painted with `startColor` -- the SAME colour the fill
- * starts from. So at the first second the advancing edge had zero contrast
- * against what it was advancing over, and the contrast only appeared as the
- * fill ramped toward blue. Jay, on the real browser, 2026-09-04: « la jauge de
- * progression est quasiment invisible, c'est comme s'il y avait une opacite ».
- * It was not opacity. It was the same colour twice.
+ * TWO ROUNDS ON THE SAME DEFECT, AND THE SECOND IS WHY THIS IS A PALETTE.
  *
- * A mid grey at low alpha reads on a light chrome and on a dark one, without
- * knowing which: it darkens a pale surface and lightens a dark one. Every fill
- * colour of the ramp -- pale grey, blue, orange -- stands off it from the
- * first pixel.
+ * The rail used to be painted with the fill's own starting colour, so the
+ * advancing edge had nothing to advance over. Jay, on the real browser,
+ * 2026-09-04: « la jauge est quasiment invisible, comme s'il y avait une
+ * opacite ». It was not opacity, it was the same colour twice.
+ *
+ * The first fix made the rail a fixed mid grey, believing one grey could serve
+ * both backgrounds. An independent review MEASURED it instead of judging it:
+ * on a light chrome that grey composites to `rgb(210)`, and the pale start of
+ * the ramp is `rgb(209, 213, 219)`. Contrast 1.03 : 1 -- the original defect,
+ * moved to a condition nobody had tested.
+ *
+ * The cause is arithmetic, not taste. A fixed grey turns light on a light
+ * surface and dark on a dark one, so NO single fill colour can stand off it on
+ * both. The rail and the ramp have to follow the background together.
+ *
+ * **These values were computed, not chosen.** Every pair below clears 3 : 1,
+ * the WCAG 1.4.11 floor for a non-text component, against its own rail
+ * composited over its own background. `contrastRatio()` in the tests recomputes
+ * it on every run -- comparing constants is what let both earlier versions
+ * through.
+ *
+ * The meaning of the ramp is untouched in both: calm at the start, active in
+ * the middle, urgent at the end.
  */
-export const POMODORO_STRIP_TRACK_COLOR = 'rgba(127, 127, 127, 0.35)' as const;
+export interface PomodoroStripPalette {
+  readonly track: string;
+  readonly start: string;
+  readonly mid: string;
+  readonly end: string;
+}
+
+/** On a dark chrome. Measured: 9.22 / 3.69 / 6.00 against the rail. */
+export const POMODORO_STRIP_DARK_PALETTE: PomodoroStripPalette = {
+  track: 'rgba(255, 255, 255, 0.18)',
+  start: '#d1d5db',
+  mid: '#3b82f6',
+  end: '#fb923c',
+};
+
+/** On a light chrome. Measured: 4.96 / 4.39 / 3.39 against the rail. */
+export const POMODORO_STRIP_LIGHT_PALETTE: PomodoroStripPalette = {
+  track: 'rgba(0, 0, 0, 0.18)',
+  start: '#475569',
+  mid: '#1d4ed8',
+  end: '#c2410c',
+};
+
+/** The floor every pair above clears, on its own background. */
+export const POMODORO_STRIP_MIN_CONTRAST = 3 as const;
+
+/** The palette for the background this window is actually on. */
+export function pomodoroStripPalette(): PomodoroStripPalette {
+  return prefersDarkChrome() ? POMODORO_STRIP_DARK_PALETTE : POMODORO_STRIP_LIGHT_PALETTE;
+}
 
 export const POMODORO_STRIP_START_COLOR = '#d1d5db' as const; // pale grey
 export const POMODORO_STRIP_MID_COLOR = '#3b82f6' as const; // vivid blue
@@ -176,6 +219,23 @@ export function computePomodoroStripFillColor(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Whether this window sits on a dark chrome.
+ *
+ * Absent `matchMedia` -- a server render, a host that hides it -- the answer is
+ * "light". It is the assumption that fails softest: the light palette is darker
+ * than the dark one, so it stays visible on an unknown surface rather than
+ * disappearing into it.
+ */
+function prefersDarkChrome(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch {
+    return false;
+  }
+}
 
 function isReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
@@ -304,9 +364,12 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
   const position = options.position ?? 'top';
   const height = options.height ?? MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT;
   const zIndex = options.zIndex ?? MORPHIC_POMODORO_STRIP_DEFAULT_Z_INDEX;
-  const startColor = options.startColor ?? POMODORO_STRIP_START_COLOR;
-  const midColor = options.midColor ?? POMODORO_STRIP_MID_COLOR;
-  const endColor = options.endColor ?? POMODORO_STRIP_END_COLOR;
+  // The palette follows the background, unless the caller names a colour. A
+  // caller that names one owns the contrast; the defaults are the measured pair.
+  const palette = pomodoroStripPalette();
+  const startColor = options.startColor ?? palette.start;
+  const midColor = options.midColor ?? palette.mid;
+  const endColor = options.endColor ?? palette.end;
   const completeColor = options.completeColor ?? POMODORO_STRIP_COMPLETE_COLOR;
   const rampUpStop = options.rampUpStop ?? POMODORO_STRIP_DEFAULT_RAMP_UP_STOP;
   const rampDownStop = options.rampDownStop ?? POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP;
@@ -321,7 +384,7 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
   root.style.height = `${height}px`;
   root.style.pointerEvents = 'none';
   root.style.zIndex = String(zIndex);
-  root.style.background = POMODORO_STRIP_TRACK_COLOR;
+  root.style.background = palette.track;
   root.style.transition = isReducedMotion() ? 'none' : 'opacity 200ms ease';
   root.style.overflow = 'hidden';
 
