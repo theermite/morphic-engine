@@ -151,12 +151,18 @@ describe('pomodoro-strip / enablePomodoroStrip', () => {
     expect(f).not.toBeNull();
     // Compared to the palette in force, never to a frozen string: pinning a
     // literal is what made this test assert the defect twice in a row.
+    // The DOM answers `rgb(r, g, b)` whatever we wrote, so the expectation is
+    // written the same way rather than as the hex we happened to type.
+    const asRgb = (hex: string): string => {
+      const v = hex.replace('#', '');
+      return `rgb(${Number.parseInt(v.slice(0, 2), 16)}, ${Number.parseInt(v.slice(2, 4), 16)}, ${Number.parseInt(v.slice(4, 6), 16)})`;
+    };
     const inForce = pomodoroStripPalette();
-    expect(t?.style.background).toBe(inForce.track);
+    expect(t?.style.background).toBe(asRgb(inForce.track));
     expect(
       t?.style.background,
       'the rail is the fill colour again; the progress is invisible until the ramp separates them',
-    ).not.toBe(inForce.start);
+    ).not.toBe(asRgb(inForce.start));
     expect(f?.style.width).toBe('0%');
   });
 
@@ -421,57 +427,140 @@ describe('the progress must be visible from the first second', () => {
     ];
   }
 
-  const WHITE: readonly [number, number, number] = [255, 255, 255];
-  const BLACK: readonly [number, number, number] = [0, 0, 0];
-
   const palettes = [
-    { name: 'dark chrome', palette: POMODORO_STRIP_DARK_PALETTE, background: BLACK },
-    { name: 'light chrome', palette: POMODORO_STRIP_LIGHT_PALETTE, background: WHITE },
+    { name: 'dark', palette: POMODORO_STRIP_DARK_PALETTE },
+    { name: 'light', palette: POMODORO_STRIP_LIGHT_PALETTE },
   ];
 
-  for (const { name, palette, background } of palettes) {
-    it(`should_keep_every_ramp_colour_readable_against_its_rail_on_a_${name.split(' ')[0]}_chrome`, () => {
-      const rail = composite(palette.track, background);
+  for (const { name, palette } of palettes) {
+    it(`should_keep_every_ramp_colour_readable_against_its_own_rail_on_${name}`, () => {
+      // Against the RAIL, not against a background. Round 3 measured against
+      // pure black and white; on the real chrome of Firefox the middle of the
+      // ramp fell to 2.16 : 1. An opaque rail makes this number a property of
+      // these six values, true on any background, with nothing left to assume.
       for (const [phase, colour] of [
         ['start', palette.start],
         ['mid', palette.mid],
         ['end', palette.end],
       ] as const) {
-        const measured = contrastRatio(parseHex(colour), rail);
+        const measured = contrastRatio(parseHex(colour), parseHex(palette.track));
         expect(
           measured,
-          `on a ${name}, the ${phase} of the ramp sits at ${measured.toFixed(2)} : 1 ` +
-            `against its rail. Below ${POMODORO_STRIP_MIN_CONTRAST} : 1 the progress ` +
-            'stops being visible -- that is the defect this palette exists to close.',
+          `on ${name}, the ${phase} of the ramp sits at ${measured.toFixed(2)} : 1 ` +
+            `against its own rail. Below ${POMODORO_STRIP_MIN_CONTRAST} : 1 the ` +
+            'advancing edge stops being visible.',
         ).toBeGreaterThanOrEqual(POMODORO_STRIP_MIN_CONTRAST);
       }
     });
 
-    it(`should_keep_the_rail_itself_visible_on_a_${name.split(' ')[0]}_chrome`, () => {
-      // A rail nobody can see is a fill with no reference: you cannot tell how
-      // far it has left to go.
-      const rail = composite(palette.track, background);
+    it(`should_keep_the_rail_opaque_on_${name}`, () => {
+      // THE PROPERTY THAT ENDS THE FAMILY, and the only one worth pinning.
+      //
+      // A translucent rail takes its colour from whatever is behind it, so the
+      // contrast above stops being ours and becomes the browser's. Three rounds
+      // died on that. An opaque rail is what makes the measurement mean
+      // something.
       expect(
-        contrastRatio(rail, background),
-        `on a ${name}, the rail itself vanishes into the background`,
-      ).toBeGreaterThan(1.2);
+        palette.track,
+        `the ${name} rail became translucent again; its contrast now depends on ` +
+          'a background we do not control, which is how the last three rounds failed',
+      ).toMatch(/^#[0-9a-f]{6}$/i);
     });
   }
 
-  it('should_refuse_the_two_palettes_that_were_already_shipped_broken', () => {
-    // The pair from the original defect, and the pair from the first fix. Both
-    // passed their own tests. Neither passes this one.
-    const originalRail = parseHex('#d1d5db'); // the rail WAS the fill start
+  it('should_refuse_every_palette_that_was_already_shipped_broken', () => {
+    // The three that shipped. None of them passes this test; if any did, the
+    // test would be proving nothing.
+    const WHITE_BG: readonly [number, number, number] = [255, 255, 255];
+    const FIREFOX_DARK: readonly [number, number, number] = [28, 27, 34]; // #1c1b22
+
+    // Round 1: the rail WAS the fill's start.
     expect(
-      contrastRatio(parseHex('#d1d5db'), originalRail),
-      'the original defect would pass this test, so this test proves nothing',
+      contrastRatio(parseHex('#d1d5db'), parseHex('#d1d5db')),
+      'round 1 would pass, so this test proves nothing',
     ).toBeLessThan(POMODORO_STRIP_MIN_CONTRAST);
 
-    const firstFixRailOnWhite = composite('rgba(127, 127, 127, 0.35)', WHITE);
+    // Round 2: a fixed grey, composited on a light chrome.
     expect(
-      contrastRatio(parseHex('#d1d5db'), firstFixRailOnWhite),
-      'the first fix would pass this test on a light chrome, so this test proves nothing',
+      contrastRatio(parseHex('#d1d5db'), composite('rgba(127, 127, 127, 0.35)', WHITE_BG)),
+      'round 2 would pass on a light chrome, so this test proves nothing',
     ).toBeLessThan(POMODORO_STRIP_MIN_CONTRAST);
+
+    // Round 3: a translucent rail over the REAL dark chrome of Firefox.
+    expect(
+      contrastRatio(parseHex('#3b82f6'), composite('rgba(255, 255, 255, 0.18)', FIREFOX_DARK)),
+      'round 3 would pass on the real Firefox chrome, so this test proves nothing',
+    ).toBeLessThan(POMODORO_STRIP_MIN_CONTRAST);
+  });
+
+  it('should_follow_the_background_when_it_changes_mid_session', () => {
+    // Found by review, 2026-09-04, and it is the same family as the colour
+    // defects: the palette was read once, at mount. Someone switching to dark
+    // at four in the afternoon kept the light rail under a dark chrome until
+    // the next restart.
+    const listeners: Array<() => void> = [];
+    let dark = false;
+    const original = window.matchMedia;
+    // @ts-expect-error deliberate stand-in for a media query that can change
+    window.matchMedia = (query: string) => ({
+      matches: query.includes('dark') ? dark : false,
+      media: query,
+      addEventListener: (_type: string, listener: () => void) => listeners.push(listener),
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      onchange: null,
+      dispatchEvent: () => false,
+    });
+
+    try {
+      startPomodoro({ workMs: 100_000 });
+      enablePomodoroStrip();
+      const asRgb = (hex: string): string => {
+        const v = hex.replace('#', '');
+        return `rgb(${Number.parseInt(v.slice(0, 2), 16)}, ${Number.parseInt(v.slice(2, 4), 16)}, ${Number.parseInt(v.slice(4, 6), 16)})`;
+      };
+      expect(track()?.style.background).toBe(asRgb(POMODORO_STRIP_LIGHT_PALETTE.track));
+
+      dark = true;
+      for (const listener of listeners) listener();
+
+      expect(
+        track()?.style.background,
+        'the rail kept the palette of a background that is no longer on screen',
+      ).toBe(asRgb(POMODORO_STRIP_DARK_PALETTE.track));
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('should_stop_listening_to_the_background_once_the_strip_is_gone', () => {
+    // A listener that outlives its strip holds the whole module alive and
+    // writes into a rail that no longer exists.
+    let removed = 0;
+    const original = window.matchMedia;
+    // @ts-expect-error deliberate stand-in
+    window.matchMedia = (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {
+        removed += 1;
+      },
+      addListener: () => {},
+      removeListener: () => {},
+      onchange: null,
+      dispatchEvent: () => false,
+    });
+
+    try {
+      startPomodoro({ workMs: 100_000 });
+      enablePomodoroStrip();
+      disablePomodoroStrip();
+      expect(removed, 'the strip left its background listener behind').toBe(1);
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it('should_answer_a_palette_for_whatever_background_the_window_is_on', () => {

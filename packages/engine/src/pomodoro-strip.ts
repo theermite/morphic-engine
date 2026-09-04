@@ -68,31 +68,43 @@ export const POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP = 0.85 as const;
 /**
  * The rail, and the ramp that runs along it -- one palette per background.
  *
- * TWO ROUNDS ON THE SAME DEFECT, AND THE SECOND IS WHY THIS IS A PALETTE.
+ * THREE ROUNDS ON THE SAME DEFECT. THIS ONE REMOVES THE ASSUMPTION INSTEAD OF
+ * CORRECTING IT.
  *
- * The rail used to be painted with the fill's own starting colour, so the
- * advancing edge had nothing to advance over. Jay, on the real browser,
- * 2026-09-04: « la jauge est quasiment invisible, comme s'il y avait une
- * opacite ». It was not opacity, it was the same colour twice.
+ * What the three had in common: a colour validated against a background that
+ * was ASSUMED, and the assumption was wrong somewhere else each time.
+ *   1. the rail was painted with the fill's own start -- no contrast at all.
+ *      Jay, on the real browser: « la jauge est quasiment invisible » ;
+ *   2. a fixed translucent grey, believed to serve both. Measured on a light
+ *      chrome: 1.03 : 1. The same defect, moved ;
+ *   3. two translucent palettes, measured against PURE black and white. On the
+ *      real chrome of Firefox (`#1c1b22`, `#2b2a33`) the middle of the ramp --
+ *      the colour shown for most of a phase -- fell to 2.62 and 2.16 : 1.
  *
- * The first fix made the rail a fixed mid grey, believing one grey could serve
- * both backgrounds. An independent review MEASURED it instead of judging it:
- * on a light chrome that grey composites to `rgb(210)`, and the pale start of
- * the ramp is `rgb(209, 213, 219)`. Contrast 1.03 : 1 -- the original defect,
- * moved to a condition nobody had tested.
+ * A translucent rail takes its final colour from whatever is behind it. So the
+ * contrast between the fill and its rail was never a property of this file: it
+ * was a property of a browser we do not control, and every round validated it
+ * against a guess.
  *
- * The cause is arithmetic, not taste. A fixed grey turns light on a light
- * surface and dark on a dark one, so NO single fill colour can stand off it on
- * both. The rail and the ramp have to follow the background together.
+ * **The rail is opaque.** The fill/rail contrast becomes a constant of these
+ * six values, provable once and true on any background -- black, white, the
+ * grey of a real toolbar, a custom theme nobody has written yet. There is no
+ * longer an assumption that can be wrong.
  *
- * **These values were computed, not chosen.** Every pair below clears 3 : 1,
- * the WCAG 1.4.11 floor for a non-text component, against its own rail
- * composited over its own background. `contrastRatio()` in the tests recomputes
- * it on every run -- comparing constants is what let both earlier versions
+ * What a background still changes: whether the RAIL is distinguishable from it.
+ * That is the weak requirement, and it degrades gently -- when the rail blends
+ * in, the fill still stands off the rail by 3.5 : 1 or more, so the advancing
+ * edge stays visible. A bar with a faint rail is readable; a bar whose fill
+ * matches its rail is not.
+ *
+ * **Values computed, never chosen.** Every ramp colour clears 3 : 1 against its
+ * own rail -- the WCAG 1.4.11 floor for a non-text component. The tests
+ * recompute it on each run; comparing constants is what let rounds 1 and 2
+ * through, and comparing against an assumed background is what let round 3
  * through.
  *
- * The meaning of the ramp is untouched in both: calm at the start, active in
- * the middle, urgent at the end.
+ * The meaning of the ramp is untouched: calm at the start, active in the
+ * middle, urgent at the end.
  */
 export interface PomodoroStripPalette {
   readonly track: string;
@@ -101,18 +113,18 @@ export interface PomodoroStripPalette {
   readonly end: string;
 }
 
-/** On a dark chrome. Measured: 9.22 / 3.69 / 6.00 against the rail. */
+/** On a dark chrome. Measured against its own rail: 8.44 / 4.11 / 4.61. */
 export const POMODORO_STRIP_DARK_PALETTE: PomodoroStripPalette = {
-  track: 'rgba(255, 255, 255, 0.18)',
-  start: '#d1d5db',
-  mid: '#3b82f6',
+  track: '#3f3f46',
+  start: '#e5e7eb',
+  mid: '#60a5fa',
   end: '#fb923c',
 };
 
-/** On a light chrome. Measured: 4.96 / 4.39 / 3.39 against the rail. */
+/** On a light chrome. Measured against its own rail: 7.07 / 4.53 / 3.50. */
 export const POMODORO_STRIP_LIGHT_PALETTE: PomodoroStripPalette = {
-  track: 'rgba(0, 0, 0, 0.18)',
-  start: '#475569',
+  track: '#d4d4d8',
+  start: '#3f3f46',
   mid: '#1d4ed8',
   end: '#c2410c',
 };
@@ -164,6 +176,8 @@ interface ActiveStrip {
   completeColor: string;
   rampUpStop: number;
   rampDownStop: number;
+  /** Undoes the theme subscription. `null` when the host offers no `matchMedia`. */
+  stopWatchingTheme: (() => void) | null;
 }
 
 let active: ActiveStrip | null = null;
@@ -234,6 +248,31 @@ function prefersDarkChrome(): boolean {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Follows the background for as long as the strip is mounted.
+ *
+ * The palette used to be read once, at mount. A person who switches their
+ * system to dark at four in the afternoon kept the light rail underneath a dark
+ * chrome until the next restart -- found by review, 2026-09-04, and it is the
+ * same family as the defect above: a colour fixed for a background that is no
+ * longer the one on screen.
+ *
+ * Answers how to unsubscribe, or `null` when the host has no `matchMedia` --
+ * a server render has no theme to change.
+ */
+function watchChrome(onChange: () => void): (() => void) | null {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
+  try {
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    if (typeof query.addEventListener !== 'function') return null;
+    const listener = (): void => onChange();
+    query.addEventListener('change', listener);
+    return () => query.removeEventListener('change', listener);
+  } catch {
+    return null;
   }
 }
 
@@ -417,6 +456,18 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
     completeColor,
     rampUpStop,
     rampDownStop,
+    // Only the colours the caller did NOT name follow the background. A caller
+    // who names one owns its contrast, and having us overwrite it on a theme
+    // change would be a setting that undoes itself.
+    stopWatchingTheme: watchChrome(() => {
+      if (!active) return;
+      const next = pomodoroStripPalette();
+      active.root.style.background = next.track;
+      if (options.startColor === undefined) active.startColor = next.start;
+      if (options.midColor === undefined) active.midColor = next.mid;
+      if (options.endColor === undefined) active.endColor = next.end;
+      applyState(active);
+    }),
   };
 
   active = strip;
@@ -427,6 +478,7 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
 export function disablePomodoroStrip(): void {
   if (!active) return;
   clearInterval(active.pollHandle);
+  active.stopWatchingTheme?.();
   active.root.remove();
   active = null;
 }
