@@ -36,7 +36,7 @@ export const MORPHIC_POMODORO_STRIP_MARKER = 'data-morphic-pomodoro-strip';
 export const MORPHIC_POMODORO_STRIP_FILL_MARKER = 'data-morphic-pomodoro-strip-fill';
 
 /** Default strip thickness in px. */
-export const MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT = 4 as const;
+export const MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT = 1 as const;
 
 /** Default z-index. */
 export const MORPHIC_POMODORO_STRIP_DEFAULT_Z_INDEX = 9997 as const;
@@ -64,6 +64,23 @@ export const POMODORO_STRIP_DEFAULT_RAMP_UP_STOP = 0.35 as const;
 
 /** Fraction (0..1) at which the fill starts leaving `midColor` toward `endColor`. */
 export const POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP = 0.85 as const;
+
+/**
+ * The rail the fill runs along, and the reason it exists.
+ *
+ * The rail used to be painted with `startColor` -- the SAME colour the fill
+ * starts from. So at the first second the advancing edge had zero contrast
+ * against what it was advancing over, and the contrast only appeared as the
+ * fill ramped toward blue. Jay, on the real browser, 2026-09-04: « la jauge de
+ * progression est quasiment invisible, c'est comme s'il y avait une opacite ».
+ * It was not opacity. It was the same colour twice.
+ *
+ * A mid grey at low alpha reads on a light chrome and on a dark one, without
+ * knowing which: it darkens a pale surface and lightens a dark one. Every fill
+ * colour of the ramp -- pale grey, blue, orange -- stands off it from the
+ * first pixel.
+ */
+export const POMODORO_STRIP_TRACK_COLOR = 'rgba(127, 127, 127, 0.35)' as const;
 
 export const POMODORO_STRIP_START_COLOR = '#d1d5db' as const; // pale grey
 export const POMODORO_STRIP_MID_COLOR = '#3b82f6' as const; // vivid blue
@@ -304,7 +321,7 @@ export function enablePomodoroStrip(options: PomodoroStripOptions = {}): void {
   root.style.height = `${height}px`;
   root.style.pointerEvents = 'none';
   root.style.zIndex = String(zIndex);
-  root.style.background = startColor;
+  root.style.background = POMODORO_STRIP_TRACK_COLOR;
   root.style.transition = isReducedMotion() ? 'none' : 'opacity 200ms ease';
   root.style.overflow = 'hidden';
 

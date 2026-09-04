@@ -240,6 +240,7 @@ export {
   POMODORO_STRIP_END_COLOR,
   POMODORO_STRIP_MID_COLOR,
   POMODORO_STRIP_START_COLOR,
+  POMODORO_STRIP_TRACK_COLOR,
   type PomodoroStripOptions,
   type PomodoroStripPosition,
   type PomodoroStripState,

@@ -26,6 +26,7 @@ import {
   POMODORO_STRIP_END_COLOR,
   POMODORO_STRIP_MID_COLOR,
   POMODORO_STRIP_START_COLOR,
+  POMODORO_STRIP_TRACK_COLOR,
   skipPhase,
   startPomodoro,
   stopPomodoro,
@@ -129,14 +130,27 @@ describe('pomodoro-strip / computePomodoroStripFillColor', () => {
 // ---------------------------------------------------------------------------
 
 describe('pomodoro-strip / enablePomodoroStrip', () => {
-  it('should mount a pale-grey track + a 0%-width fill when a phase just started', () => {
+  it('should mount a contrasting track + a 0%-width fill when a phase just started', () => {
+    // CONTRACT CHANGED, 2026-09-04, and this test is why it took a human eye.
+    //
+    // It used to demand a PALE GREY track -- the very colour the fill starts
+    // from. So it asserted, precisely and greenly, that the progress bar is
+    // invisible at the moment it starts. Jay saw it on the real browser: « la
+    // jauge est quasiment invisible, comme s'il y avait une opacite ».
+    //
+    // A test can pin a defect as firmly as it pins a feature. This one now
+    // demands what the rail is for: something the fill can be seen against.
     startPomodoro({ workMs: 100_000 });
     enablePomodoroStrip();
     const t = track();
     const f = fill();
     expect(t).not.toBeNull();
     expect(f).not.toBeNull();
-    expect(t?.style.background).toBe('rgb(209, 213, 219)');
+    expect(t?.style.background).toBe('rgba(127, 127, 127, 0.35)');
+    expect(
+      t?.style.background,
+      'the track is the fill colour again; the progress is invisible until the ramp separates them',
+    ).not.toBe('rgb(209, 213, 219)');
     expect(f?.style.width).toBe('0%');
   });
 
@@ -328,5 +342,31 @@ describe('pomodoro-strip / getPomodoroStripState', () => {
       phase: 'short-break',
       completing: true,
     });
+  });
+});
+
+describe('the progress must be visible from the first second', () => {
+  // Jay, on the real browser, 2026-09-04: « la jauge de progression est
+  // quasiment invisible, c'est comme s'il y avait une opacite ». It was not
+  // opacity: the rail was painted with the very colour the fill starts from, so
+  // the advancing edge had nothing to advance over.
+  //
+  // 1437 green tests never saw it. Only someone looking at the screen did.
+
+  it('should_paint_the_rail_a_different_colour_than_the_fill_start', () => {
+    expect(
+      POMODORO_STRIP_TRACK_COLOR,
+      'the rail and the fill start from the same colour again; the progress ' +
+        'is invisible until the ramp separates them',
+    ).not.toBe(POMODORO_STRIP_START_COLOR);
+  });
+
+  it('should_keep_the_rail_visible_on_a_light_and_on_a_dark_chrome', () => {
+    // A mid grey at low alpha darkens a pale surface and lightens a dark one.
+    // A hex colour cannot do both, which is why this one is not hex.
+    expect(
+      POMODORO_STRIP_TRACK_COLOR.startsWith('rgba('),
+      'the rail became opaque; it then reads on one chrome and vanishes on the other',
+    ).toBe(true);
   });
 });
