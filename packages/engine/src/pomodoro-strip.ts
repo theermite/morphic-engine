@@ -87,9 +87,16 @@ export const POMODORO_STRIP_DEFAULT_RAMP_DOWN_STOP = 0.85 as const;
  * against a guess.
  *
  * **The rail is opaque.** The fill/rail contrast becomes a constant of these
- * six values, provable once and true on any background -- black, white, the
+ * six values, provable once and true behind any background -- black, white, the
  * grey of a real toolbar, a custom theme nobody has written yet. There is no
- * longer an assumption that can be wrong.
+ * longer a background to assume.
+ *
+ * **The honest limit**, so the sentence above is not read as more than it says:
+ * this holds for the contrast between the fill and its rail. It says nothing
+ * about `prefers-contrast` or `forced-colors`, which the engine handles
+ * elsewhere (`contrast.ts`) and this file has never read. Someone who asked
+ * their system for more contrast gets the same six values as everyone else --
+ * an old gap, not one this change opened, and not one it closes.
  *
  * What a background still changes: whether the RAIL is distinguishable from it.
  * That is the weak requirement, and it degrades gently -- when the rail blends

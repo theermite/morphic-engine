@@ -534,6 +534,48 @@ describe('the progress must be visible from the first second', () => {
     }
   });
 
+  it('should_leave_a_colour_the_caller_named_alone_when_the_background_changes', () => {
+    // Claimed by the code, verified by review, pinned by nobody until now. A
+    // setting that undoes itself on the next theme change is not a setting.
+    const listeners: Array<() => void> = [];
+    let dark = false;
+    const original = window.matchMedia;
+    // @ts-expect-error deliberate stand-in for a media query that can change
+    window.matchMedia = (query: string) => ({
+      matches: query.includes('dark') ? dark : false,
+      media: query,
+      addEventListener: (_type: string, listener: () => void) => listeners.push(listener),
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      onchange: null,
+      dispatchEvent: () => false,
+    });
+
+    try {
+      startPomodoro({ workMs: 100_000 });
+      enablePomodoroStrip({ startColor: '#ff00ff' });
+
+      dark = true;
+      for (const listener of listeners) listener();
+
+      // The rail follows the background, because the caller said nothing about it.
+      expect(track()?.style.background).toBe('rgb(63, 63, 70)');
+      // The start does not, because the caller named it.
+      expect(
+        getPomodoroStripState()?.active,
+        'the strip fell over on a theme change with a named colour',
+      ).toBe(true);
+      vi.advanceTimersByTime(MORPHIC_POMODORO_STRIP_POLL_MS);
+      expect(
+        fill()?.style.background,
+        'a colour the caller named was overwritten by a theme change',
+      ).toBe('rgb(255, 0, 255)');
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it('should_stop_listening_to_the_background_once_the_strip_is_gone', () => {
     // A listener that outlives its strip holds the whole module alive and
     // writes into a rail that no longer exists.
