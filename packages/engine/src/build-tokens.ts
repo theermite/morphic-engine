@@ -30,7 +30,7 @@ import {
   MOTIONS,
   morphicTokens,
   THEMES,
-} from './tokens.js';
+} from './tokens-values.js';
 
 // Re-export axis constants for tests + downstream consumers.
 export { CONTRASTS, DENSITIES, FONT_FAMILIES, FONT_SIZES, MOTIONS, THEMES };

@@ -26,9 +26,9 @@
  */
 
 import { MORPHIC_STORAGE_KEY } from './init.js';
-import { getTarget } from './target.js';
-import { FONT_FAMILIES } from './tokens.js';
 import { safeStorage } from './storage-access.js';
+import { getTarget } from './target.js';
+import { FONT_FAMILIES } from './tokens-values.js';
 
 // ---------------------------------------------------------------------------
 // Types
