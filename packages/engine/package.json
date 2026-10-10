@@ -22,6 +22,10 @@
     "shinkofa"
   ],
   "type": "module",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/morphic-provider.js"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
