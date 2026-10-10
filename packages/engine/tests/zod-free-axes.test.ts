@@ -12,21 +12,23 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '../src');
 
-/** Every module specifier imported by a source file (static, re-export, bare side-effect). */
+/**
+ * Every module specifier a source imports — static, re-export, bare, dynamic
+ * `import()` and `require()`. Uses the TypeScript scanner rather than a regex:
+ * a regex misses forms such as a comment holding an apostrophe inside an
+ * import list (caught by the independent review, 2026-10-10).
+ */
+function importsIn(source: string): string[] {
+  return ts.preProcessFile(source, true, true).importedFiles.map((f) => f.fileName);
+}
+
 function importsOf(file: string): string[] {
-  const source = readFileSync(file, 'utf-8');
-  const found: string[] = [];
-  for (const m of source.matchAll(/^\s*(?:import|export)\b[^'"]*?from\s+['"]([^'"]+)['"]/gm)) {
-    found.push(m[1] as string);
-  }
-  for (const m of source.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)) {
-    found.push(m[1] as string);
-  }
-  return found;
+  return importsIn(readFileSync(file, 'utf-8'));
 }
 
 /** Walks relative imports from `entry`; returns the bare packages reached. */
@@ -66,5 +68,15 @@ describe('axis modules stay free of zod', () => {
 
   it('the walker does see zod where it is really imported (guard against a blind test)', () => {
     expect([...packagesReachedFrom('tokens.ts')]).toContain('zod');
+  });
+
+  it.each([
+    ['dynamic import', "const m = await import('zod');"],
+    ['apostrophe in a comment', "import {\n  a, // don't remove\n} from 'zod';"],
+    ['quoted export name', "export { 'x' as y } from 'zod';"],
+    ['import after code on one line', "const a = 1; import { z } from 'zod';"],
+    ['require call', "const z = require('zod');"],
+  ])('the scanner sees a %s', (_label, source) => {
+    expect(importsIn(source)).toContain('zod');
   });
 });
