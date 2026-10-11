@@ -13,27 +13,7 @@
  * Self-styled (see morphic-button.css), zero host-framework coupling.
  */
 
-import {
-  type ColorVisionCorrection,
-  type ColorVisionType,
-  clearColorVisionCorrection,
-  clearReadingFocus,
-  clearReadingGuide,
-  disableWaiSymbols,
-  enableWaiSymbols,
-  enterRecoveryMode,
-  exitRecoveryMode,
-  getColorVisionCorrection,
-  getReadingFocus,
-  getReadingGuide,
-  isRecoveryActive,
-  type ReadingBand,
-  type ReadingFocusIntensity,
-  setColorVisionCorrection,
-  setReadingFocus,
-  setReadingGuide,
-  stopPomodoro,
-} from '@theermite/morphic-engine';
+import { stopPomodoro } from '@theermite/morphic-engine';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useMorphicContrast,
@@ -43,20 +23,42 @@ import {
   useMorphicMotion,
   useMorphicTheme,
 } from '../useMorphic.js';
-import { CloseIcon, PaletteIcon, ResetIcon } from './icons.js';
+import {
+  CATEGORY_AXES,
+  contrastLabel,
+  describeChanges,
+  FONT_STACKS,
+  themeLabel,
+} from './categories.js';
+import {
+  AccessibilityIcon,
+  CloseIcon,
+  EnergyIcon,
+  ReadingIcon,
+  ResetIcon,
+  TextIcon,
+  ViewIcon,
+} from './icons.js';
 import { mergeLabels } from './labels.js';
 import { PomodoroControl } from './PomodoroControl.js';
 import { computePlacement, type ModalPlacement } from './placement.js';
-import { Chip, Row, SectionTitle } from './primitives.js';
+import { Category, Chip, Row } from './primitives.js';
 import {
   ALL_AXES,
   DEFAULT_VISIBLE_AXES,
   type MorphicAxisKey,
   type MorphicButtonProps,
+  type MorphicCategoryKey,
 } from './types.js';
+import { useEngineAxes } from './useEngineAxes.js';
 import { defaultWaiResolver } from './wai-emoji.js';
 
-type WaiMode = 'before' | 'after';
+const CATEGORY_ICONS: Record<MorphicCategoryKey, React.JSX.Element> = {
+  view: <ViewIcon />,
+  text: <TextIcon />,
+  reading: <ReadingIcon />,
+  energy: <EnergyIcon />,
+};
 
 // --- Component --------------------------------------------------------------
 
@@ -94,23 +96,20 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   const [density, setDensity] = useMorphicDensity();
   const [contrast, setContrast] = useMorphicContrast();
 
-  const [rf, setRf] = useState<ReadingFocusIntensity | null>(null);
-  const [band, setBand] = useState<ReadingBand | null>(null);
-  const [ruler, setRuler] = useState<boolean>(false);
-  const [wai, setWai] = useState<WaiMode | null>(null);
-  const [colorVision, setColorVisionState] = useState<ColorVisionCorrection | null>(null);
-  const [recovery, setRecovery] = useState<boolean>(false);
-
-  // Sync engine-only axes (reading focus/guide/color-vision/recovery) into local state on open.
-  useEffect(() => {
-    if (!open) return;
-    setRf(getReadingFocus());
-    const guide = getReadingGuide();
-    setBand(guide.band);
-    setRuler(guide.ruler);
-    setColorVisionState(getColorVisionCorrection());
-    setRecovery(isRecoveryActive());
-  }, [open]);
+  const {
+    rf,
+    band,
+    ruler,
+    wai,
+    colorVision,
+    recovery,
+    handleRf,
+    handleBand,
+    handleRuler,
+    handleWai,
+    handleColorVision,
+    handleRecovery,
+  } = useEngineAxes(open, waiResolver);
 
   // Escape + outside click close the dialog.
   useEffect(() => {
@@ -128,49 +127,6 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
       document.removeEventListener('mousedown', onOutside);
     };
   }, [open]);
-
-  const handleRf = useCallback((v: ReadingFocusIntensity | null) => {
-    if (v === null) clearReadingFocus();
-    else setReadingFocus(v);
-    setRf(v);
-  }, []);
-
-  const handleBand = useCallback((v: ReadingBand | null) => {
-    if (v === null) clearReadingGuide('band');
-    else setReadingGuide(v);
-    setBand(v);
-  }, []);
-
-  const handleRuler = useCallback((on: boolean) => {
-    if (on) setReadingGuide('ruler');
-    else clearReadingGuide('ruler');
-    setRuler(on);
-  }, []);
-
-  const handleWai = useCallback(
-    (v: WaiMode | null) => {
-      if (v === null) disableWaiSymbols();
-      else enableWaiSymbols({ mode: v, resolver: waiResolver });
-      setWai(v);
-    },
-    [waiResolver],
-  );
-
-  const handleColorVision = useCallback((v: ColorVisionType | null) => {
-    if (v === null) {
-      clearColorVisionCorrection();
-      setColorVisionState(null);
-    } else {
-      const next = setColorVisionCorrection(v);
-      setColorVisionState(next);
-    }
-  }, []);
-
-  const handleRecovery = useCallback((on: boolean) => {
-    if (on) enterRecoveryMode();
-    else exitRecoveryMode();
-    setRecovery(on);
-  }, []);
 
   const handleReset = useCallback(() => {
     setTheme('auto');
@@ -202,10 +158,72 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
     handleWai,
   ]);
 
+  const [openCats, setOpenCats] = useState<Record<MorphicCategoryKey, boolean>>({
+    view: true,
+    text: false,
+    reading: false,
+    energy: false,
+  });
+  const toggleCat = (key: MorphicCategoryKey) => setOpenCats((c) => ({ ...c, [key]: !c[key] }));
+
+  // Opening the fold also opens the categories it adds rows to, otherwise the
+  // click would reveal nothing visible.
+  const toggleAdvanced = () => {
+    const next = !showAdvanced;
+    setShowAdvanced(next);
+    if (next) {
+      setOpenCats((c) => ({
+        ...c,
+        view: c.view || has('contrast'),
+        reading: c.reading || has('waiSymbols'),
+      }));
+    }
+  };
+
+  // A never-chosen axis (null) or one following the system (`auto`) shows its
+  // default as selected: a bar with nothing selected reads as broken.
+  const shown = <T extends string>(value: T | null, def: T): T =>
+    value === null || (value === 'auto' && def !== 'auto') ? def : value;
+
+  const changes = describeChanges(
+    {
+      theme,
+      motion,
+      contrast,
+      fontFamily,
+      fontSize,
+      density,
+      colorVision,
+      readingFocus: rf,
+      band,
+      ruler,
+      wai,
+      recovery,
+    },
+    t,
+    has,
+  );
+  const adapted = Object.values(changes).some((list) => list.length > 0);
+
+  const categoryProps = (key: MorphicCategoryKey) => ({
+    id: key,
+    title: t.categories[key],
+    summary: changes[key].length > 0 ? changes[key].join(' · ') : t.categoryDefault,
+    icon: CATEGORY_ICONS[key],
+    open: openCats[key],
+    onToggle: () => toggleCat(key),
+  });
+  const hasCategory = (key: MorphicCategoryKey) => CATEGORY_AXES[key].some(has);
+
   return (
     <div
       className={`morphic-mb${props.className ? ` ${props.className}` : ''}`}
       style={props.style}
+      // The engine never rewrites this subtree (reading focus wraps words in
+      // <b>): React must keep owning the panel's text nodes. Written literally,
+      // not imported, so an older engine simply ignores it instead of failing
+      // the host's build. Kept equal to MORPHIC_SKIP_ATTR by a test.
+      data-morphic-skip=""
     >
       <button
         type="button"
@@ -216,7 +234,8 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
         aria-expanded={open}
         onClick={() => setOpen((p) => !p)}
       >
-        <PaletteIcon />
+        <AccessibilityIcon />
+        {adapted && <span className="morphic-mb-dot" aria-hidden="true" />}
       </button>
 
       {open && (
@@ -239,157 +258,200 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
           </div>
 
           <div className="morphic-mb-body">
-            {(has('theme') ||
-              has('fontFamily') ||
-              has('fontSize') ||
-              has('motion') ||
-              has('density')) && <SectionTitle>{t.sections.display}</SectionTitle>}
-            {has('theme') && (
-              <Row label={t.rows.theme}>
-                {(['dark', 'light', 'auto', 'sepia', 'high-contrast'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={v === 'high-contrast' ? t.theme.highContrast : t.theme[v]}
-                    active={theme === v}
-                    onClick={() => setTheme(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {has('fontFamily') && (
-              <Row label={t.rows.font}>
-                {(['system', 'serif', 'atkinson', 'dyslexic'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.fontFamily[v]}
-                    active={fontFamily === v}
-                    onClick={() => setFontFamily(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {has('fontSize') && (
-              <Row label={t.rows.size}>
-                {(['sm', 'md', 'lg', 'xl'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.fontSize[v]}
-                    active={fontSize === v}
-                    onClick={() => setFontSize(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {has('motion') && (
-              <Row label={t.rows.motion}>
-                {(['full', 'reduced', 'none'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.motion[v]}
-                    active={motion === v}
-                    onClick={() => setMotion(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {has('density') && (
-              <Row label={t.rows.density}>
-                {(['compact', 'comfortable', 'spacious'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.density[v]}
-                    active={density === v}
-                    onClick={() => setDensity(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {(has('readingFocus') || has('readingGuide')) && (
-              <SectionTitle>{t.sections.reading}</SectionTitle>
-            )}
-            {has('readingFocus') && (
-              <Row label={t.rows.readingFocus}>
-                <Chip
-                  label={t.readingFocus.off}
-                  active={rf === null}
-                  onClick={() => handleRf(null)}
-                />
-                {(['low', 'medium', 'high'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.readingFocus[v]}
-                    active={rf === v}
-                    onClick={() => handleRf(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {has('readingGuide') && (
-              <Row label={t.rows.readingGuide}>
-                <Chip
-                  label={t.readingGuide.off}
-                  active={band === null}
-                  onClick={() => handleBand(null)}
-                />
-                {(['line', 'mask'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.readingGuide[v]}
-                    active={band === v}
-                    onClick={() => handleBand(v)}
-                  />
-                ))}
-              </Row>
-            )}
-            {has('readingGuide') && (
-              <Row label={t.rows.readingRuler}>
-                <Chip
-                  label={t.readingRuler.off}
-                  active={!ruler}
-                  onClick={() => handleRuler(false)}
-                />
-                <Chip label={t.readingRuler.on} active={ruler} onClick={() => handleRuler(true)} />
-              </Row>
+            {hasCategory('view') && (
+              <Category {...categoryProps('view')}>
+                {has('theme') && (
+                  <Row label={t.rows.theme} variant="tiles">
+                    {(['dark', 'light', 'auto', 'sepia', 'high-contrast'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={themeLabel(t, v)}
+                        active={shown(theme, 'auto') === v}
+                        onClick={() => setTheme(v)}
+                      >
+                        <span className={`morphic-mb-swatch morphic-mb-swatch--${v}`} />
+                        <span>{themeLabel(t, v)}</span>
+                      </Chip>
+                    ))}
+                  </Row>
+                )}
+                {has('motion') && (
+                  <Row label={t.rows.motion}>
+                    {(['full', 'reduced', 'none'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.motion[v]}
+                        active={shown(motion, 'full') === v}
+                        onClick={() => setMotion(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+                {has('colorVision') && (
+                  <Row label={t.rows.colorVision}>
+                    <Chip
+                      label={t.colorVision.off}
+                      active={colorVision === null}
+                      onClick={() => handleColorVision(null)}
+                    />
+                    {(['protan', 'deutan', 'tritan'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.colorVision[v]}
+                        active={colorVision?.type === v}
+                        onClick={() => handleColorVision(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+                {showAdvanced && has('contrast') && (
+                  <Row label={t.rows.contrast}>
+                    {(['no-preference', 'more', 'less'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={contrastLabel(t, v)}
+                        active={shown(contrast, 'no-preference') === v}
+                        onClick={() => setContrast(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+              </Category>
             )}
 
-            {has('colorVision') && (
-              <Row label={t.rows.colorVision}>
-                <Chip
-                  label={t.colorVision.off}
-                  active={colorVision === null}
-                  onClick={() => handleColorVision(null)}
-                />
-                {(['protan', 'deutan', 'tritan'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={t.colorVision[v]}
-                    active={colorVision?.type === v}
-                    onClick={() => handleColorVision(v)}
+            {hasCategory('text') && (
+              <Category {...categoryProps('text')}>
+                {has('fontFamily') && (
+                  <Row label={t.rows.font}>
+                    {(['system', 'serif', 'atkinson', 'dyslexic'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.fontFamily[v]}
+                        active={shown(fontFamily, 'system') === v}
+                        onClick={() => setFontFamily(v)}
+                        style={{ fontFamily: FONT_STACKS[v] }}
+                      />
+                    ))}
+                  </Row>
+                )}
+                {has('fontSize') && (
+                  <Row label={t.rows.size}>
+                    {(['sm', 'md', 'lg', 'xl'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.fontSize[v]}
+                        active={shown(fontSize, 'md') === v}
+                        onClick={() => setFontSize(v)}
+                      >
+                        <span className={`morphic-mb-size morphic-mb-size--${v}`}>A</span>
+                      </Chip>
+                    ))}
+                  </Row>
+                )}
+                {has('density') && (
+                  <Row label={t.rows.density}>
+                    {(['compact', 'comfortable', 'spacious'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.density[v]}
+                        active={shown(density, 'comfortable') === v}
+                        onClick={() => setDensity(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+              </Category>
+            )}
+
+            {hasCategory('reading') && (
+              <Category {...categoryProps('reading')}>
+                {has('readingFocus') && (
+                  <Row label={t.rows.readingFocus}>
+                    <Chip
+                      label={t.readingFocus.off}
+                      active={rf === null}
+                      onClick={() => handleRf(null)}
+                    />
+                    {(['low', 'medium', 'high'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.readingFocus[v]}
+                        active={rf === v}
+                        onClick={() => handleRf(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+                {has('readingGuide') && (
+                  <Row label={t.rows.readingGuide}>
+                    <Chip
+                      label={t.readingGuide.off}
+                      active={band === null}
+                      onClick={() => handleBand(null)}
+                    />
+                    {(['line', 'mask'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.readingGuide[v]}
+                        active={band === v}
+                        onClick={() => handleBand(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+                {has('readingGuide') && (
+                  <Row label={t.rows.readingRuler}>
+                    <Chip
+                      label={t.readingRuler.off}
+                      active={!ruler}
+                      onClick={() => handleRuler(false)}
+                    />
+                    <Chip
+                      label={t.readingRuler.on}
+                      active={ruler}
+                      onClick={() => handleRuler(true)}
+                    />
+                  </Row>
+                )}
+                {showAdvanced && has('waiSymbols') && (
+                  <Row label={t.rows.wai}>
+                    <Chip label={t.wai.off} active={wai === null} onClick={() => handleWai(null)} />
+                    {(['before', 'after'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={t.wai[v]}
+                        active={wai === v}
+                        onClick={() => handleWai(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
+              </Category>
+            )}
+
+            {hasCategory('energy') && (
+              <Category {...categoryProps('energy')}>
+                {has('recoveryMode') && (
+                  <Row label={t.rows.recoveryMode}>
+                    <Chip
+                      label={t.recoveryMode.off}
+                      active={!recovery}
+                      onClick={() => handleRecovery(false)}
+                    />
+                    <Chip
+                      label={t.recoveryMode.on}
+                      active={recovery}
+                      onClick={() => handleRecovery(true)}
+                    />
+                  </Row>
+                )}
+                {has('pomodoro') && (
+                  <PomodoroControl
+                    key={pomodoroResetKey}
+                    labels={{ label: t.rows.pomodoro, ...t.pomodoro }}
                   />
-                ))}
-              </Row>
-            )}
-
-            {has('recoveryMode') && (
-              <Row label={t.rows.recoveryMode}>
-                <Chip
-                  label={t.recoveryMode.off}
-                  active={!recovery}
-                  onClick={() => handleRecovery(false)}
-                />
-                <Chip
-                  label={t.recoveryMode.on}
-                  active={recovery}
-                  onClick={() => handleRecovery(true)}
-                />
-              </Row>
-            )}
-
-            {has('pomodoro') && (
-              <PomodoroControl
-                key={pomodoroResetKey}
-                labels={{ label: t.rows.pomodoro, ...t.pomodoro }}
-              />
+                )}
+              </Category>
             )}
 
             {foldedAxesPresent && (
@@ -397,44 +459,10 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                 type="button"
                 className="morphic-mb-advanced-toggle"
                 aria-expanded={showAdvanced}
-                onClick={() => setShowAdvanced((p) => !p)}
+                onClick={toggleAdvanced}
               >
                 {showAdvanced ? t.advancedToggle.less : t.advancedToggle.more}
               </button>
-            )}
-
-            {showAdvanced && has('contrast') && (
-              <Row label={t.rows.contrast}>
-                {(['no-preference', 'more', 'less'] as const).map((v) => (
-                  <Chip
-                    key={v}
-                    label={
-                      v === 'no-preference'
-                        ? t.contrast.noPreference
-                        : t.contrast[v as 'more' | 'less']
-                    }
-                    active={contrast === v}
-                    onClick={() => setContrast(v)}
-                  />
-                ))}
-              </Row>
-            )}
-
-            {showAdvanced && has('waiSymbols') && (
-              <>
-                <SectionTitle>{t.sections.visual}</SectionTitle>
-                <Row label={t.rows.wai}>
-                  <Chip label={t.wai.off} active={wai === null} onClick={() => handleWai(null)} />
-                  {(['before', 'after'] as const).map((v) => (
-                    <Chip
-                      key={v}
-                      label={t.wai[v]}
-                      active={wai === v}
-                      onClick={() => handleWai(v)}
-                    />
-                  ))}
-                </Row>
-              </>
             )}
           </div>
 

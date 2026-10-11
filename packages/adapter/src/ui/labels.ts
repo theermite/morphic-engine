@@ -17,6 +17,8 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
   resetAria: 'Réinitialiser toutes les préférences',
   footnote: 'Préférences sauvegardées localement',
   sections: { text: 'Texte', display: 'Affichage', reading: 'Lecture', visual: 'Aide visuelle' },
+  categories: { view: 'Vue', text: 'Texte', reading: 'Lecture', energy: 'Énergie' },
+  categoryDefault: 'Par défaut',
   rows: {
     font: 'Police',
     size: 'Taille',

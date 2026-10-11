@@ -9,11 +9,19 @@
  * root (`pnpm --filter @theermite/morphic-adapter build` sets the cwd there).
  */
 
-import { copyFileSync, mkdirSync } from 'node:fs';
-
-const ASSETS = ['morphic-button.css', 'morphic-base.css'];
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 mkdirSync('dist/ui', { recursive: true });
-for (const file of ASSETS) {
-  copyFileSync(`src/ui/${file}`, `dist/ui/${file}`);
-}
+copyFileSync('src/ui/morphic-base.css', 'dist/ui/morphic-base.css');
+
+// The button's stylesheet is kept as three source files (palettes, panel, choices)
+// and published as ONE, so hosts keep importing a single `./ui.css`.
+const BUTTON_PARTS = [
+  'morphic-button-palettes.css',
+  'morphic-button.css',
+  'morphic-button-choices.css',
+];
+writeFileSync(
+  'dist/ui/morphic-button.css',
+  BUTTON_PARTS.map((file) => readFileSync(`src/ui/${file}`, 'utf-8')).join('\n'),
+);

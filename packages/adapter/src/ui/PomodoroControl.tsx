@@ -79,7 +79,7 @@ export function PomodoroControl(props: { labels: PomodoroControlLabels }): React
   const isIdle = state.phase === 'idle';
 
   return (
-    <Row label={t.label}>
+    <Row label={t.label} variant="actions">
       {isIdle && (
         <>
           <label className="morphic-mb-duration-field" htmlFor={workInputId}>

@@ -9,6 +9,8 @@ import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 afterEach(() => {
+  // Stylesheet guards run in the node environment: there is no DOM to reset.
+  if (typeof document === 'undefined') return;
   cleanup();
   // Reset morphic state between tests
   document.documentElement.removeAttribute('data-morphic-theme');

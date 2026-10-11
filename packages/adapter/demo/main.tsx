@@ -42,7 +42,9 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import '../src/ui/morphic-base.css';
+import '../src/ui/morphic-button-palettes.css';
 import '../src/ui/morphic-button.css';
+import '../src/ui/morphic-button-choices.css';
 
 // ---------------------------------------------------------------------------
 // A single "axis not in the button yet" card — generic wrapper, each axis

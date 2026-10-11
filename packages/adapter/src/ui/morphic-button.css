@@ -2,57 +2,103 @@
  * morphic-button.css — self-contained styles for <MorphicButton>.
  *
  * CDC ref : F-036. Brick : B-030b. License : AGPL-3.0-or-later.
+ * Redesign 2026-10-11 (Jay): collapsible categories, segmented choices with a
+ * check mark, theme tiles, round trigger with an "adapted" dot.
  *
- * Zero framework dependency. Themeable via `--morphic-ui-*` custom properties
- * a host can override (on `.morphic-mb` or any ancestor). Neutral dark-friendly
- * defaults. Touch targets >= 44px, visible focus, reduced-motion honored.
+ * Palettes live in morphic-button-palettes.css and choices in
+ * morphic-button-choices.css; the build joins the three files into the
+ * published `ui.css`.
+ *
+ * Three promises, each guarded by tests/ui/morphic-button-css.test.ts:
+ *
+ * 1. The panel follows the theme the user picked. The engine writes
+ *    `data-morphic-theme` on <html>; each value selects a palette below
+ *    (sepia uses the light palette: the page-wide sepia filter tints it).
+ *
+ * 2. Host styles cannot repaint it. Every rule that paints a control uses two
+ *    classes (`.morphic-mb .morphic-mb-chip`), which outweighs a host's generic
+ *    `button:hover`. Measured 2026-10-11: such a rule painted an unselected
+ *    choice in the accent colour, so it looked selected.
+ *
+ * 3. Hosts keep their theming knobs. This file never assigns `--morphic-ui-*`:
+ *    it reads them with a fallback, so a value set by the host, on the button
+ *    or on any ancestor, always wins over the palette.
+ *    Knobs: --morphic-ui-accent, -surface, -surface-2 (bars), -text,
+ *    -text-muted, -border, -radius, -shadow. (`--morphic-ui-on-accent` is no
+ *    longer read: a selected choice is raised, not filled with the accent.)
+ *
+ * Positioning rules for `.morphic-mb-modal` stay single-class on purpose: a
+ * host may re-anchor the panel with a plain `.morphic-mb-modal` rule (Kakusei
+ * centres it) and must keep winning.
  */
 
-.morphic-mb {
-  /* Theming knobs — override any of these from the host. */
-  --morphic-ui-accent: #6c8cff;
-  --morphic-ui-on-accent: #ffffff;
-  --morphic-ui-surface: #1c1f26;
-  --morphic-ui-surface-2: #262a33;
-  --morphic-ui-text: #e8eaed;
-  --morphic-ui-text-muted: #9aa0ab;
-  --morphic-ui-border: rgba(255, 255, 255, 0.12);
-  --morphic-ui-radius: 12px;
-  --morphic-ui-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+/* ── Shared button reset (host styles must not leak in) ───────────────── */
 
-  position: relative;
-  display: inline-block;
+.morphic-mb .morphic-mb-trigger,
+.morphic-mb .morphic-mb-close,
+.morphic-mb .morphic-mb-cat-toggle,
+.morphic-mb .morphic-mb-chip,
+.morphic-mb .morphic-mb-advanced-toggle,
+.morphic-mb .morphic-mb-reset {
+  margin: 0;
+  box-sizing: border-box;
+  font: inherit;
+  line-height: 1.2;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  box-shadow: none;
+  appearance: none;
+  cursor: pointer;
 }
 
-.morphic-mb-trigger {
+.morphic-mb .morphic-mb-trigger:focus-visible,
+.morphic-mb .morphic-mb-close:focus-visible,
+.morphic-mb .morphic-mb-cat-toggle:focus-visible,
+.morphic-mb .morphic-mb-chip:focus-visible,
+.morphic-mb .morphic-mb-advanced-toggle:focus-visible,
+.morphic-mb .morphic-mb-reset:focus-visible {
+  outline: 2px solid var(--mb-c-accent);
+  outline-offset: 2px;
+}
+
+/* ── Trigger ──────────────────────────────────────────────────────────── */
+
+.morphic-mb .morphic-mb-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
   padding: 0;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--morphic-ui-text-muted);
-  cursor: pointer;
+  border: 1px solid var(--mb-c-border);
+  border-radius: 50%;
+  background: var(--mb-c-surface);
+  color: var(--mb-c-text);
   transition:
     color 0.15s ease,
-    background-color 0.15s ease;
+    border-color 0.15s ease;
 }
 
-.morphic-mb-trigger:hover {
-  color: var(--morphic-ui-accent);
-  background: var(--morphic-ui-surface-2);
+.morphic-mb .morphic-mb-trigger:hover {
+  border-color: var(--mb-c-accent);
+  background: var(--mb-c-surface);
+  color: var(--mb-c-accent);
 }
 
-.morphic-mb-trigger:focus-visible,
-.morphic-mb-chip:focus-visible,
-.morphic-mb-close:focus-visible,
-.morphic-mb-reset:focus-visible {
-  outline: 2px solid var(--morphic-ui-accent);
-  outline-offset: 2px;
+.morphic-mb .morphic-mb-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mb-c-accent);
+  box-shadow: 0 0 0 2px var(--mb-c-surface);
 }
+
+/* ── Panel ────────────────────────────────────────────────────────────── */
 
 .morphic-mb-modal {
   position: absolute;
@@ -62,11 +108,15 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--morphic-ui-border);
-  border-radius: var(--morphic-ui-radius);
-  background: var(--morphic-ui-surface);
-  color: var(--morphic-ui-text);
-  box-shadow: var(--morphic-ui-shadow);
+}
+
+.morphic-mb .morphic-mb-modal {
+  border: 1px solid var(--mb-c-border);
+  border-radius: var(--mb-c-radius);
+  background: var(--mb-c-surface);
+  color: var(--mb-c-text);
+  box-shadow: var(--mb-c-shadow);
+  text-align: left;
 }
 
 /* Placement (B-030f) — computed at open time from the trigger's position
@@ -84,159 +134,189 @@
   left: 0;
 }
 
-.morphic-mb-head {
+.morphic-mb .morphic-mb-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--morphic-ui-border);
+  padding: 16px 20px 10px;
 }
 
-.morphic-mb-title {
-  font-size: 0.9rem;
-  font-weight: 600;
+.morphic-mb .morphic-mb-title {
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
-.morphic-mb-close {
+.morphic-mb .morphic-mb-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--mb-c-track);
+  color: var(--mb-c-muted);
+}
+
+.morphic-mb .morphic-mb-close:hover {
+  background: var(--mb-c-track);
+  color: var(--mb-c-text);
+}
+
+.morphic-mb .morphic-mb-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px 8px;
+  overflow-y: auto;
+}
+
+/* ── Categories: sections split by a hairline, no frame ───────────────── */
+
+.morphic-mb .morphic-mb-cat + .morphic-mb-cat {
+  border-top: 1px solid var(--mb-divider);
+}
+
+.morphic-mb .morphic-mb-cat--view {
+  --mb-cat: var(--mb-cat-view);
+}
+.morphic-mb .morphic-mb-cat--text {
+  --mb-cat: var(--mb-cat-text);
+}
+.morphic-mb .morphic-mb-cat--reading {
+  --mb-cat: var(--mb-cat-reading);
+}
+.morphic-mb .morphic-mb-cat--energy {
+  --mb-cat: var(--mb-cat-energy);
+}
+
+.morphic-mb .morphic-mb-cat-heading {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.morphic-mb .morphic-mb-cat-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--mb-c-text);
+  text-align: left;
+}
+
+.morphic-mb .morphic-mb-cat-toggle:hover {
+  background: var(--mb-hover);
+  color: var(--mb-c-text);
+}
+
+.morphic-mb .morphic-mb-cat-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--morphic-ui-text-muted);
-  cursor: pointer;
+  border-radius: 10px;
+  color: var(--mb-cat);
+  background: color-mix(in srgb, var(--mb-cat) 15%, transparent);
 }
 
-.morphic-mb-close:hover {
-  color: var(--morphic-ui-text);
+.morphic-mb .morphic-mb-cat-text {
+  display: block;
+  min-width: 0;
 }
 
-.morphic-mb-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px;
-  overflow-y: auto;
+.morphic-mb .morphic-mb-cat-title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
-.morphic-mb-duration-field {
+.morphic-mb .morphic-mb-cat-summary {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  color: var(--mb-c-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.morphic-mb .morphic-mb-chevron {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: var(--morphic-ui-text-muted);
+  color: var(--mb-c-muted);
+  transition: transform 0.18s ease;
 }
 
-.morphic-mb-duration-field input {
-  width: 52px;
-  padding: 4px 6px;
-  border: 1px solid var(--morphic-ui-border);
-  border-radius: 6px;
-  background: var(--morphic-ui-surface-2);
-  color: var(--morphic-ui-text);
-  font: inherit;
+.morphic-mb .morphic-mb-cat-toggle[aria-expanded="true"] .morphic-mb-chevron {
+  transform: rotate(180deg);
 }
 
-.morphic-mb-advanced-toggle {
+.morphic-mb .morphic-mb-cat-content {
+  padding: 2px 12px 16px 56px;
+}
+
+.morphic-mb .morphic-mb-cat-content[hidden] {
+  display: none;
+}
+
+/* ── Fold and footer ──────────────────────────────────────────────────── */
+
+.morphic-mb .morphic-mb-advanced-toggle {
   align-self: flex-start;
-  margin-top: 4px;
-  padding: 4px 0;
+  margin: 8px 12px 4px;
+  padding: 6px 0;
   border: none;
   background: transparent;
-  color: var(--morphic-ui-accent);
+  color: var(--mb-c-accent);
   font-size: 0.8rem;
   font-weight: 600;
-  cursor: pointer;
+}
+
+.morphic-mb .morphic-mb-advanced-toggle:hover {
+  background: transparent;
+  color: var(--mb-c-accent);
   text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
-.morphic-mb-section {
-  margin: 4px 0 0;
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--morphic-ui-text-muted);
-}
-
-.morphic-mb-row {
+.morphic-mb .morphic-mb-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-}
-
-.morphic-mb-row-label {
-  flex-shrink: 0;
-  width: 6rem;
-  font-size: 0.8rem;
-  color: var(--morphic-ui-text-muted);
-}
-
-.morphic-mb-chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
-}
-
-.morphic-mb-chip {
-  min-height: 32px;
-  padding: 6px 10px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: var(--morphic-ui-surface-2);
-  color: var(--morphic-ui-text-muted);
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition:
-    color 0.12s ease,
-    background-color 0.12s ease;
-}
-
-.morphic-mb-chip:hover {
-  color: var(--morphic-ui-text);
-}
-
-.morphic-mb-chip.is-active {
-  background: var(--morphic-ui-accent);
-  color: var(--morphic-ui-on-accent);
-  font-weight: 500;
-}
-
-.morphic-mb-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 12px 20px;
-  border-top: 1px solid var(--morphic-ui-border);
+  border-top: 1px solid var(--mb-divider);
 }
 
-.morphic-mb-note {
-  font-size: 0.66rem;
-  color: var(--morphic-ui-text-muted);
+.morphic-mb .morphic-mb-note {
+  font-size: 0.72rem;
+  color: var(--mb-c-muted);
 }
 
-.morphic-mb-reset {
+.morphic-mb .morphic-mb-reset {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
-  padding: 4px 8px;
+  min-height: 36px;
+  padding: 6px 12px;
   border: none;
-  border-radius: 7px;
+  border-radius: 9px;
   background: transparent;
-  color: var(--morphic-ui-text-muted);
-  font-size: 0.72rem;
-  cursor: pointer;
+  color: var(--mb-c-accent);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
-.morphic-mb-reset:hover {
-  color: var(--morphic-ui-text);
+.morphic-mb .morphic-mb-reset:hover {
+  background: var(--mb-c-track);
+  color: var(--mb-c-accent);
 }
 
 /* Mobile: dock the modal near the top, full-width with side gutters. */
@@ -251,8 +331,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .morphic-mb-trigger,
-  .morphic-mb-chip {
+  .morphic-mb .morphic-mb-trigger,
+  .morphic-mb .morphic-mb-chevron {
     transition: none;
   }
 }

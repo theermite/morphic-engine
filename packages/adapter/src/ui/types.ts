@@ -59,6 +59,9 @@ export const DEFAULT_VISIBLE_AXES: readonly MorphicAxisKey[] = [
   'pomodoro',
 ] as const;
 
+/** The collapsible groups of the panel, in display order. */
+export type MorphicCategoryKey = 'view' | 'text' | 'reading' | 'energy';
+
 /** Every user-facing string. Override any subset via the `labels` prop. */
 export interface MorphicButtonLabels {
   triggerAria: string;
@@ -67,7 +70,12 @@ export interface MorphicButtonLabels {
   reset: string;
   resetAria: string;
   footnote: string;
+  /** @deprecated Since the categories (2026-10-11) the panel no longer shows section titles. Kept so existing `labels` overrides still type-check. */
   sections: { text: string; display: string; reading: string; visual: string };
+  /** Titles of the collapsible categories (Jay 2026-10-11). */
+  categories: { view: string; text: string; reading: string; energy: string };
+  /** Summary shown under a category title when nothing in it differs from the defaults. */
+  categoryDefault: string;
   rows: {
     font: string;
     size: string;

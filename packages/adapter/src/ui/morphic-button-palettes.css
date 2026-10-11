@@ -1,0 +1,113 @@
+/**
+ * morphic-button-palettes.css — colour palettes of <MorphicButton>.
+ *
+ * CDC ref : F-036. License : AGPL-3.0-or-later.
+ *
+ * Source half of the published `ui.css`: scripts/copy-assets.mjs concatenates
+ * this file and morphic-button.css into dist/ui/morphic-button.css, so hosts
+ * still import one stylesheet. See morphic-button.css for the three promises
+ * (theme-following, isolation, host knobs).
+ */
+
+/* ── Palettes ─────────────────────────────────────────────────────────── */
+
+.morphic-mb {
+  --mb-surface: #1b1e25;
+  --mb-raised: #3a4050;
+  --mb-track: #262a33;
+  --mb-hover: #23272f;
+  --mb-text: #eceef1;
+  --mb-muted: #a8aebb;
+  --mb-divider: rgba(255, 255, 255, 0.08);
+  --mb-border: rgba(255, 255, 255, 0.1);
+  --mb-accent: #8fa6ff;
+  --mb-cat-view: #7cc4ff;
+  --mb-cat-text: #c9a6ff;
+  --mb-cat-reading: #7fd8aa;
+  --mb-cat-energy: #ffb877;
+  --mb-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+
+  position: relative;
+  display: inline-block;
+}
+
+:root[data-morphic-theme="light"] .morphic-mb,
+:root[data-morphic-theme="sepia"] .morphic-mb {
+  --mb-surface: #ffffff;
+  --mb-raised: #ffffff;
+  --mb-track: #eef0f4;
+  --mb-hover: #f6f7f9;
+  --mb-text: #1c1f26;
+  --mb-muted: #555c69;
+  --mb-divider: rgba(20, 24, 33, 0.08);
+  --mb-border: rgba(20, 24, 33, 0.12);
+  --mb-accent: #3550c8;
+  --mb-cat-view: #1d6aa8;
+  --mb-cat-text: #6b3fc0;
+  --mb-cat-reading: #23744d;
+  --mb-cat-energy: #9a520f;
+  --mb-shadow: 0 18px 48px rgba(20, 24, 33, 0.16);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-morphic-theme]) .morphic-mb {
+    --mb-surface: #ffffff;
+    --mb-raised: #ffffff;
+    --mb-track: #eef0f4;
+    --mb-hover: #f6f7f9;
+    --mb-text: #1c1f26;
+    --mb-muted: #555c69;
+    --mb-divider: rgba(20, 24, 33, 0.08);
+    --mb-border: rgba(20, 24, 33, 0.12);
+    --mb-accent: #3550c8;
+    --mb-cat-view: #1d6aa8;
+    --mb-cat-text: #6b3fc0;
+    --mb-cat-reading: #23744d;
+    --mb-cat-energy: #9a520f;
+    --mb-shadow: 0 18px 48px rgba(20, 24, 33, 0.16);
+  }
+}
+
+/* Dark is the base palette above; restated so an explicit choice wins over the
+   system preference rule. */
+:root[data-morphic-theme="dark"] .morphic-mb {
+  --mb-surface: #1b1e25;
+  --mb-raised: #3a4050;
+  --mb-track: #262a33;
+  --mb-hover: #23272f;
+  --mb-text: #eceef1;
+  --mb-muted: #a8aebb;
+  --mb-divider: rgba(255, 255, 255, 0.08);
+  --mb-border: rgba(255, 255, 255, 0.1);
+  --mb-accent: #8fa6ff;
+}
+
+/* High contrast: black, white, yellow — no tints, every edge drawn. */
+:root[data-morphic-theme="high-contrast"] .morphic-mb {
+  --mb-surface: #000000;
+  --mb-raised: #000000;
+  --mb-track: #000000;
+  --mb-hover: #1f1f1f;
+  --mb-text: #ffffff;
+  --mb-muted: #ffffff;
+  --mb-divider: #ffffff;
+  --mb-border: #ffffff;
+  --mb-accent: #ffeb3b;
+  --mb-cat-view: #ffeb3b;
+  --mb-cat-text: #ffeb3b;
+  --mb-cat-reading: #ffeb3b;
+  --mb-cat-energy: #ffeb3b;
+  --mb-shadow: none;
+}
+
+/* Resolved tokens: the host's knob first, the palette otherwise. */
+.morphic-mb {
+  --mb-c-surface: var(--morphic-ui-surface, var(--mb-surface));
+  --mb-c-track: var(--morphic-ui-surface-2, var(--mb-track));
+  --mb-c-text: var(--morphic-ui-text, var(--mb-text));
+  --mb-c-muted: var(--morphic-ui-text-muted, var(--mb-muted));
+  --mb-c-border: var(--morphic-ui-border, var(--mb-border));
+  --mb-c-accent: var(--morphic-ui-accent, var(--mb-accent));
+  --mb-c-radius: var(--morphic-ui-radius, 18px);
+  --mb-c-shadow: var(--morphic-ui-shadow, var(--mb-shadow));
+}

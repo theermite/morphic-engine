@@ -18,11 +18,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   __resetPomodoroStateForTests,
+  clearReadingFocus,
   getColorVisionCorrection,
   getPomodoroState,
   getReadingFocus,
   getReadingGuide,
   isRecoveryActive,
+  MORPHIC_SKIP_ATTR,
+  setReadingFocus,
 } from '@theermite/morphic-engine';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../../src/index.js';
@@ -40,8 +43,17 @@ function renderButton(props?: Parameters<typeof MorphicButton>[0]) {
   );
 }
 
-function openModal(): void {
+/** Opens the dialog only: categories keep their default open/closed state. */
+function openDialog(): void {
   fireEvent.click(screen.getByRole('button', { name: /personnaliser l'affichage/i }));
+}
+
+/** Opens the dialog and expands every category, so each choice is reachable. */
+function openModal(): void {
+  openDialog();
+  for (const toggle of document.querySelectorAll('.morphic-mb-cat-toggle')) {
+    if (toggle.getAttribute('aria-expanded') === 'false') fireEvent.click(toggle);
+  }
 }
 
 const root = () => document.documentElement;
@@ -445,8 +457,8 @@ describe('MorphicButton — modal placement (viewport collision)', () => {
   });
 });
 
-describe("MorphicButton — default row order matches Jay's list (2026-08-29)", () => {
-  it('renders the always-visible rows in the exact requested sequence', () => {
+describe('MorphicButton — row order (grouped by category, Jay 2026-10-11)', () => {
+  it('renders the always-visible rows category by category: view, text, reading, energy', () => {
     renderButton();
     openModal();
     const labels = Array.from(document.querySelectorAll('.morphic-mb-row-label')).map(
@@ -454,14 +466,14 @@ describe("MorphicButton — default row order matches Jay's list (2026-08-29)", 
     );
     expect(labels).toEqual([
       'Thème',
+      'Animation',
+      'Correction daltonisme',
       'Police',
       'Taille',
-      'Animation',
       'Densité',
       'Focus texte',
       'Bande',
       'Règle',
-      'Correction daltonisme',
       'Mode récupération',
       'Cycle Pomodoro',
     ]);
@@ -469,7 +481,7 @@ describe("MorphicButton — default row order matches Jay's list (2026-08-29)", 
 });
 
 describe('MorphicButton — default-visible vs "plus d\'adaptations" fold', () => {
-  it('shows the core axes without needing to expand anything', () => {
+  it('shows the core axes without needing the fold', () => {
     renderButton();
     openModal();
     expect(screen.getByRole('button', { name: 'Sombre' })).toBeInTheDocument(); // theme
@@ -505,5 +517,174 @@ describe('MorphicButton — default-visible vs "plus d\'adaptations" fold', () =
     renderButton({ axes: ['theme', 'motion'] });
     openModal();
     expect(screen.queryByRole('button', { name: /plus d'adaptations/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('MorphicButton — categories (Jay 2026-10-11)', () => {
+  const toggle = (name: string) => screen.getByRole('button', { name });
+
+  it('opens with "Vue" expanded and the other categories collapsed', () => {
+    renderButton();
+    openDialog();
+    expect(toggle('Vue')).toHaveAttribute('aria-expanded', 'true');
+    for (const name of ['Texte', 'Lecture', 'Énergie']) {
+      expect(toggle(name)).toHaveAttribute('aria-expanded', 'false');
+    }
+    expect(screen.getByRole('button', { name: 'Sépia' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'OpenDyslexic' })).not.toBeInTheDocument();
+  });
+
+  it('expands and collapses a category from its title', () => {
+    renderButton();
+    openDialog();
+    fireEvent.click(toggle('Texte'));
+    expect(toggle('Texte')).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'OpenDyslexic' })).toBeInTheDocument();
+    fireEvent.click(toggle('Texte'));
+    expect(screen.queryByRole('button', { name: 'OpenDyslexic' })).not.toBeInTheDocument();
+  });
+
+  it('summarises what differs from the defaults, as the toggle description', () => {
+    renderButton();
+    openDialog();
+    expect(toggle('Vue')).toHaveAccessibleDescription('Par défaut');
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sépia' }));
+    });
+    expect(toggle('Vue')).toHaveAccessibleDescription('Thème : Sépia');
+  });
+
+  it('names a boolean setting by its row when it is on', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'On' }));
+    });
+    expect(toggle('Lecture')).toHaveAccessibleDescription('Règle');
+  });
+
+  it('renders only the categories that hold at least one requested axis', () => {
+    renderButton({ axes: ['theme'] });
+    openDialog();
+    expect(document.querySelectorAll('.morphic-mb-cat-toggle')).toHaveLength(1);
+    expect(toggle('Vue')).toBeInTheDocument();
+  });
+
+  it('opening the fold also expands the categories that hold folded axes', () => {
+    renderButton();
+    openDialog();
+    fireEvent.click(toggle('Vue'));
+    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
+    expect(screen.getByRole('button', { name: 'Élevé' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avant' })).toBeInTheDocument();
+  });
+});
+
+describe('MorphicButton — choices show their effect (Jay 2026-10-11)', () => {
+  it('marks the active choice with a check, not only with colour', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sépia' }));
+    });
+    const sepia = screen.getByRole('button', { name: 'Sépia' });
+    expect(sepia).toHaveAttribute('aria-pressed', 'true');
+    expect(sepia.querySelector('.morphic-mb-check')).not.toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Clair' }).querySelector('.morphic-mb-check'),
+    ).toBeNull();
+  });
+
+  it('gives each theme choice a colour swatch', () => {
+    renderButton();
+    openModal();
+    for (const [name, value] of [
+      ['Sombre', 'dark'],
+      ['Clair', 'light'],
+      ['Auto', 'auto'],
+      ['Sépia', 'sepia'],
+      ['Contraste+', 'high-contrast'],
+    ] as const) {
+      expect(
+        screen.getByRole('button', { name }).querySelector(`.morphic-mb-swatch--${value}`),
+      ).not.toBeNull();
+    }
+  });
+
+  it('writes each font choice in its own font', () => {
+    renderButton();
+    openModal();
+    expect(screen.getByRole('button', { name: 'OpenDyslexic' }).style.fontFamily).toContain(
+      'OpenDyslexic',
+    );
+    expect(screen.getByRole('button', { name: 'Serif' }).style.fontFamily).toContain('Georgia');
+  });
+
+  it('shows sizes as growing letters while keeping their label as accessible name', () => {
+    renderButton();
+    openModal();
+    const xl = screen.getByRole('button', { name: 'XL' });
+    expect(xl.textContent).toBe('A');
+    expect(xl.querySelector('.morphic-mb-size--xl')).not.toBeNull();
+  });
+});
+
+describe('MorphicButton — trigger shows when the page is adapted (Jay 2026-10-11)', () => {
+  const dot = () => document.querySelector('.morphic-mb-trigger .morphic-mb-dot');
+
+  it('shows no dot for a fresh visitor', () => {
+    renderButton();
+    expect(dot()).toBeNull();
+  });
+
+  it('shows the dot once a setting differs from its default, and drops it on reset', () => {
+    renderButton();
+    openDialog();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sépia' }));
+    });
+    expect(dot()).not.toBeNull();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /réinitialiser/i }));
+    });
+    expect(dot()).toBeNull();
+  });
+
+  it('reads engine-only settings at mount, before the panel is ever opened', () => {
+    setReadingFocus('medium');
+    renderButton();
+    expect(dot()).not.toBeNull();
+    clearReadingFocus();
+  });
+});
+
+describe('MorphicButton — the engine never rewrites the panel (found 2026-10-11)', () => {
+  it('marks its root with the engine opt-out attribute', () => {
+    renderButton();
+    expect(document.querySelector('.morphic-mb')?.hasAttribute(MORPHIC_SKIP_ATTR)).toBe(true);
+  });
+
+  it('keeps updating its own text after reading focus is switched on', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Moyen' }));
+    });
+    expect(document.querySelector('.morphic-mb b[data-morphic-reading-focus]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Lecture' })).toHaveAccessibleDescription(
+      'Focus texte : Moyen',
+    );
+    clearReadingFocus();
+  });
+});
+
+describe('MorphicButton — a never-chosen setting shows its default as selected', () => {
+  it('marks Auto, Complète, Système, M, Confort and Défaut for a fresh visitor', () => {
+    renderButton();
+    openModal();
+    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
+    for (const name of ['Auto', 'Complète', 'Système', 'M', 'Confort', 'Défaut']) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+    }
   });
 });

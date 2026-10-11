@@ -1,0 +1,182 @@
+/**
+ * morphic-button-choices.css — rows and choices of <MorphicButton>.
+ *
+ * CDC ref : F-036. License : AGPL-3.0-or-later.
+ *
+ * Third source part of the published `ui.css` (palettes, panel, choices),
+ * joined by scripts/copy-assets.mjs. Same rules as morphic-button.css: every
+ * painting selector carries two classes, `--morphic-ui-*` is only read.
+ */
+
+/* ── Rows and choices ─────────────────────────────────────────────────── */
+
+.morphic-mb .morphic-mb-row {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.morphic-mb .morphic-mb-row + .morphic-mb-row {
+  margin-top: 14px;
+}
+
+.morphic-mb .morphic-mb-row-label {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mb-c-muted);
+}
+
+/* Segmented bar: one track, the selected choice raised out of it. */
+.morphic-mb .morphic-mb-chips--choices,
+.morphic-mb .morphic-mb-chips--tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--mb-c-track);
+}
+
+.morphic-mb .morphic-mb-chips--tiles {
+  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+}
+
+.morphic-mb .morphic-mb-chips--actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.morphic-mb .morphic-mb-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mb-c-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.morphic-mb .morphic-mb-chip:hover {
+  background: transparent;
+  color: var(--mb-c-text);
+}
+
+.morphic-mb .morphic-mb-chip.is-active,
+.morphic-mb .morphic-mb-chip.is-active:hover {
+  border-color: var(--mb-c-border);
+  background: var(--mb-raised);
+  color: var(--mb-c-text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* High contrast: the selected choice is outlined in yellow, not only raised. */
+:root[data-morphic-theme="high-contrast"] .morphic-mb .morphic-mb-chip.is-active {
+  border: 2px solid var(--mb-c-accent);
+}
+
+.morphic-mb .morphic-mb-check {
+  display: inline-flex;
+  color: var(--mb-c-accent);
+}
+
+/* Actions (pomodoro) are plain buttons, not part of a bar. */
+.morphic-mb .morphic-mb-chips--actions .morphic-mb-chip {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-color: var(--mb-c-border);
+  background: var(--mb-c-track);
+  color: var(--mb-c-text);
+}
+
+.morphic-mb .morphic-mb-chips--actions .morphic-mb-chip:hover {
+  border-color: var(--mb-c-accent);
+  background: var(--mb-c-track);
+}
+
+/* Theme tiles: a large swatch above the name. */
+.morphic-mb .morphic-mb-chips--tiles .morphic-mb-chip {
+  position: relative;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 64px;
+  padding: 8px 4px;
+  font-size: 0.74rem;
+}
+
+.morphic-mb .morphic-mb-chips--tiles .morphic-mb-check {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+}
+
+.morphic-mb .morphic-mb-swatch {
+  display: block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(127, 127, 127, 0.6);
+  border-radius: 50%;
+}
+
+.morphic-mb .morphic-mb-swatch--dark {
+  background: #1a1d23;
+}
+.morphic-mb .morphic-mb-swatch--light {
+  background: #ffffff;
+}
+.morphic-mb .morphic-mb-swatch--auto {
+  background: linear-gradient(90deg, #ffffff 50%, #1a1d23 50%);
+}
+.morphic-mb .morphic-mb-swatch--sepia {
+  background: #f1e3c6;
+}
+.morphic-mb .morphic-mb-swatch--high-contrast {
+  background: linear-gradient(90deg, #000000 50%, #ffeb3b 50%);
+}
+
+/* Font sizes shown as growing letters (relative, so they follow the page). */
+.morphic-mb .morphic-mb-size--sm {
+  font-size: 0.75rem;
+}
+.morphic-mb .morphic-mb-size--md {
+  font-size: 0.95rem;
+}
+.morphic-mb .morphic-mb-size--lg {
+  font-size: 1.15rem;
+}
+.morphic-mb .morphic-mb-size--xl {
+  font-size: 1.4rem;
+}
+
+/* Pomodoro duration inputs. */
+.morphic-mb .morphic-mb-duration-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--mb-c-muted);
+}
+
+.morphic-mb .morphic-mb-duration-field input {
+  width: 3.5rem;
+  min-height: 36px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--mb-c-border);
+  border-radius: 8px;
+  background: var(--mb-c-track);
+  color: var(--mb-c-text);
+  font: inherit;
+}
