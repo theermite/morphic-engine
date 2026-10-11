@@ -19,13 +19,17 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   __resetPomodoroStateForTests,
   clearReadingFocus,
+  disablePomodoroStrip,
+  enablePomodoroStrip,
   getColorVisionCorrection,
   getPomodoroState,
+  getPomodoroStripState,
   getReadingFocus,
   getReadingGuide,
   isRecoveryActive,
   MORPHIC_SKIP_ATTR,
   setReadingFocus,
+  startPomodoro,
 } from '@theermite/morphic-engine';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../../src/index.js';
@@ -33,6 +37,7 @@ import { MorphicButton } from '../../src/ui/index.js';
 
 afterEach(() => {
   __resetPomodoroStateForTests();
+  for (const el of document.querySelectorAll('[adapt-symbol]')) el.remove();
 });
 
 function renderButton(props?: Parameters<typeof MorphicButton>[0]) {
@@ -57,6 +62,14 @@ function openModal(): void {
 }
 
 const root = () => document.documentElement;
+
+/** A page element the engine's WAI symbols can act on (attribute `adapt-symbol`). */
+function withSymbolMarkup(): void {
+  const el = document.createElement('span');
+  el.setAttribute('adapt-symbol', '12345');
+  el.textContent = 'maison';
+  document.body.appendChild(el);
+}
 
 describe('MorphicButton — trigger + modal', () => {
   it('renders a trigger button collapsed by default', () => {
@@ -156,7 +169,6 @@ describe('MorphicButton — axes route through engine (single source of truth)',
   it('contrast sets data-morphic-contrast', () => {
     renderButton();
     openModal();
-    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Élevé' }));
     });
@@ -192,9 +204,9 @@ describe('MorphicButton — axes route through engine (single source of truth)',
   });
 
   it('WAI symbols toggle does not throw and marks the chip active', () => {
+    withSymbolMarkup();
     renderButton();
     openModal();
-    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
     const before = screen.getByRole('button', { name: 'Avant' });
     act(() => {
       fireEvent.click(before);
@@ -466,6 +478,7 @@ describe('MorphicButton — row order (grouped by category, Jay 2026-10-11)', ()
     );
     expect(labels).toEqual([
       'Thème',
+      'Contraste',
       'Animation',
       'Correction daltonisme',
       'Police',
@@ -480,43 +493,30 @@ describe('MorphicButton — row order (grouped by category, Jay 2026-10-11)', ()
   });
 });
 
-describe('MorphicButton — default-visible vs "plus d\'adaptations" fold', () => {
-  it('shows the core axes without needing the fold', () => {
+describe('MorphicButton — no fold: every axis lives in its category (Jay 2026-10-11)', () => {
+  it('has no "Plus d\'adaptations" toggle any more', () => {
     renderButton();
     openModal();
-    expect(screen.getByRole('button', { name: 'Sombre' })).toBeInTheDocument(); // theme
-    expect(screen.getByRole('button', { name: 'OpenDyslexic' })).toBeInTheDocument(); // fontFamily
-    expect(screen.getByRole('button', { name: 'Léger' })).toBeInTheDocument(); // readingFocus
+    expect(screen.queryByRole('button', { name: /adaptations/i })).not.toBeInTheDocument();
   });
 
-  it('hides contrast and WAI symbols behind the fold by default', () => {
+  it('shows contrast directly in the Vue category', () => {
     renderButton();
-    openModal();
-    expect(screen.queryByRole('button', { name: 'Élevé' })).not.toBeInTheDocument(); // contrast
-    expect(screen.queryByRole('button', { name: 'Avant' })).not.toBeInTheDocument(); // wai
-  });
-
-  it('reveals the folded axes on toggle, and can hide them again', () => {
-    renderButton();
-    openModal();
-    const toggle = screen.getByRole('button', { name: "Plus d'adaptations" });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-
-    fireEvent.click(toggle);
+    openDialog();
     expect(screen.getByRole('button', { name: 'Élevé' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: "Moins d'adaptations" })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: "Moins d'adaptations" }));
-    expect(screen.queryByRole('button', { name: 'Élevé' })).not.toBeInTheDocument();
   });
 
-  it('does not render the toggle at all when every folded axis is excluded via `axes`', () => {
-    renderButton({ axes: ['theme', 'motion'] });
+  it('hides the symbols row on a page that marks no element for symbols', () => {
+    renderButton();
     openModal();
-    expect(screen.queryByRole('button', { name: /plus d'adaptations/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Avant' })).not.toBeInTheDocument();
+  });
+
+  it('shows the symbols row when the page marks elements for symbols', () => {
+    withSymbolMarkup();
+    renderButton();
+    openModal();
+    expect(screen.getByRole('button', { name: 'Avant' })).toBeInTheDocument();
   });
 });
 
@@ -568,15 +568,6 @@ describe('MorphicButton — categories (Jay 2026-10-11)', () => {
     openDialog();
     expect(document.querySelectorAll('.morphic-mb-cat-toggle')).toHaveLength(1);
     expect(toggle('Vue')).toBeInTheDocument();
-  });
-
-  it('opening the fold also expands the categories that hold folded axes', () => {
-    renderButton();
-    openDialog();
-    fireEvent.click(toggle('Vue'));
-    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
-    expect(screen.getByRole('button', { name: 'Élevé' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Avant' })).toBeInTheDocument();
   });
 });
 
@@ -682,9 +673,50 @@ describe('MorphicButton — a never-chosen setting shows its default as selected
   it('marks Auto, Complète, Système, M, Confort and Défaut for a fresh visitor', () => {
     renderButton();
     openModal();
-    fireEvent.click(screen.getByRole('button', { name: "Plus d'adaptations" }));
     for (const name of ['Auto', 'Complète', 'Système', 'M', 'Confort', 'Défaut']) {
       expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
     }
+  });
+});
+
+describe('MorphicButton — the pomodoro is visible while it runs (Jay 2026-10-11)', () => {
+  afterEach(() => {
+    disablePomodoroStrip();
+  });
+
+  it('shows the phase and the time left once a session starts', () => {
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(screen.getByRole('timer')).toHaveTextContent(/Travail · 2[45]:\d\d/);
+  });
+
+  it('turns the page progress strip on when a session starts', () => {
+    renderButton();
+    openModal();
+    expect(getPomodoroStripState()).toBeNull();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    expect(getPomodoroStripState()).not.toBeNull();
+  });
+
+  it('turns the strip on at mount when a session is already running', () => {
+    startPomodoro();
+    renderButton();
+    expect(getPomodoroStripState()).not.toBeNull();
+  });
+
+  it('keeps a strip the host already set up, with its own options', () => {
+    enablePomodoroStrip({ height: 9 });
+    renderButton();
+    openModal();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    });
+    const strip = document.querySelector<HTMLElement>('[data-morphic-pomodoro-strip]');
+    expect(strip?.style.height).toBe('9px');
   });
 });

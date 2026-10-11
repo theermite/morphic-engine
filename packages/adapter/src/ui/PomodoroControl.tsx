@@ -12,7 +12,9 @@
  */
 
 import {
+  enablePomodoroStrip,
   getPomodoroState,
+  getPomodoroStripState,
   MORPHIC_POMODORO_EVENT_BREAK_END,
   MORPHIC_POMODORO_EVENT_BREAK_START,
   MORPHIC_POMODORO_EVENT_SESSION_COMPLETE,
@@ -20,6 +22,7 @@ import {
   MORPHIC_POMODORO_EVENT_WORK_END,
   MORPHIC_POMODORO_SHORT_BREAK_DEFAULT,
   MORPHIC_POMODORO_WORK_DEFAULT,
+  type PomodoroPhase,
   pausePomodoro,
   resumePomodoro,
   skipPhase,
@@ -38,6 +41,32 @@ export interface PomodoroControlLabels {
   stop: string;
   workMinutes: string;
   breakMinutes: string;
+  phaseWork: string;
+  phaseShortBreak: string;
+  phaseLongBreak: string;
+  paused: string;
+}
+
+/**
+ * Turn the page progress strip on, unless the host already did: re-enabling
+ * would replace the host's own options (height, colours). Without this, no
+ * site ever showed the strip (Jay 2026-10-11, « on n'a aucune visibilité »).
+ */
+export function ensurePomodoroStrip(): void {
+  if (getPomodoroStripState() === null) enablePomodoroStrip();
+}
+
+/** « 18:42 » — minutes may exceed 59 for long sessions, seconds never do. */
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function phaseLabel(t: PomodoroControlLabels, phase: Exclude<PomodoroPhase, 'idle'>): string {
+  if (phase === 'work') return t.phaseWork;
+  return phase === 'short-break' ? t.phaseShortBreak : t.phaseLongBreak;
 }
 
 const MIN_MINUTES = 1;
@@ -107,16 +136,23 @@ export function PomodoroControl(props: { labels: PomodoroControlLabels }): React
           <Chip
             label={t.start}
             active={false}
-            onClick={() =>
+            onClick={() => {
               setState(
                 startPomodoro({
                   workMs: workMinutes * 60_000,
                   shortBreakMs: breakMinutes * 60_000,
                 }),
-              )
-            }
+              );
+              ensurePomodoroStrip();
+            }}
           />
         </>
+      )}
+      {state.phase !== 'idle' && (
+        <span className="morphic-mb-timer" role="timer">
+          {phaseLabel(t, state.phase)} · {formatRemaining(state.remainingMs)}
+          {state.paused && ` · ${t.paused}`}
+        </span>
       )}
       {!isIdle && !state.paused && (
         <Chip label={t.pause} active={false} onClick={() => setState(pausePomodoro())} />

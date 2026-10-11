@@ -23,7 +23,7 @@ import type { MorphicAxisKey, MorphicButtonLabels, MorphicCategoryKey } from './
 
 /** Which axes each collapsible category holds, in display order. */
 export const CATEGORY_AXES: Record<MorphicCategoryKey, readonly MorphicAxisKey[]> = {
-  view: ['theme', 'motion', 'colorVision', 'contrast'],
+  view: ['theme', 'contrast', 'motion', 'colorVision'],
   text: ['fontFamily', 'fontSize', 'density'],
   reading: ['readingFocus', 'readingGuide', 'waiSymbols'],
   energy: ['recoveryMode', 'pomodoro'],

@@ -13,7 +13,7 @@
  * Self-styled (see morphic-button.css), zero host-framework coupling.
  */
 
-import { stopPomodoro } from '@theermite/morphic-engine';
+import { getPomodoroState, stopPomodoro } from '@theermite/morphic-engine';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useMorphicContrast,
@@ -40,12 +40,11 @@ import {
   ViewIcon,
 } from './icons.js';
 import { mergeLabels } from './labels.js';
-import { PomodoroControl } from './PomodoroControl.js';
+import { ensurePomodoroStrip, PomodoroControl } from './PomodoroControl.js';
 import { computePlacement, type ModalPlacement } from './placement.js';
 import { Category, Chip, Row } from './primitives.js';
 import {
   ALL_AXES,
-  DEFAULT_VISIBLE_AXES,
   type MorphicAxisKey,
   type MorphicButtonProps,
   type MorphicCategoryKey,
@@ -66,13 +65,8 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   const { labels: labelOverrides, axes = ALL_AXES, waiResolver = defaultWaiResolver } = props;
   const t = useMemo(() => mergeLabels(labelOverrides), [labelOverrides]);
   const has = useCallback((a: MorphicAxisKey) => axes.includes(a), [axes]);
-  const foldedAxesPresent = useMemo(
-    () => axes.some((a) => !DEFAULT_VISIBLE_AXES.includes(a)),
-    [axes],
-  );
 
   const [open, setOpen] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   // Bumped on reset to force <PomodoroControl> to remount and re-read idle
   // state — stopPomodoro() doesn't dispatch an event the control listens for.
   const [pomodoroResetKey, setPomodoroResetKey] = useState(0);
@@ -166,19 +160,16 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
   });
   const toggleCat = (key: MorphicCategoryKey) => setOpenCats((c) => ({ ...c, [key]: !c[key] }));
 
-  // Opening the fold also opens the categories it adds rows to, otherwise the
-  // click would reveal nothing visible.
-  const toggleAdvanced = () => {
-    const next = !showAdvanced;
-    setShowAdvanced(next);
-    if (next) {
-      setOpenCats((c) => ({
-        ...c,
-        view: c.view || has('contrast'),
-        reading: c.reading || has('waiSymbols'),
-      }));
-    }
-  };
+  // Symbols act only on elements the page marks with `adapt-symbol`; on a page
+  // without any, the row would be a control that does nothing (none of the
+  // four sites had one, 2026-10-11). Read while the panel is open (client only).
+  const pageHasSymbols = open && document.querySelector('[adapt-symbol]') !== null;
+
+  // A session started earlier (another page, before a reload) must show its
+  // progress strip without the panel ever being opened.
+  useEffect(() => {
+    if (has('pomodoro') && getPomodoroState().phase !== 'idle') ensurePomodoroStrip();
+  }, [has]);
 
   // A never-chosen axis (null) or one following the system (`auto`) shows its
   // default as selected: a bar with nothing selected reads as broken.
@@ -275,6 +266,18 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                     ))}
                   </Row>
                 )}
+                {has('contrast') && (
+                  <Row label={t.rows.contrast}>
+                    {(['no-preference', 'more', 'less'] as const).map((v) => (
+                      <Chip
+                        key={v}
+                        label={contrastLabel(t, v)}
+                        active={shown(contrast, 'no-preference') === v}
+                        onClick={() => setContrast(v)}
+                      />
+                    ))}
+                  </Row>
+                )}
                 {has('motion') && (
                   <Row label={t.rows.motion}>
                     {(['full', 'reduced', 'none'] as const).map((v) => (
@@ -300,18 +303,6 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                         label={t.colorVision[v]}
                         active={colorVision?.type === v}
                         onClick={() => handleColorVision(v)}
-                      />
-                    ))}
-                  </Row>
-                )}
-                {showAdvanced && has('contrast') && (
-                  <Row label={t.rows.contrast}>
-                    {(['no-preference', 'more', 'less'] as const).map((v) => (
-                      <Chip
-                        key={v}
-                        label={contrastLabel(t, v)}
-                        active={shown(contrast, 'no-preference') === v}
-                        onClick={() => setContrast(v)}
                       />
                     ))}
                   </Row>
@@ -413,7 +404,7 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                     />
                   </Row>
                 )}
-                {showAdvanced && has('waiSymbols') && (
+                {has('waiSymbols') && (pageHasSymbols || wai !== null) && (
                   <Row label={t.rows.wai}>
                     <Chip label={t.wai.off} active={wai === null} onClick={() => handleWai(null)} />
                     {(['before', 'after'] as const).map((v) => (
@@ -452,17 +443,6 @@ export function MorphicButton(props: MorphicButtonProps): React.JSX.Element {
                   />
                 )}
               </Category>
-            )}
-
-            {foldedAxesPresent && (
-              <button
-                type="button"
-                className="morphic-mb-advanced-toggle"
-                aria-expanded={showAdvanced}
-                onClick={toggleAdvanced}
-              >
-                {showAdvanced ? t.advancedToggle.less : t.advancedToggle.more}
-              </button>
             )}
           </div>
 

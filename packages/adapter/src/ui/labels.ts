@@ -65,6 +65,10 @@ export const DEFAULT_LABELS: MorphicButtonLabels = {
     stop: 'Arrêter',
     workMinutes: 'Session (min)',
     breakMinutes: 'Pause (min)',
+    phaseWork: 'Travail',
+    phaseShortBreak: 'Pause courte',
+    phaseLongBreak: 'Pause longue',
+    paused: 'en pause',
   },
   advancedToggle: { more: "Plus d'adaptations", less: "Moins d'adaptations" },
 };

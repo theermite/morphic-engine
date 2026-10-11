@@ -111,7 +111,13 @@ export interface MorphicButtonLabels {
     stop: string;
     workMinutes: string;
     breakMinutes: string;
+    /** Phase names shown with the time left while a session runs. */
+    phaseWork: string;
+    phaseShortBreak: string;
+    phaseLongBreak: string;
+    paused: string;
   };
+  /** @deprecated The fold was removed on 2026-10-11 (every axis lives in its category). Kept so existing `labels` overrides still type-check. */
   advancedToggle: { more: string; less: string };
 }
 
