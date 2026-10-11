@@ -21,6 +21,7 @@ import {
   getReadingFocus,
   MORPHIC_READING_FOCUS_MARKER,
   MORPHIC_READING_FOCUS_RATIOS,
+  MORPHIC_SKIP_ATTR,
   READING_FOCUS_INTENSITIES,
   type ReadingFocusIntensity,
   setReadingFocus,
@@ -209,6 +210,32 @@ describe('applyReadingFocus — properties (fast-check)', () => {
 // ---------------------------------------------------------------------------
 // setReadingFocus — DOM application
 // ---------------------------------------------------------------------------
+
+describe('setReadingFocus — opt-out zones (data-morphic-skip)', () => {
+  it('exposes the opt-out attribute name', () => {
+    expect(MORPHIC_SKIP_ATTR).toBe('data-morphic-skip');
+  });
+
+  it('leaves the text nodes of a skipped subtree untouched, so a framework keeps owning them', () => {
+    const main = document.createElement('main');
+    main.innerHTML = '<p>read me</p><div data-morphic-skip><span>panel text</span></div>';
+    document.body.appendChild(main);
+    const panelText = main.querySelector('span')?.firstChild;
+    setReadingFocus('medium', { target: main });
+    expect(main.querySelector('p b[data-morphic-reading-focus]')).not.toBeNull();
+    expect(main.querySelector('[data-morphic-skip] b')).toBeNull();
+    // Same node, not a rebuilt copy: a framework holding a reference to it can still update it.
+    expect(main.querySelector('span')?.firstChild).toBe(panelText);
+  });
+
+  it('skips nested descendants of the opt-out zone, at any depth', () => {
+    const main = document.createElement('main');
+    main.innerHTML = '<div data-morphic-skip><section><p><em>deep text</em></p></section></div>';
+    document.body.appendChild(main);
+    setReadingFocus('high', { target: main });
+    expect(main.querySelector('b')).toBeNull();
+  });
+});
 
 describe('setReadingFocus — DOM application', () => {
   it('throws on invalid intensity', () => {

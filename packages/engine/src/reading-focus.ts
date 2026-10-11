@@ -25,7 +25,8 @@
  *     Escapes HTML to prevent injection.
  *   - `setReadingFocus(intensity, { target })` — applies to a DOM element
  *     (defaults to document.body). Walks TEXT_NODE descendants, transforms each.
- *     Skips SCRIPT, STYLE, NOSCRIPT, TEXTAREA, INPUT. Idempotent.
+ *     Skips SCRIPT, STYLE, NOSCRIPT, TEXTAREA, INPUT, CODE, PRE, and any
+ *     subtree marked `data-morphic-skip`. Idempotent.
  *   - `getReadingFocus()` — reads back the persisted intensity.
  *   - `clearReadingFocus({ target })` — unwraps our `<b data-morphic-reading-focus>`
  *     markers and removes storage sub-key. Preserves user's own <b> tags.
@@ -60,6 +61,14 @@ export const MORPHIC_READING_FOCUS_MARKER = 'data-morphic-reading-focus' as cons
 const STORAGE_SUBKEY = 'readingFocus' as const;
 
 /** Tag names whose text content must NOT be transformed. */
+/**
+ * Opt-out attribute: a subtree carrying it is never rewritten. Text nodes owned
+ * by a UI framework (React, Vue…) must stay the very nodes the framework holds,
+ * otherwise its next update targets a node that is no longer in the page
+ * (found 2026-10-11: React threw `NotFoundError` in <MorphicButton>'s panel).
+ */
+export const MORPHIC_SKIP_ATTR = 'data-morphic-skip' as const;
+
 const SKIPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'CODE', 'PRE']);
 
 // ---------------------------------------------------------------------------
@@ -199,6 +208,7 @@ function shouldSkipAncestor(node: Node): boolean {
   while (cur !== null && cur.nodeType === Node.ELEMENT_NODE) {
     const el = cur as Element;
     if (SKIPPED_TAGS.has(el.tagName)) return true;
+    if (el.hasAttribute(MORPHIC_SKIP_ATTR)) return true;
     // Skip if already inside one of our markers (idempotency guard for nested walks).
     if (el.tagName === 'B' && el.hasAttribute(MORPHIC_READING_FOCUS_MARKER)) return true;
     cur = cur.parentNode;

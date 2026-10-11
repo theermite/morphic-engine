@@ -266,6 +266,7 @@ export {
   clearReadingFocus,
   getReadingFocus,
   MORPHIC_READING_FOCUS_MARKER,
+  MORPHIC_SKIP_ATTR,
   MORPHIC_READING_FOCUS_RATIOS,
   READING_FOCUS_INTENSITIES,
   type ReadingFocusIntensity,
