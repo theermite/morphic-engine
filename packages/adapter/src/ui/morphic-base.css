@@ -51,6 +51,8 @@ html[data-morphic-font-family] body code {
 }
 
 /* ── Motion ──────────────────────────────────────────────────────────── */
+/* biome-ignore-start lint/complexity/noImportantStyles: a motion preference is an
+   accessibility need; it must win over any animation the host page declares. */
 html[data-morphic-motion="reduced"] *,
 html[data-morphic-motion="reduced"] *::before,
 html[data-morphic-motion="reduced"] *::after {
@@ -65,6 +67,7 @@ html[data-morphic-motion="none"] *::after {
   transition: none !important;
   scroll-behavior: auto !important;
 }
+/* biome-ignore-end lint/complexity/noImportantStyles: end of the motion block */
 
 /* ── Density (exposes a multiplier; hosts consume --morphic-gap) ──────── */
 html[data-morphic-density="compact"] {

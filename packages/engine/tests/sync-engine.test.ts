@@ -412,6 +412,7 @@ describe('PBT — fast-check', () => {
     // this — Object.keys must see a real own property, and the value must
     // read back exactly as written.
     expect(Object.keys(prefs)).toContain('__proto__');
+    // biome-ignore lint/complexity/useLiteralKeys: bracket access on purpose — the test proves `__proto__` is a plain own key here
     expect(prefs['__proto__']).toBe('poisoned-value');
     destroySyncEngine();
   });

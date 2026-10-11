@@ -130,6 +130,7 @@
   <main id="app"></main>
   <script type="module">
     import RefreshRuntime from "/@react-refresh";
+
     RefreshRuntime.injectIntoGlobalHook(window);
     window.$RefreshReg$ = () => {};
     window.$RefreshSig$ = () => (type) => type;

@@ -21,8 +21,8 @@
  */
 
 import { MORPHIC_STORAGE_KEY, VALID_THEMES } from './init.js';
-import { getTarget } from './target.js';
 import { safeStorage } from './storage-access.js';
+import { getTarget } from './target.js';
 
 // ---------------------------------------------------------------------------
 // Types
