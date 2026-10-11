@@ -328,6 +328,11 @@
     right: 8px;
     width: auto;
   }
+
+  /* No indent under the category title: the width goes to the choices. */
+  .morphic-mb .morphic-mb-cat-content {
+    padding-left: 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

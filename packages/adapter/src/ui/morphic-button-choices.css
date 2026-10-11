@@ -31,18 +31,35 @@
 }
 
 /* Segmented bar: one track, the selected choice raised out of it. */
+/* Flex, not grid: each choice keeps at least the width of its own text (a
+   long label such as « Désactivée » never spills), and the bar wraps onto a
+   second line on a narrow screen instead of squeezing. */
 .morphic-mb .morphic-mb-chips--choices,
 .morphic-mb .morphic-mb-chips--tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   padding: 3px;
   border-radius: 11px;
   background: var(--mb-c-track);
 }
 
-.morphic-mb .morphic-mb-chips--tiles {
-  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+.morphic-mb .morphic-mb-chips--choices .morphic-mb-chip {
+  flex: 1 1 auto;
+}
+
+/* Theme tiles: each at least as wide as its name, the rest shared out. */
+.morphic-mb .morphic-mb-chips--tiles .morphic-mb-chip {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+/* Narrow screens: smaller tile names, so « Contraste+ » fits without being cut. */
+@media (max-width: 640px) {
+  .morphic-mb .morphic-mb-chips--tiles .morphic-mb-chip {
+    padding-inline: 2px;
+    font-size: 0.68rem;
+  }
 }
 
 .morphic-mb .morphic-mb-chips--actions {
