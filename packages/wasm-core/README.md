@@ -2,8 +2,11 @@
 
 Rust → WebAssembly critical paths for the Morphic Adaptation Engine.
 
-**Version**: `2.0.0-alpha.0` (not published to npm — consumed internally by the engine)  
-**Status**: Shipped. NaCl box primitives operational.
+[![npm](https://img.shields.io/npm/v/@theermite/morphic-wasm-core)](https://www.npmjs.com/package/@theermite/morphic-wasm-core)
+
+**Status**: `2.0.0-alpha`, published on npm. NaCl box primitives operational. The
+engine's WebAssembly bridge loads this package lazily when it is installed; otherwise
+the engine uses its TypeScript implementation (tweetnacl), which produces the same bytes.
 
 ## What it provides
 
