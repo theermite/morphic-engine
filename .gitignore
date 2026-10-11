@@ -46,3 +46,10 @@ packages/wasm-core/pkg/
 
 # Methodology (PII-laden, MNK-GoRin source-of-truth — never published)
 .claude/
+
+# Local AI working instructions — kept on disk for development sessions,
+# not published (they point to rule files that live outside this repo).
+/CLAUDE.md
+
+# Scratch directory used by local tooling
+/tmp/
