@@ -5,6 +5,11 @@ Versions before `2.0.0-beta.5` were development snapshots of the rewrite; the hi
 of the first engine (`@shinkofa/morphic-engine` 1.x) is summarised in
 [`docs/Changelog-v1-v2.md`](docs/Changelog-v1-v2.md).
 
+## engine 2.0.0-beta.15 · adapter 2.0.0-beta.5 · wasm-core 2.0.0-alpha.1 — 2026-10-12
+
+- Documentation only: package READMEs aligned with the actual API, licences and
+  publication status, so the pages on npm match the code. No change in behaviour.
+
 ## engine 2.0.0-beta.14 · adapter 2.0.0-beta.4 — 2026-10-11
 
 - **Redesigned `<MorphicButton>` panel**: four collapsible categories (View, Text,
