@@ -92,3 +92,21 @@ html[data-morphic-contrast="more"] body {
 html[data-morphic-contrast="less"] body {
   filter: contrast(0.75);
 }
+
+/* ── Recovery mode: a warm dark (Jay 2026-10-11) ──────────────────────
+   The engine switches the theme to dark and marks <html> with
+   data-morphic-recovery. A warm veil, multiplied over the dark page, takes the
+   blue out of the light — a "night light". Sepia alone was too bright for a
+   real rest mode. A veil, not a `filter` on body: a filter there unpins every
+   fixed element (the pomodoro strip scrolled off-screen, measured -480px).
+   Clicks pass through it. */
+html[data-morphic-recovery] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  background: rgb(255, 147, 41);
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+}

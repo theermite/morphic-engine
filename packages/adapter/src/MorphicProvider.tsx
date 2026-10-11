@@ -19,7 +19,7 @@
 
 'use client';
 
-import { morphicInit } from '@theermite/morphic-engine';
+import { morphicInit, syncRecoveryMarker } from '@theermite/morphic-engine';
 import { createContext, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 interface MorphicContextValue {
@@ -42,6 +42,9 @@ export function MorphicProvider({ children }: MorphicProviderProps): ReactNode {
   // (idempotent — engine just re-reads localStorage / media queries).
   useEffect(() => {
     morphicInit();
+    // Recovery mode is persisted, its <html> marker is not: put it back so
+    // the warm dark look survives a reload.
+    syncRecoveryMarker();
     // After init, bump once so any hooks that mounted before init see the
     // freshly-read DOM state.
     setTick((t) => t + 1);

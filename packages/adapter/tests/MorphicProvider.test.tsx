@@ -13,7 +13,13 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { MORPHIC_STORAGE_KEY } from '@theermite/morphic-engine';
+import {
+  __resetRecoveryStateForTests,
+  enterRecoveryMode,
+  exitRecoveryMode,
+  MORPHIC_RECOVERY_ATTR,
+  MORPHIC_STORAGE_KEY,
+} from '@theermite/morphic-engine';
 import { describe, expect, it } from 'vitest';
 import { MorphicProvider } from '../src/index.js';
 
@@ -60,5 +66,21 @@ describe('<MorphicProvider>', () => {
         </MorphicProvider>,
       );
     }).not.toThrow();
+  });
+});
+
+describe('MorphicProvider — recovery mode survives a reload (Jay 2026-10-11)', () => {
+  it('re-applies the recovery marker on mount when recovery is persisted', () => {
+    enterRecoveryMode();
+    // A reload: the DOM is fresh, the persisted state remains.
+    document.documentElement.removeAttribute(MORPHIC_RECOVERY_ATTR);
+    __resetRecoveryStateForTests();
+    render(
+      <MorphicProvider>
+        <p>x</p>
+      </MorphicProvider>,
+    );
+    expect(document.documentElement.hasAttribute(MORPHIC_RECOVERY_ATTR)).toBe(true);
+    exitRecoveryMode();
   });
 });

@@ -111,3 +111,26 @@ describe('morphic-button.css — the panel follows the chosen theme', () => {
     );
   });
 });
+
+describe('morphic-base.css — recovery mode is a warm dark (Jay 2026-10-11)', () => {
+  const BASE = readFileSync(resolve(UI, 'morphic-base.css'), 'utf-8').replace(
+    /\/\*[\s\S]*?\*\//g,
+    '',
+  );
+
+  it('warms the page with a warm veil while recovery is active', () => {
+    expect(BASE).toMatch(
+      /html\[data-morphic-recovery\] body::after\s*\{[^}]*position:\s*fixed[^}]*mix-blend-mode:\s*multiply/,
+    );
+  });
+
+  it('never filters <body> for recovery: a filter there unpins every fixed element (the pomodoro strip scrolled away, measured at -480px)', () => {
+    expect(BASE).not.toMatch(/html\[data-morphic-recovery\] body\s*\{[^}]*filter:/);
+  });
+
+  it('lets clicks pass through the veil', () => {
+    expect(BASE).toMatch(
+      /html\[data-morphic-recovery\] body::after\s*\{[^}]*pointer-events:\s*none/,
+    );
+  });
+});
