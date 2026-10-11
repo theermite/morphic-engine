@@ -266,8 +266,8 @@ export {
   clearReadingFocus,
   getReadingFocus,
   MORPHIC_READING_FOCUS_MARKER,
-  MORPHIC_SKIP_ATTR,
   MORPHIC_READING_FOCUS_RATIOS,
+  MORPHIC_SKIP_ATTR,
   READING_FOCUS_INTENSITIES,
   type ReadingFocusIntensity,
   type ReadingFocusOptions,
@@ -293,6 +293,7 @@ export {
   exitRecoveryMode,
   getRecoveryState,
   isRecoveryActive,
+  MORPHIC_RECOVERY_ATTR,
   MORPHIC_RECOVERY_EVENT_ENTER,
   MORPHIC_RECOVERY_EVENT_EXIT,
   MORPHIC_RECOVERY_MARKER,
@@ -301,6 +302,7 @@ export {
   type RecoveryModeState,
   type RecoveryPrefsSnapshot,
   type RecoveryProfile,
+  syncRecoveryMarker,
 } from './recovery-mode.js';
 export {
   __resetSyncStateForTests,

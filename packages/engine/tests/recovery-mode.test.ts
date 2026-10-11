@@ -27,6 +27,7 @@ import {
   getTheme,
   isRecoveryActive,
   MORPHIC_DECISION_POINTS_CAP_DEFAULT,
+  MORPHIC_RECOVERY_ATTR,
   MORPHIC_RECOVERY_EVENT_ENTER,
   MORPHIC_RECOVERY_EVENT_EXIT,
   MORPHIC_RECOVERY_MARKER,
@@ -38,6 +39,7 @@ import {
   setDensity,
   setMotion,
   setTheme,
+  syncRecoveryMarker,
 } from '../src/index.js';
 
 // ---------------------------------------------------------------------------
@@ -47,6 +49,7 @@ import {
 function resetAll(): void {
   localStorage.clear();
   document.documentElement.removeAttribute('data-morphic-theme');
+  document.documentElement.removeAttribute('data-morphic-recovery');
   document.documentElement.style.removeProperty('--morphic-theme');
   document.documentElement.style.removeProperty('--morphic-motion');
   document.documentElement.style.removeProperty('--morphic-density');
@@ -85,7 +88,7 @@ describe('Constants', () => {
       motion: 'reduced',
       density: 'spacious',
       decisionPointsCap: 3,
-      theme: 'sepia',
+      theme: 'dark',
     });
   });
 
@@ -105,7 +108,8 @@ describe('enterRecoveryMode — apply profile', () => {
     expect(getMotion()).toBe('reduced');
     expect(getDensity()).toBe('spacious');
     expect(getDecisionPointsCap()).toBe(3);
-    expect(getTheme()).toBe('sepia');
+    // Warm dark (Jay 2026-10-11): the dark theme, warmed by the recovery marker.
+    expect(getTheme()).toBe('dark');
   });
 
   it('should set --morphic-motion to reduced on documentElement', () => {
@@ -118,9 +122,9 @@ describe('enterRecoveryMode — apply profile', () => {
     expect(document.documentElement.style.getPropertyValue('--morphic-density')).toBe('spacious');
   });
 
-  it('should set data-morphic-theme to sepia on documentElement', () => {
+  it('should set data-morphic-theme to dark on documentElement', () => {
     enterRecoveryMode();
-    expect(document.documentElement.getAttribute('data-morphic-theme')).toBe('sepia');
+    expect(document.documentElement.getAttribute('data-morphic-theme')).toBe('dark');
   });
 
   it('should merge partial profile override with defaults', () => {
@@ -323,12 +327,12 @@ describe('exitRecoveryMode — restore from snapshot', () => {
   });
 
   it('should restore theme to pre-recovery value', () => {
-    setTheme('dark');
+    setTheme('light');
     enterRecoveryMode();
-    expect(getTheme()).toBe('sepia');
+    expect(getTheme()).toBe('dark');
 
     exitRecoveryMode();
-    expect(getTheme()).toBe('dark');
+    expect(getTheme()).toBe('light');
   });
 
   it('should restore decisionPointsCap to pre-recovery value', () => {
@@ -693,7 +697,7 @@ describe('Type contract', () => {
       motion: 'reduced',
       density: 'spacious',
       decisionPointsCap: 3,
-      theme: 'sepia',
+      theme: 'dark',
     };
     expect(profile).toEqual(RECOVERY_PROFILE_DEFAULT);
   });
@@ -703,5 +707,40 @@ describe('Type contract', () => {
     expect(state).toHaveProperty('active');
     expect(state).toHaveProperty('profile');
     expect(state).toHaveProperty('snapshot');
+  });
+});
+
+describe('recovery marker on <html> — the warm dark look (Jay 2026-10-11)', () => {
+  const root = () => document.documentElement;
+
+  it('exposes the marker attribute name', () => {
+    expect(MORPHIC_RECOVERY_ATTR).toBe('data-morphic-recovery');
+  });
+
+  it('should set the marker on enter and remove it on exit', () => {
+    enterRecoveryMode();
+    expect(root().hasAttribute(MORPHIC_RECOVERY_ATTR)).toBe(true);
+    exitRecoveryMode();
+    expect(root().hasAttribute(MORPHIC_RECOVERY_ATTR)).toBe(false);
+  });
+
+  it('should set the marker whatever the profile theme', () => {
+    enterRecoveryMode({ profile: { theme: 'sepia' } });
+    expect(root().hasAttribute(MORPHIC_RECOVERY_ATTR)).toBe(true);
+  });
+
+  it('should restore the marker after a reload when recovery is persisted', () => {
+    enterRecoveryMode();
+    // A reload: the DOM is fresh, the persisted state remains.
+    root().removeAttribute(MORPHIC_RECOVERY_ATTR);
+    __resetRecoveryStateForTests();
+    syncRecoveryMarker();
+    expect(root().hasAttribute(MORPHIC_RECOVERY_ATTR)).toBe(true);
+  });
+
+  it('should remove a stale marker when recovery is not active', () => {
+    root().setAttribute(MORPHIC_RECOVERY_ATTR, '');
+    syncRecoveryMarker();
+    expect(root().hasAttribute(MORPHIC_RECOVERY_ATTR)).toBe(false);
   });
 });

@@ -8,7 +8,10 @@
  * Spec :
  *   - `enterRecoveryMode(options?)` snapshots current sensory/cognitive prefs,
  *     applies a low-stim profile (motion=reduced, density=spacious,
- *     decisionPointsCap=3, theme=sepia by default), persists state, and
+ *     decisionPointsCap=3, theme=dark by default) and marks <html> with
+ *     `data-morphic-recovery` — morphic-base.css warms the page with it, so
+ *     the default look is a warm dark (Jay 2026-10-11: sepia alone was too
+ *     bright for a real rest mode) —, persists state, and
  *     dispatches `morphic:energy:recovery-enter` on window.
  *   - `exitRecoveryMode()` restores the snapshot, clears state, dispatches
  *     `morphic:energy:recovery-exit` on window.
@@ -42,8 +45,8 @@ import {
 import { type DensityChoice, getDensity, setDensity } from './density.js';
 import { MORPHIC_STORAGE_KEY } from './init.js';
 import { getMotion, type MotionChoice, setMotion } from './motion.js';
-import { getTheme, setTheme, type ThemeChoice } from './theme.js';
 import { safeStorage } from './storage-access.js';
+import { getTheme, setTheme, type ThemeChoice } from './theme.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -51,6 +54,13 @@ import { safeStorage } from './storage-access.js';
 
 /** Storage sub-key under MORPHIC_STORAGE_KEY for recovery mode state. */
 export const MORPHIC_RECOVERY_MARKER = 'morphic-recovery' as const;
+
+/**
+ * Attribute set on <html> while recovery mode is active. Stylesheets key the
+ * warm dark look on it (morphic-base.css). Restored after a reload by
+ * `syncRecoveryMarker()`.
+ */
+export const MORPHIC_RECOVERY_ATTR = 'data-morphic-recovery' as const;
 
 /** Window event dispatched when recovery mode is entered. */
 export const MORPHIC_RECOVERY_EVENT_ENTER = 'morphic:energy:recovery-enter' as const;
@@ -100,7 +110,7 @@ export const RECOVERY_PROFILE_DEFAULT: RecoveryProfile = {
   motion: 'reduced',
   density: 'spacious',
   decisionPointsCap: MORPHIC_DECISION_POINTS_CAP_DEFAULT,
-  theme: 'sepia',
+  theme: 'dark',
 };
 
 // ---------------------------------------------------------------------------
@@ -317,6 +327,7 @@ export function enterRecoveryMode(options?: RecoveryModeOptions): RecoveryModeSt
   const newState: RecoveryModeState = { active: true, profile, snapshot };
   currentState = newState;
   writeStorageState(newState);
+  setRecoveryMarker(true);
 
   emitRecoveryEvent(MORPHIC_RECOVERY_EVENT_ENTER, newState);
   return newState;
@@ -355,6 +366,7 @@ export function exitRecoveryMode(): RecoveryModeState {
   };
   currentState = newState;
   writeStorageState(null);
+  setRecoveryMarker(false);
 
   emitRecoveryEvent(MORPHIC_RECOVERY_EVENT_EXIT, newState);
   return newState;
@@ -363,6 +375,21 @@ export function exitRecoveryMode(): RecoveryModeState {
 // ---------------------------------------------------------------------------
 // Read API
 // ---------------------------------------------------------------------------
+
+function setRecoveryMarker(on: boolean): void {
+  if (typeof document === 'undefined') return; // SSR — no page to mark
+  if (on) document.documentElement.setAttribute(MORPHIC_RECOVERY_ATTR, '');
+  else document.documentElement.removeAttribute(MORPHIC_RECOVERY_ATTR);
+}
+
+/**
+ * Re-apply the <html> marker from the persisted state. Call once at page load
+ * (the React adapter's provider does): the state survives a reload in
+ * storage, the attribute does not.
+ */
+export function syncRecoveryMarker(): void {
+  setRecoveryMarker(getStateInternal().active);
+}
 
 /** Returns true iff recovery mode is currently active. */
 export function isRecoveryActive(): boolean {
