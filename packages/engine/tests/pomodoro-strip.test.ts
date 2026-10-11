@@ -18,6 +18,7 @@ import {
   enablePomodoroStrip,
   getPomodoroStripState,
   MORPHIC_POMODORO_STRIP_BREATHE_MS,
+  MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT,
   MORPHIC_POMODORO_STRIP_FILL_MARKER,
   MORPHIC_POMODORO_STRIP_MARKER,
   MORPHIC_POMODORO_STRIP_POLL_MS,
@@ -611,5 +612,11 @@ describe('the progress must be visible from the first second', () => {
       [POMODORO_STRIP_DARK_PALETTE, POMODORO_STRIP_LIGHT_PALETTE],
       'the strip mounted a palette that is neither of the two measured ones',
     ).toContainEqual(chosen);
+  });
+});
+
+describe('the strip is thick enough to be seen (Jay 2026-10-11)', () => {
+  it('defaults to 4px: 1px was invisible on a web page', () => {
+    expect(MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT).toBe(4);
   });
 });

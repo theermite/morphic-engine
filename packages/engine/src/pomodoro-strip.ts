@@ -35,8 +35,11 @@ export const MORPHIC_POMODORO_STRIP_MARKER = 'data-morphic-pomodoro-strip';
 /** Marker attribute on the fill (child) element. */
 export const MORPHIC_POMODORO_STRIP_FILL_MARKER = 'data-morphic-pomodoro-strip-fill';
 
-/** Default strip thickness in px. */
-export const MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT = 1 as const;
+/**
+ * Default strip thickness in px. Was 1 (the Hibiki desktop liseré): on a web
+ * page that line was invisible (Jay 2026-10-11, « on n'a aucune visibilité »).
+ */
+export const MORPHIC_POMODORO_STRIP_DEFAULT_HEIGHT = 4 as const;
 
 /** Default z-index. */
 export const MORPHIC_POMODORO_STRIP_DEFAULT_Z_INDEX = 9997 as const;
